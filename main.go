@@ -1,7 +1,7 @@
 package main
 
 import (
-	"self-hosted-cloud/server/routes"
+	"self-hosted-cloud/server/auth"
 
 	"github.com/gin-gonic/gin"
 )
@@ -9,7 +9,7 @@ import (
 func main() {
 	router := gin.Default()
 
-	router.GET("/", routes.GetAbout)
+	auth.Routes(router)
 
 	router.Run(":8080")
 }

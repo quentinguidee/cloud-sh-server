@@ -1,4 +1,4 @@
-package routes
+package auth
 
 import (
 	"net/http"
@@ -9,12 +9,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetAbout(testing *testing.T) {
+func TestLogin(testing *testing.T) {
 	router := gin.New()
-	router.GET("/", GetAbout)
+
+	Routes(router)
 
 	recorder := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/", nil)
+	req, _ := http.NewRequest("GET", "/auth/login", nil)
 
 	router.ServeHTTP(recorder, req)
 
