@@ -38,15 +38,15 @@ Validates the code, add the user to the database, and returns the app token and 
 - Error Responses:
 
   - `400`:
-    - `Missing parameter(s)`
-    - `The code is invalid`
-    - `The state parameter does not match the one in the URL`
+    - Missing parameter(s)
+    - The code is invalid
+    - The state parameter does not match the one in the URL
   - `500`:
-    - `Server failed to generate the app token`
-    - `Server failed to retrieve the user from Github`
-    - `Server failed decode Github user account`
+    - Server failed to generate the app token
+    - Server failed to retrieve the user from Github
+    - Server failed decode Github user account
   - `Any other error`
-    - `Github related error, see `[Github User Api Documentation](https://docs.github.com/en/rest/users/users#get-the-authenticated-user)
+    - Github related error, see [Github User Api Documentation](https://docs.github.com/en/rest/users/users#get-the-authenticated-user)
 
 - Returned Content:
 
@@ -67,9 +67,9 @@ Returns user information.
 - Success Response: `200`
 - Error Responses:
   - `404`:
-    - `User not found`
+    - User not found
   - `500`:
-    - `Server failed to retrieve user`
+    - Server failed to retrieve user
 - Returned Content:
 
 ```json
