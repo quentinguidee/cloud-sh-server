@@ -36,14 +36,13 @@ func Middleware(database Database) gin.HandlerFunc {
 func (db *Database) GetUser(username string) (User, error) {
 	statement, err := db.instance.Prepare("SELECT id, username, name FROM users WHERE username = ?")
 	if err != nil {
-		print(err.Error())
 		return User{}, errors.New("failed to prepare statement")
 	}
 
 	var user User
 	err = statement.QueryRow(username).Scan(&user.Id, &user.Username, &user.Name)
 	if err != nil {
-		return User{}, errors.New("failed to execute statement")
+		return User{}, err
 	}
 
 	return user, nil

@@ -39,6 +39,7 @@ func TestGetUser(testing *testing.T) {
 
 func TestGetNonExistingUser(testing *testing.T) {
 	db, mock, _ := sqlmock.New()
+
 	mock.ExpectPrepare("^SELECT (.+) FROM users WHERE username = \\?$").
 		ExpectQuery().
 		WithArgs("username").
@@ -54,5 +55,5 @@ func TestGetNonExistingUser(testing *testing.T) {
 
 	router.ServeHTTP(recorder, req)
 
-	assert.Equal(testing, http.StatusInternalServerError, recorder.Code) // TODO: Update to 404 when possible (http.StatusNotFound)
+	assert.Equal(testing, http.StatusNotFound, recorder.Code)
 }
