@@ -106,7 +106,7 @@ func authorize(context *gin.Context) {
 	var user User
 	err = json.NewDecoder(res.Body).Decode(&user)
 	if err != nil {
-		context.JSON(res.StatusCode, gin.H{
+		context.JSON(http.StatusInternalServerError, gin.H{
 			"message": "Failed to decode GitHub user account.",
 		})
 		return
