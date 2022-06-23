@@ -25,7 +25,7 @@ func main() {
 
 	auth.LoadRoutes(router)
 
-	err = router.Run(":8080")
+	err = router.Run("localhost:8080")
 	if err != nil {
 		return
 	}
