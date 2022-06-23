@@ -26,7 +26,7 @@ func LoadRoutes(router *gin.RouterGroup) {
 	github := router.Group("/github")
 	{
 		github.GET("/login", login)
-		github.POST("/authorize", authorize)
+		github.POST("/callback", callback)
 	}
 }
 
@@ -50,9 +50,7 @@ type User struct {
 	Name  string
 }
 
-func authorize(context *gin.Context) {
-	// TODO: Split this function
-
+func callback(context *gin.Context) {
 	var config = getConfig()
 	var params AuthorizeParams
 

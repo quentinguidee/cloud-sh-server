@@ -18,11 +18,11 @@ Returns URL to login with GitHub.
 }
 ```
 
-## Authorize
+## Callback
 
 Validates the code, add the user to the database, and returns the app token and the user.
 
-`GET /auth/github/authorize`
+`POST /auth/github/callback`
 
 - Parameters: `None`
 - Data Parameters:
