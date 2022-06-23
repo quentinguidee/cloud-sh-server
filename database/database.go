@@ -47,3 +47,17 @@ func (db *Database) GetUser(username string) (User, error) {
 
 	return user, nil
 }
+
+func (db *Database) CreateUser(user User) error {
+	statement, err := db.instance.Prepare("INSERT INTO users(username, name) VALUES (?, ?)")
+	if err != nil {
+		return errors.New("failed to prepare statement")
+	}
+
+	_, err = statement.Exec(user.Username, user.Name)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
