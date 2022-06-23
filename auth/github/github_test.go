@@ -20,5 +20,5 @@ func TestLogin(testing *testing.T) {
 	router.ServeHTTP(recorder, req)
 
 	assert.Equal(testing, http.StatusOK, recorder.Code)
-	assert.Equal(testing, `{"url":"https://github.com/login/oauth/authorize?access_type=offline\u0026client_id=\u0026redirect_uri=http%3A%2F%2Flocalhost%3A3000\u0026response_type=code\u0026scope=all"}`, recorder.Body.String())
+	assert.Equal(testing, `{"url":"https://github.com/login/oauth/authorize?access_type=offline\u0026client_id=\u0026redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Flogin\u0026response_type=code\u0026scope=all"}`, recorder.Body.String())
 }
