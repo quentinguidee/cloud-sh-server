@@ -8,10 +8,11 @@ import (
 	"self-hosted-cloud/server/database"
 )
 
-func LoadRoutes(router *gin.RouterGroup) {
-	user := router.Group("/")
+func LoadRoutes(router *gin.Engine) {
+	user := router.Group("/user")
 	{
-		user.GET("/user/:username", getUser)
+		user.GET("/", getUser)
+		user.GET("/:username", getUser)
 	}
 }
 

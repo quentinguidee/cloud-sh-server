@@ -26,10 +26,10 @@ func TestGetUser(testing *testing.T) {
 	router := gin.New()
 	router.Use(database.Middleware(database.New(db)))
 
-	LoadRoutes(router.Group("/auth"))
+	LoadRoutes(router)
 
 	recorder := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/auth/user/username", nil)
+	req, _ := http.NewRequest("GET", "/user/username", nil)
 
 	router.ServeHTTP(recorder, req)
 
@@ -48,12 +48,13 @@ func TestGetNonExistingUser(testing *testing.T) {
 	router := gin.New()
 	router.Use(database.Middleware(database.New(db)))
 
-	LoadRoutes(router.Group("/auth"))
+	LoadRoutes(router)
 
 	recorder := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/auth/user/username", nil)
+	req, _ := http.NewRequest("GET", "/user/username", nil)
 
 	router.ServeHTTP(recorder, req)
 
 	assert.Equal(testing, http.StatusNotFound, recorder.Code)
+	assert.Equal(testing, `{"message":"User username doesn't exists"}`, recorder.Body.String())
 }

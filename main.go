@@ -5,8 +5,8 @@ import (
 	"github.com/joho/godotenv"
 	cors "github.com/rs/cors/wrapper/gin"
 	"log"
-	"self-hosted-cloud/server/auth"
 	"self-hosted-cloud/server/database"
+	"self-hosted-cloud/server/routes/auth"
 )
 
 func main() {
