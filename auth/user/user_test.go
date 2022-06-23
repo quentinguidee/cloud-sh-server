@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
@@ -37,14 +36,12 @@ func TestGetUser(testing *testing.T) {
 	assert.Equal(testing, http.StatusOK, recorder.Code)
 	assert.Equal(testing, `{"id":2,"name":"Name","username":"username"}`, recorder.Body.String())
 }
+
 func TestGetNonExistingUser(testing *testing.T) {
 	db, mock, _ := sqlmock.New()
-
-	_ = sqlmock.NewRows([]string{"id", "username", "name"}).
-		AddRow(2, "username", "Name")
 	mock.ExpectPrepare("^SELECT (.+) FROM users WHERE username = \\?$").
 		ExpectQuery().
-		WithArgs("nousername").
+		WithArgs("username").
 		WillReturnError(sql.ErrNoRows)
 
 	router := gin.New()
@@ -58,5 +55,4 @@ func TestGetNonExistingUser(testing *testing.T) {
 	router.ServeHTTP(recorder, req)
 
 	assert.Equal(testing, http.StatusInternalServerError, recorder.Code) // TODO: Update to 404 when possible (http.StatusNotFound)
-
 }
