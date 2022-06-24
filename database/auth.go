@@ -37,12 +37,15 @@ func (db *Database) CreateUserFromGithub(githubUser GithubUser) (User, error) {
 		Username: githubUser.Login,
 		Name:     githubUser.Name,
 	}
+
 	userId, err := db.CreateUser(user)
 	if err != nil {
 		return User{}, err
 	}
 
-	_, err = db.instance.Exec(`INSERT INTO auth_github(username, user_id) VALUES (?, ?)`, githubUser.Login, userId)
+	user.Id = userId
+
+	_, err = db.instance.Exec(`INSERT INTO auth_github(username, user_id) VALUES (?, ?)`, githubUser.Login, user.Id)
 	if err != nil {
 		return User{}, err
 	}

@@ -127,9 +127,19 @@ func callback(context *gin.Context) {
 		return
 	}
 
+	// Open session
+	session, err := db.CreateSession(user.Id)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Failed to create user session.",
+		})
+		return
+	}
+
 	// OK
 	context.JSON(http.StatusOK, gin.H{
-		"token": token,
-		"user":  user,
+		"token":   token,
+		"user":    user,
+		"session": session,
 	})
 }
