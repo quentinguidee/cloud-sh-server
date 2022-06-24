@@ -2,7 +2,6 @@ package database
 
 import (
 	"database/sql"
-	"errors"
 	. "self-hosted-cloud/server/models"
 )
 
@@ -17,19 +16,15 @@ func (db *Database) CreateGithubAuthTable() (sql.Result, error) {
 }
 
 func (db *Database) GetUserFromGithub(username string) (User, error) {
-	statement, err := db.instance.Prepare(`
+	request := `
 		SELECT users.id, users.username, users.name
 		FROM users, auth_github
 		WHERE users.id = auth_github.user_id
 		  AND auth_github.username = ?;
-	`)
-
-	if err != nil {
-		return User{}, errors.New("")
-	}
+	`
 
 	var user User
-	err = statement.QueryRow(username).Scan(&user.Id, &user.Username, &user.Name)
+	err := db.instance.QueryRow(request, username).Scan(&user.Id, &user.Username, &user.Name)
 	if err != nil {
 		return User{}, err
 	}
