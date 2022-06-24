@@ -31,16 +31,17 @@ func (db *Database) GetUser(username string) (User, error) {
 	return user, nil
 }
 
-func (db *Database) CreateUser(user User) error {
-	statement, err := db.instance.Prepare("INSERT INTO users(username, name) VALUES (?, ?)")
+func (db *Database) CreateUser(user User) (int, error) {
+	statement, err := db.instance.Prepare("INSERT INTO users(username, name) VALUES (?, ?) RETURNING id")
 	if err != nil {
-		return errors.New("failed to prepare statement")
+		return 0, err
 	}
 
-	_, err = statement.Exec(user.Username, user.Name)
+	var id int
+	err = statement.QueryRow(user.Username, user.Name).Scan(&id)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	return id, nil
 }

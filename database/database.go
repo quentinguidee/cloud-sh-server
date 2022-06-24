@@ -27,7 +27,7 @@ func GetDatabase(path string) (Database, error) {
 
 func (db *Database) Initialize() {
 	_, _ = db.CreateUsersTable()
-	_, _ = db.CreateGitHubAuthTable()
+	_, _ = db.CreateGithubAuthTable()
 }
 
 const KeyDatabase = "KEY_DATABASE"
