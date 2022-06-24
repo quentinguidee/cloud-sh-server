@@ -1,9 +1,9 @@
 package database
 
 import (
+	"crypto/rand"
 	"database/sql"
-	"errors"
-	"github.com/google/uuid"
+	"fmt"
 	. "self-hosted-cloud/server/models"
 )
 
@@ -20,14 +20,15 @@ func (db *Database) CreateSessionsTable() (sql.Result, error) {
 func (db *Database) CreateSession(userId int) (Session, error) {
 	request := "INSERT INTO sessions(user_id, token) VALUES (?, ?)"
 
-	token, err := uuid.NewUUID()
+	token := make([]byte, 32)
+	_, err := rand.Read(token)
 	if err != nil {
-		return Session{}, errors.New("failed to generate an UUID for the session")
+		return Session{}, err
 	}
 
 	session := Session{
 		UserId: userId,
-		Token:  token.String(),
+		Token:  fmt.Sprintf("%X", token),
 	}
 
 	_, err = db.instance.Exec(request, session.UserId, session.Token)
