@@ -18,7 +18,7 @@ func (db *Database) CreateGithubAuthTable() (sql.Result, error) {
 
 func (db *Database) GetUserFromGithub(username string) (User, error) {
 	statement, err := db.instance.Prepare(`
-		SELECT *
+		SELECT users.id, users.username, users.name
 		FROM users, auth_github
 		WHERE users.id = auth_github.user_id
 		  AND auth_github.username = ?;
@@ -37,19 +37,20 @@ func (db *Database) GetUserFromGithub(username string) (User, error) {
 	return user, nil
 }
 
-func (db *Database) CreateUserFromGithub(githubUser GithubUser) error {
-	userId, err := db.CreateUser(User{
-		Username: githubUser.Username,
+func (db *Database) CreateUserFromGithub(githubUser GithubUser) (User, error) {
+	user := User{
+		Username: githubUser.Login,
 		Name:     githubUser.Name,
-	})
+	}
+	userId, err := db.CreateUser(user)
 	if err != nil {
-		return err
+		return User{}, err
 	}
 
-	_, err = db.instance.Exec(`INSERT INTO auth_github(username, user_id) VALUES (?, ?)`, githubUser.Username, userId)
+	_, err = db.instance.Exec(`INSERT INTO auth_github(username, user_id) VALUES (?, ?)`, githubUser.Login, userId)
 	if err != nil {
-		return err
+		return User{}, err
 	}
 
-	return nil
+	return user, nil
 }

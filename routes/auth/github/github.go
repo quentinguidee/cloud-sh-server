@@ -2,11 +2,14 @@ package github
 
 import (
 	authContext "context"
+	"database/sql"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
 	"net/http"
 	"os"
+	"self-hosted-cloud/server/database"
+	. "self-hosted-cloud/server/models"
 )
 
 func getConfig() oauth2.Config {
@@ -43,11 +46,6 @@ func login(context *gin.Context) {
 type AuthorizeParams struct {
 	Code  string
 	State string
-}
-
-type User struct {
-	Email string
-	Name  string
 }
 
 func callback(context *gin.Context) {
@@ -101,11 +99,30 @@ func callback(context *gin.Context) {
 	}
 
 	// Decode client info
-	var user User
-	err = json.NewDecoder(res.Body).Decode(&user)
+	var githubUser GithubUser
+	err = json.NewDecoder(res.Body).Decode(&githubUser)
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{
 			"message": "Failed to decode GitHub user account.",
+		})
+		return
+	}
+
+	// Create account if it doesn't exist
+	db := context.MustGet(database.KeyDatabase).(database.Database)
+	user, err := db.GetUserFromGithub(githubUser.Login)
+	if err == sql.ErrNoRows {
+		user, err = db.CreateUserFromGithub(githubUser)
+		if err != nil {
+			context.JSON(http.StatusInternalServerError, gin.H{
+				"message": "Failed to create the new user.",
+			})
+			return
+		}
+	}
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Failed to retrieve the user.",
 		})
 		return
 	}

@@ -5,3 +5,9 @@ type User struct {
 	Username string
 	Name     string
 }
+
+type GithubUser struct {
+	Email string
+	Name  string
+	Login string
+}
