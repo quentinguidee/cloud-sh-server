@@ -3,6 +3,7 @@ package database
 import (
 	"crypto/rand"
 	"database/sql"
+	"errors"
 	"fmt"
 	. "self-hosted-cloud/server/models"
 )
@@ -37,6 +38,24 @@ func (db *Database) CreateSession(userId int) (Session, error) {
 	}
 
 	return session, nil
+}
+
+func (db *Database) CloseSession(session Session) error {
+	request := "DELETE FROM sessions WHERE token = ? AND user_id = ?"
+
+	println(session.Token)
+
+	res, err := db.instance.Exec(request, session.Token, session.UserId)
+	if err != nil {
+		return err
+	}
+
+	count, _ := res.RowsAffected()
+	if count == 0 {
+		return errors.New("the session doesn't exists")
+	}
+
+	return nil
 }
 
 func (db *Database) ValidateToken(token string, userId int) (bool, error) {
