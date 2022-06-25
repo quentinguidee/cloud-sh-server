@@ -49,7 +49,7 @@ func (db *Database) CreateBucketsTable() {
 	`)
 }
 
-func (db *Database) GetBucket(bucketId string) (storage.Bucket, error) {
+func (db *Database) GetBucket(bucketId int) (storage.Bucket, error) {
 	request := "SELECT id, name, root_node FROM buckets WHERE buckets.id = ?"
 
 	var bucket storage.Bucket
@@ -60,7 +60,7 @@ func (db *Database) GetBucket(bucketId string) (storage.Bucket, error) {
 	return bucket, nil
 }
 
-func (db *Database) GetNodes(fromNode int) ([]storage.Node, error) {
+func (db *Database) GetNodesFromNode(fromNode int) ([]storage.Node, error) {
 	request := `
 		SELECT nodes.id, nodes.filename, nodes.filetype, nodes.internal_filename
 		FROM buckets_nodes nodes, buckets_nodes_associations associations
@@ -92,7 +92,7 @@ func (db *Database) GetNodes(fromNode int) ([]storage.Node, error) {
 	return nodes, nil
 }
 
-func (db *Database) GetNode(fromNode int, filename string) (storage.Node, error) {
+func (db *Database) GetNodeFromNode(fromNode int, filename string) (storage.Node, error) {
 	request := `
 		SELECT nodes.id, nodes.filename, nodes.filetype, nodes.internal_filename
 		FROM buckets_nodes nodes, buckets_nodes_associations associations
@@ -115,28 +115,40 @@ func (db *Database) GetNode(fromNode int, filename string) (storage.Node, error)
 	return node, nil
 }
 
-func (db *Database) GetFiles(bucketId string, path string) ([]storage.Node, error) {
+func (db *Database) GetNode(bucketId int, path string) (storage.Node, error) {
 	if len(path) > 0 && path[0] == '/' {
 		path = path[1:]
 	}
 
 	bucket, err := db.GetBucket(bucketId)
 	if err != nil {
+		return storage.Node{}, err
+	}
+
+	node := storage.Node{
+		Id: bucket.RootNode,
+	}
+
+	for _, filename := range strings.Split(path, "/") {
+		node, err = db.GetNodeFromNode(node.Id, filename)
+		if err != nil {
+			return storage.Node{}, err
+		}
+		if node.Filetype != "directory" {
+			return node, nil
+		}
+	}
+
+	return node, nil
+}
+
+func (db *Database) GetFiles(bucketId int, path string) ([]storage.Node, error) {
+	node, err := db.GetNode(bucketId, path)
+	if err != nil {
 		return nil, err
 	}
 
-	node := bucket.RootNode
-	for _, filename := range strings.Split(path, "/") {
-		node, err := db.GetNode(node, filename)
-		if err != nil {
-			return nil, err
-		}
-		if node.Filetype != "directory" {
-			return []storage.Node{node}, nil
-		}
-	}
-
-	nodes, err := db.GetNodes(node)
+	nodes, err := db.GetNodesFromNode(node.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -191,4 +203,35 @@ func (db *Database) CreateBucket(userId int) (storage.Bucket, error) {
 	}
 
 	return bucket, nil
+}
+
+func (db *Database) CreateNode(directoryId int, node storage.Node) error {
+	request := `
+		INSERT INTO buckets_nodes(filename, filetype, internal_filename, bucket_id)
+		VALUES (?, ?, ?, ?)
+		RETURNING id
+	`
+
+	err := db.instance.QueryRow(request,
+		node.Filename,
+		node.Filetype,
+		node.InternalFilename,
+		node.BucketId,
+	).Scan(&node.Id)
+
+	if err != nil {
+		return err
+	}
+
+	request = `
+		INSERT INTO buckets_nodes_associations(from_node, to_node)
+		VALUES (?, ?)
+	`
+
+	_, err = db.instance.Exec(request, directoryId, node.Id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

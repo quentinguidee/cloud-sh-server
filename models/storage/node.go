@@ -5,4 +5,5 @@ type Node struct {
 	Filename         string `json:"filename,omitempty"`
 	Filetype         string `json:"filetype,omitempty"`
 	InternalFilename string `json:"internal_filename,omitempty"`
+	BucketId         int    `json:"bucket_id,omitempty"`
 }
