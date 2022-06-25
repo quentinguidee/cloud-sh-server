@@ -1,6 +1,7 @@
 package database
 
 import (
+	"fmt"
 	"self-hosted-cloud/server/models/storage"
 	"strings"
 )
@@ -141,4 +142,53 @@ func (db *Database) GetFiles(bucketId string, path string) ([]storage.Node, erro
 	}
 
 	return nodes, nil
+}
+
+func (db *Database) CreateBucket(userId int) (storage.Bucket, error) {
+	request := "INSERT INTO buckets(name) VALUES (?) RETURNING id"
+	bucket := storage.Bucket{
+		Name: fmt.Sprintf("Main bucket"),
+	}
+	err := db.instance.QueryRow(request, bucket.Name).Scan(&bucket.Id)
+	if err != nil {
+		return storage.Bucket{}, err
+	}
+
+	node := storage.Node{
+		Filename: "/",
+		Filetype: "directory",
+	}
+	request = `
+		INSERT INTO buckets_nodes(filename, filetype, internal_filename, bucket_id)
+		VALUES ('/', 'directory', NULL, ?)
+		RETURNING id
+	`
+
+	err = db.instance.QueryRow(request, bucket.Id).Scan(&node.Id)
+	if err != nil {
+		return storage.Bucket{}, err
+	}
+
+	request = `
+		UPDATE buckets
+		SET root_node = ?
+		WHERE id = ?
+	`
+
+	_, err = db.instance.Exec(request, node.Id, bucket.Id)
+	if err != nil {
+		return storage.Bucket{}, err
+	}
+
+	request = `
+		INSERT INTO buckets_access(bucket_id, user_id, access_type)
+		VALUES (?, ?, 'admin')
+	`
+
+	_, err = db.instance.Exec(request, bucket.Id, userId)
+	if err != nil {
+		return storage.Bucket{}, err
+	}
+
+	return bucket, nil
 }
