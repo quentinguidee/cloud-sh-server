@@ -21,7 +21,8 @@ func main() {
 	}
 
 	router := gin.Default()
-	router.Use(cors.Default())
+
+	router.Use(cors.AllowAll())
 	router.Use(database.Middleware(db))
 
 	auth.LoadRoutes(router)

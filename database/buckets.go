@@ -12,6 +12,7 @@ func (db *Database) CreateBucketsTable() {
 			id        INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT,
 			name      VARCHAR(255),
 			root_node INTEGER,
+			type      VARCHAR(63),
 			FOREIGN KEY(root_node) REFERENCES buckets_nodes(id)
 		)
 	`)
@@ -49,11 +50,34 @@ func (db *Database) CreateBucketsTable() {
 	`)
 }
 
-func (db *Database) GetBucket(bucketId int) (storage.Bucket, error) {
-	request := "SELECT id, name, root_node FROM buckets WHERE buckets.id = ?"
+func (db *Database) GetUserBucket(userId int) (storage.Bucket, error) {
+	request := `
+		SELECT buckets.id, buckets.name, buckets.root_node, buckets.type
+		FROM buckets, buckets_access access
+		WHERE buckets.id = access.bucket_id
+		  AND buckets.type = 'user_bucket'
+		  AND access.user_id = ?
+	`
 
 	var bucket storage.Bucket
-	err := db.instance.QueryRow(request, bucketId).Scan(&bucket.Id, &bucket.Name, &bucket.RootNode)
+	err := db.instance.QueryRow(request, userId).Scan(
+		&bucket.Id,
+		&bucket.Name,
+		&bucket.RootNode,
+		&bucket.Type)
+
+	if err != nil {
+		return storage.Bucket{}, err
+	}
+
+	return bucket, nil
+}
+
+func (db *Database) GetBucket(bucketId int) (storage.Bucket, error) {
+	request := "SELECT id, name, root_node, type FROM buckets WHERE buckets.id = ?"
+
+	var bucket storage.Bucket
+	err := db.instance.QueryRow(request, bucketId).Scan(&bucket.Id, &bucket.Name, &bucket.RootNode, &bucket.Type)
 	if err != nil {
 		return storage.Bucket{}, err
 	}
@@ -115,21 +139,21 @@ func (db *Database) GetNodeFromNode(fromNode int, filename string) (storage.Node
 	return node, nil
 }
 
-func (db *Database) GetNode(bucketId int, path string) (storage.Node, error) {
-	if len(path) > 0 && path[0] == '/' {
-		path = path[1:]
-	}
-
-	bucket, err := db.GetBucket(bucketId)
-	if err != nil {
-		return storage.Node{}, err
-	}
-
+func (db *Database) GetNode(bucket storage.Bucket, path string) (storage.Node, error) {
 	node := storage.Node{
 		Id: bucket.RootNode,
 	}
 
+	if len(path) > 0 && path[0] == '/' {
+		path = path[1:]
+	}
+
+	if len(path) == 0 {
+		return node, nil
+	}
+
 	for _, filename := range strings.Split(path, "/") {
+		var err error
 		node, err = db.GetNodeFromNode(node.Id, filename)
 		if err != nil {
 			return storage.Node{}, err
@@ -142,8 +166,8 @@ func (db *Database) GetNode(bucketId int, path string) (storage.Node, error) {
 	return node, nil
 }
 
-func (db *Database) GetFiles(bucketId int, path string) ([]storage.Node, error) {
-	node, err := db.GetNode(bucketId, path)
+func (db *Database) GetFiles(bucket storage.Bucket, path string) ([]storage.Node, error) {
+	node, err := db.GetNode(bucket, path)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +181,7 @@ func (db *Database) GetFiles(bucketId int, path string) ([]storage.Node, error) 
 }
 
 func (db *Database) CreateBucket(userId int) (storage.Bucket, error) {
-	request := "INSERT INTO buckets(name) VALUES (?) RETURNING id"
+	request := "INSERT INTO buckets(name, type) VALUES (?, 'user_bucket') RETURNING id"
 	bucket := storage.Bucket{
 		Name: fmt.Sprintf("Main bucket"),
 	}

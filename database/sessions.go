@@ -42,8 +42,6 @@ func (db *Database) CreateSession(userId int) (Session, error) {
 func (db *Database) CloseSession(session Session) error {
 	request := "DELETE FROM sessions WHERE token = ? AND user_id = ?"
 
-	println(session.Token)
-
 	res, err := db.instance.Exec(request, session.Token, session.UserId)
 	if err != nil {
 		return err
@@ -55,6 +53,28 @@ func (db *Database) CloseSession(session Session) error {
 	}
 
 	return nil
+}
+
+func (db *Database) GetUserFromSession(token string) (User, error) {
+	request := `
+		SELECT users.id, users.username, users.name, users.profile_picture
+		FROM users, sessions
+		WHERE sessions.user_id = users.id
+		  AND sessions.token = ?
+	`
+
+	var user User
+	err := db.instance.QueryRow(request, token).Scan(
+		&user.Id,
+		&user.Username,
+		&user.Name,
+		&user.ProfilePicture)
+
+	if err != nil {
+		return User{}, err
+	}
+
+	return user, err
 }
 
 func (db *Database) ValidateToken(token string, userId int) (bool, error) {
