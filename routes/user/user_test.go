@@ -15,8 +15,8 @@ import (
 func TestGetUser(testing *testing.T) {
 	db, mock, _ := sqlmock.New()
 
-	rows := sqlmock.NewRows([]string{"id", "username", "name"}).
-		AddRow(2, "username", "Name")
+	rows := sqlmock.NewRows([]string{"id", "username", "name", "profile_picture"}).
+		AddRow(2, "username", "Name", "https://google.com/")
 
 	mock.ExpectQuery("^SELECT (.+) FROM users WHERE username = \\?$").
 		WithArgs("username").
