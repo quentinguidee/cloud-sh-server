@@ -34,8 +34,9 @@ func (db *Database) GetUserFromGithub(username string) (User, error) {
 
 func (db *Database) CreateUserFromGithub(githubUser GithubUser) (User, error) {
 	user := User{
-		Username: githubUser.Login,
-		Name:     githubUser.Name,
+		Username:       githubUser.Login,
+		Name:           githubUser.Name,
+		ProfilePicture: githubUser.AvatarUrl,
 	}
 
 	userId, err := db.CreateUser(user)
