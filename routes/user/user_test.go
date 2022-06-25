@@ -33,7 +33,7 @@ func TestGetUser(testing *testing.T) {
 	router.ServeHTTP(recorder, req)
 
 	assert.Equal(testing, http.StatusOK, recorder.Code)
-	assert.Equal(testing, `{"id":2,"name":"Name","username":"username"}`, recorder.Body.String())
+	assert.Equal(testing, `{"id":2,"username":"username","name":"Name","profile_picture":"https://google.com/"}`, recorder.Body.String())
 }
 
 func TestGetNonExistingUser(testing *testing.T) {
