@@ -1,12 +1,11 @@
 package database
 
 import (
-	"database/sql"
 	. "self-hosted-cloud/server/models"
 )
 
-func (db *Database) CreateUsersTable() (sql.Result, error) {
-	return db.instance.Exec(`
+func (db *Database) CreateUsersTable() {
+	_, _ = db.instance.Exec(`
 		CREATE TABLE IF NOT EXISTS users (
 			id              INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT,
 			username        VARCHAR(255) UNIQUE,

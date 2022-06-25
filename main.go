@@ -7,6 +7,7 @@ import (
 	"log"
 	"self-hosted-cloud/server/database"
 	"self-hosted-cloud/server/routes/auth"
+	"self-hosted-cloud/server/routes/storage"
 )
 
 func main() {
@@ -24,6 +25,7 @@ func main() {
 	router.Use(database.Middleware(db))
 
 	auth.LoadRoutes(router)
+	storage.LoadRoutes(router)
 
 	err = router.Run("localhost:8080")
 	if err != nil {

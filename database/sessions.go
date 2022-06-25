@@ -2,14 +2,13 @@ package database
 
 import (
 	"crypto/rand"
-	"database/sql"
 	"errors"
 	"fmt"
 	. "self-hosted-cloud/server/models"
 )
 
-func (db *Database) CreateSessionsTable() (sql.Result, error) {
-	return db.instance.Exec(`
+func (db *Database) CreateSessionsTable() {
+	_, _ = db.instance.Exec(`
 		CREATE TABLE IF NOT EXISTS sessions (
 			id      INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT,
 			user_id INTEGER,
