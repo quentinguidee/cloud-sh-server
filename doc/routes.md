@@ -50,9 +50,17 @@ Validates the code, add the user to the database, and returns the app token and 
 
 - Returned Content:
 
-```json
+```json5
 {
-  "token": "token"
+  "session": {
+    "user_id": 1,
+    "token": "0123456789ABCDEF0123456789ABCDEF",
+  },
+  "user": {
+    "id": "1",
+    "name": "Jean Dupont",
+    "username": "jean.dupont"
+  }
 }
 ```
 

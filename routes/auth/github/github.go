@@ -138,7 +138,6 @@ func callback(context *gin.Context) {
 
 	// OK
 	context.JSON(http.StatusOK, gin.H{
-		"token":   token,
 		"user":    user,
 		"session": session,
 	})
