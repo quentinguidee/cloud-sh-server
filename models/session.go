@@ -1,7 +1,7 @@
 package models
 
 type Session struct {
-	Id     int
-	UserId int
-	Token  string
+	Id     int    `json:"id,omitempty"`
+	UserId int    `json:"user_id,omitempty"`
+	Token  string `json:"token,omitempty"`
 }
