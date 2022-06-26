@@ -5,6 +5,7 @@ import (
 	"self-hosted-cloud/server/database"
 	"self-hosted-cloud/server/models"
 	"self-hosted-cloud/server/models/storage"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -72,6 +73,13 @@ func createFile(context *gin.Context) {
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{
 			"message": err.Error(),
+		})
+		return
+	}
+
+	if strings.TrimSpace(params.Name) == "" {
+		context.JSON(http.StatusBadRequest, gin.H{
+			"message": "Filename cannot be empty.",
 		})
 		return
 	}
