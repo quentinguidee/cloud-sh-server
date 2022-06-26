@@ -1,13 +1,15 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
-	cors "github.com/rs/cors/wrapper/gin"
 	"log"
+	"os"
 	"self-hosted-cloud/server/database"
 	"self-hosted-cloud/server/routes/auth"
 	"self-hosted-cloud/server/routes/storage"
+
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+	cors "github.com/rs/cors/wrapper/gin"
 )
 
 func main() {
@@ -28,7 +30,7 @@ func main() {
 	auth.LoadRoutes(router)
 	storage.LoadRoutes(router)
 
-	err = router.Run("localhost:8080")
+	err = router.Run("localhost:" + os.Getenv("SERVER_PORT"))
 	if err != nil {
 		return
 	}
