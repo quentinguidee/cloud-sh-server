@@ -24,7 +24,7 @@ type GetFilesParams struct {
 func getFiles(context *gin.Context) {
 	db := context.MustGet(database.KeyDatabase).(database.Database)
 
-	path := context.Param("path")
+	path := context.Query("path")
 	token := context.GetHeader("Authorization")
 
 	// TODO: db.VerifySession()
@@ -77,7 +77,7 @@ func createFile(context *gin.Context) {
 
 	// TODO: db.VerifySession()
 
-	path := context.Param("path")
+	path := context.Query("path")
 	token := context.GetHeader("Authorization")
 
 	user, err := db.GetUserFromSession(token)
