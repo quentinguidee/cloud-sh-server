@@ -23,13 +23,13 @@ func getUser(context *gin.Context) {
 	user, err := db.GetUser(username)
 	if err == sql.ErrNoRows {
 		context.JSON(http.StatusNotFound, gin.H{
-			"message": fmt.Sprintf("User %s doesn't exists", username),
+			"message": fmt.Sprintf("User '%s' doesn't exists.", username),
 		})
 		return
 	}
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{
-			"message": fmt.Sprintf("Couldn't retrieve the user %s", username),
+			"message": fmt.Sprintf("Couldn't retrieve the user '%s'.", username),
 		})
 		return
 	}

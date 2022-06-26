@@ -54,5 +54,5 @@ func TestGetNonExistingUser(testing *testing.T) {
 	router.ServeHTTP(recorder, req)
 
 	assert.Equal(testing, http.StatusNotFound, recorder.Code)
-	assert.Equal(testing, `{"message":"User username doesn't exists"}`, recorder.Body.String())
+	assert.Equal(testing, `{"message":"User 'username' doesn't exists."}`, recorder.Body.String())
 }
