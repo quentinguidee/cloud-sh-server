@@ -105,10 +105,9 @@ func createFile(context *gin.Context) {
 	}
 
 	node := storage.Node{
-		Filename:         params.Name,
-		Filetype:         params.Type,
-		InternalFilename: "UUID-TODO",
-		BucketId:         bucket.Id,
+		Filename: params.Name,
+		Filetype: params.Type,
+		BucketId: bucket.Id,
 	}
 
 	err = db.CreateNode(directory.Id, node)

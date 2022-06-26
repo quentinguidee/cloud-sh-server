@@ -33,7 +33,6 @@ func (db *Database) CreateBucketsTable() {
 		    id                INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT,
 		    filename          VARCHAR(255),
 		    filetype          VARCHAR(63),
-		    internal_filename VARCHAR(255),
 		    bucket_id         INTEGER,
 		    FOREIGN KEY(bucket_id) REFERENCES buckets(id)
 		)
@@ -86,7 +85,7 @@ func (db *Database) GetBucket(bucketId int) (storage.Bucket, error) {
 
 func (db *Database) GetNodesFromNode(fromNode int) ([]storage.Node, error) {
 	request := `
-		SELECT nodes.id, nodes.filename, nodes.filetype, nodes.internal_filename
+		SELECT nodes.id, nodes.filename, nodes.filetype
 		FROM buckets_nodes nodes, buckets_nodes_associations associations
 		WHERE associations.from_node = ?
           AND associations.to_node = nodes.id
@@ -103,8 +102,7 @@ func (db *Database) GetNodesFromNode(fromNode int) ([]storage.Node, error) {
 		err := rows.Scan(
 			&node.Id,
 			&node.Filename,
-			&node.Filetype,
-			&node.InternalFilename)
+			&node.Filetype)
 
 		if err != nil {
 			return nil, err
@@ -118,7 +116,7 @@ func (db *Database) GetNodesFromNode(fromNode int) ([]storage.Node, error) {
 
 func (db *Database) GetNodeFromNode(fromNode int, filename string) (storage.Node, error) {
 	request := `
-		SELECT nodes.id, nodes.filename, nodes.filetype, nodes.internal_filename
+		SELECT nodes.id, nodes.filename, nodes.filetype
 		FROM buckets_nodes nodes, buckets_nodes_associations associations
 		WHERE associations.from_node = ?
 		  AND associations.to_node = nodes.id
@@ -129,8 +127,7 @@ func (db *Database) GetNodeFromNode(fromNode int, filename string) (storage.Node
 	err := db.instance.QueryRow(request, fromNode, filename).Scan(
 		&node.Id,
 		&node.Filename,
-		&node.Filetype,
-		&node.InternalFilename)
+		&node.Filetype)
 
 	if err != nil {
 		return storage.Node{}, err
@@ -195,8 +192,8 @@ func (db *Database) CreateBucket(userId int) (storage.Bucket, error) {
 		Filetype: "directory",
 	}
 	request = `
-		INSERT INTO buckets_nodes(filename, filetype, internal_filename, bucket_id)
-		VALUES ('/', 'directory', NULL, ?)
+		INSERT INTO buckets_nodes(filename, filetype, bucket_id)
+		VALUES ('/', 'directory', ?)
 		RETURNING id
 	`
 
@@ -231,15 +228,14 @@ func (db *Database) CreateBucket(userId int) (storage.Bucket, error) {
 
 func (db *Database) CreateNode(directoryId int, node storage.Node) error {
 	request := `
-		INSERT INTO buckets_nodes(filename, filetype, internal_filename, bucket_id)
-		VALUES (?, ?, ?, ?)
+		INSERT INTO buckets_nodes(filename, filetype, bucket_id)
+		VALUES (?, ?, ?)
 		RETURNING id
 	`
 
 	err := db.instance.QueryRow(request,
 		node.Filename,
 		node.Filetype,
-		node.InternalFilename,
 		node.BucketId,
 	).Scan(&node.Id)
 
