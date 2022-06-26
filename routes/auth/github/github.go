@@ -119,6 +119,11 @@ func callback(context *gin.Context) {
 			})
 			return
 		}
+
+		_, err := db.CreateBucket(user.Id)
+		if err != nil {
+			return
+		}
 	}
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{

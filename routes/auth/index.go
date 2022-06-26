@@ -9,10 +9,10 @@ import (
 )
 
 func LoadRoutes(router *gin.Engine) {
-	auth := router.Group("/auth")
+	group := router.Group("/auth")
 	{
-		github.LoadRoutes(auth)
-		auth.POST("/logout", logout)
+		github.LoadRoutes(group)
+		group.POST("/logout", logout)
 	}
 }
 
