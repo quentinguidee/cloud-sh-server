@@ -1,6 +1,7 @@
 package database
 
 import (
+	"database/sql"
 	"fmt"
 	"self-hosted-cloud/server/models/storage"
 	"strings"
@@ -165,6 +166,9 @@ func (db *Database) GetNode(bucket storage.Bucket, path string) (storage.Node, e
 
 func (db *Database) GetFiles(bucket storage.Bucket, path string) ([]storage.Node, error) {
 	node, err := db.GetNode(bucket, path)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
