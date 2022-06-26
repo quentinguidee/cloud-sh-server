@@ -4,12 +4,13 @@ import (
 	authContext "context"
 	"database/sql"
 	"encoding/json"
-	"github.com/gin-gonic/gin"
-	"golang.org/x/oauth2"
 	"net/http"
 	"os"
 	"self-hosted-cloud/server/database"
 	. "self-hosted-cloud/server/models"
+
+	"github.com/gin-gonic/gin"
+	"golang.org/x/oauth2"
 )
 
 func getConfig() oauth2.Config {

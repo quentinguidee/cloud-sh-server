@@ -1,11 +1,12 @@
 package storage
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"self-hosted-cloud/server/database"
 	"self-hosted-cloud/server/models"
 	"self-hosted-cloud/server/models/storage"
+
+	"github.com/gin-gonic/gin"
 )
 
 func LoadRoutes(router *gin.Engine) {

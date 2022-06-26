@@ -3,9 +3,10 @@ package user
 import (
 	"database/sql"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"self-hosted-cloud/server/database"
+
+	"github.com/gin-gonic/gin"
 )
 
 func LoadRoutes(router *gin.Engine) {
