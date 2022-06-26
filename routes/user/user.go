@@ -9,10 +9,10 @@ import (
 )
 
 func LoadRoutes(router *gin.Engine) {
-	user := router.Group("/user")
+	group := router.Group("/user")
 	{
-		user.GET("/", getUser)
-		user.GET("/:username", getUser)
+		group.GET("/", getUser)
+		group.GET("/:username", getUser)
 	}
 }
 

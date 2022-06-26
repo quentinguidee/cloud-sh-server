@@ -1,12 +1,11 @@
 package database
 
 import (
-	"database/sql"
 	. "self-hosted-cloud/server/models"
 )
 
-func (db *Database) CreateGithubAuthTable() (sql.Result, error) {
-	return db.instance.Exec(`
+func (db *Database) CreateGithubAuthTable() {
+	_, _ = db.instance.Exec(`
 		CREATE TABLE IF NOT EXISTS auth_github (
 			username VARCHAR(255) UNIQUE PRIMARY KEY,
 			user_id  INTEGER,

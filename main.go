@@ -5,6 +5,7 @@ import (
 	"os"
 	"self-hosted-cloud/server/database"
 	"self-hosted-cloud/server/routes/auth"
+	"self-hosted-cloud/server/routes/storage"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -22,10 +23,13 @@ func main() {
 	}
 
 	router := gin.Default()
-	router.Use(cors.Default())
+
+	router.Use(cors.AllowAll())
 	router.Use(database.Middleware(db))
 
 	auth.LoadRoutes(router)
+	storage.LoadRoutes(router)
+
 	err = router.Run("localhost:" + os.Getenv("SERVER_PORT"))
 	if err != nil {
 		return
