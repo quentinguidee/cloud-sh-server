@@ -15,8 +15,9 @@ import (
 func LoadRoutes(router *gin.Engine) {
 	group := router.Group("/storage")
 	{
-		group.GET("", getFiles)
-		group.PUT("", createFile)
+		group.GET("", getNodes)
+		group.PUT("", createNode)
+		group.DELETE("", deleteNodes)
 	}
 }
 
@@ -25,7 +26,7 @@ type GetFilesParams struct {
 	Session models.Session `json:"session"`
 }
 
-func getFiles(c *gin.Context) {
+func getNodes(c *gin.Context) {
 	db := database.GetDatabaseFromContext(c)
 
 	path := c.Query("path")
@@ -58,7 +59,7 @@ type CreateFilesParams struct {
 	Name string `json:"name,omitempty"`
 }
 
-func createFile(c *gin.Context) {
+func createNode(c *gin.Context) {
 	db := database.GetDatabaseFromContext(c)
 
 	var params CreateFilesParams
@@ -106,6 +107,36 @@ func createFile(c *gin.Context) {
 	}
 
 	err = node.Create(path)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+}
+
+func deleteNodes(c *gin.Context) {
+	db := database.GetDatabaseFromContext(c)
+
+	path := c.Query("path")
+
+	user, err := utils.GetUserFromContext(c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	bucket, err := db.GetUserBucket(user.Id)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	node, err := db.GetNode(bucket, path)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	err = db.DeleteRecursively(node, path)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return

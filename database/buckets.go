@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"path/filepath"
 	"self-hosted-cloud/server/models/storage"
 	"strings"
 )
@@ -85,7 +86,7 @@ func (db *Database) GetBucket(bucketId int) (storage.Bucket, error) {
 
 func (db *Database) GetNodesFromNode(fromNode int) ([]storage.Node, error) {
 	request := `
-		SELECT nodes.id, nodes.filename, nodes.filetype
+		SELECT nodes.id, nodes.filename, nodes.filetype, nodes.bucket_id
 		FROM buckets_nodes nodes, buckets_nodes_associations associations
 		WHERE associations.from_node = ?
           AND associations.to_node = nodes.id
@@ -102,7 +103,8 @@ func (db *Database) GetNodesFromNode(fromNode int) ([]storage.Node, error) {
 		err := rows.Scan(
 			&node.Id,
 			&node.Filename,
-			&node.Filetype)
+			&node.Filetype,
+			&node.BucketId)
 
 		if err != nil {
 			return nil, err
@@ -116,7 +118,7 @@ func (db *Database) GetNodesFromNode(fromNode int) ([]storage.Node, error) {
 
 func (db *Database) GetNodeFromNode(fromNode int, filename string) (storage.Node, error) {
 	request := `
-		SELECT nodes.id, nodes.filename, nodes.filetype
+		SELECT nodes.id, nodes.filename, nodes.filetype, nodes.bucket_id
 		FROM buckets_nodes nodes, buckets_nodes_associations associations
 		WHERE associations.from_node = ?
 		  AND associations.to_node = nodes.id
@@ -127,7 +129,8 @@ func (db *Database) GetNodeFromNode(fromNode int, filename string) (storage.Node
 	err := db.instance.QueryRow(request, fromNode, filename).Scan(
 		&node.Id,
 		&node.Filename,
-		&node.Filetype)
+		&node.Filetype,
+		&node.BucketId)
 
 	if err != nil {
 		return storage.Node{}, err
@@ -250,6 +253,58 @@ func (db *Database) CreateNode(directoryId int, node storage.Node) error {
 	`
 
 	_, err = db.instance.Exec(request, directoryId, node.Id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (db *Database) Delete(node storage.Node, path string) error {
+	request := `
+		BEGIN TRANSACTION;
+		DELETE FROM buckets_nodes WHERE id = ?;
+		DELETE FROM buckets_nodes_associations WHERE to_node = ?;
+		COMMIT TRANSACTION;
+	`
+
+	_, err := db.instance.Exec(request, node.Id, node.Id)
+	if err != nil {
+		return err
+	}
+
+	err = node.Delete(path)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (db *Database) DeleteRecursively(node storage.Node, path string) error {
+	nodes, err := db.GetNodesFromNode(node.Id)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+
+	for _, node := range nodes {
+		var err error
+
+		path := filepath.Join(path, node.Filename)
+
+		switch node.Filetype {
+		case "directory":
+			err = db.DeleteRecursively(node, path)
+		default:
+			err = db.Delete(node, path)
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+
+	err = db.Delete(node, path)
 	if err != nil {
 		return err
 	}
