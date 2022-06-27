@@ -26,6 +26,10 @@ func GetDatabase(path string) (Database, error) {
 	return db, nil
 }
 
+func GetDatabaseFromContext(c *gin.Context) Database {
+	return c.MustGet(KeyDatabase).(Database)
+}
+
 func (db *Database) Initialize() {
 	db.CreateUsersTable()
 	db.CreateSessionsTable()

@@ -25,7 +25,7 @@ type GetFilesParams struct {
 }
 
 func getFiles(c *gin.Context) {
-	db := c.MustGet(database.KeyDatabase).(database.Database)
+	db := database.GetDatabaseFromContext(c)
 
 	path := c.Query("path")
 	token := c.GetHeader("Authorization")
@@ -61,7 +61,7 @@ type CreateFilesParams struct {
 }
 
 func createFile(c *gin.Context) {
-	db := c.MustGet(database.KeyDatabase).(database.Database)
+	db := database.GetDatabaseFromContext(c)
 
 	var params CreateFilesParams
 	err := c.BindJSON(&params)

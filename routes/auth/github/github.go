@@ -105,7 +105,7 @@ func callback(c *gin.Context) {
 	}
 
 	// Create account if it doesn't exist
-	db := c.MustGet(database.KeyDatabase).(database.Database)
+	db := database.GetDatabaseFromContext(c)
 	user, err := db.GetUserFromGithub(githubUser.Login)
 	if err == sql.ErrNoRows {
 		user, err = db.CreateUserFromGithub(githubUser)

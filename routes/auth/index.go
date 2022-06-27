@@ -28,7 +28,7 @@ func logout(c *gin.Context) {
 		return
 	}
 
-	db := c.MustGet(database.KeyDatabase).(database.Database)
+	db := database.GetDatabaseFromContext(c)
 	err = db.CloseSession(session)
 	if err != nil {
 		err = errors.New("this session doesn't exists")

@@ -20,7 +20,7 @@ func LoadRoutes(router *gin.Engine) {
 
 func getUser(c *gin.Context) {
 	username := c.Param("username")
-	db := c.MustGet(database.KeyDatabase).(database.Database)
+	db := database.GetDatabaseFromContext(c)
 	user, err := db.GetUser(username)
 	if err == sql.ErrNoRows {
 		err = errors.New(fmt.Sprintf("the user '%s' doesn't exists", username))
