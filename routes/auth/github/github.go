@@ -4,6 +4,7 @@ import (
 	authContext "context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"os"
 	"self-hosted-cloud/server/database"
@@ -56,17 +57,15 @@ func callback(context *gin.Context) {
 	// Decode JSON
 	err := context.BindJSON(&params)
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{
-			"message": "Body can't be decoded into an AuthorizeParams object.",
-		})
+		err = errors.New("body can't be decoded into an AuthorizeParams object")
+		context.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
 	// Ensure the AUTH_STATE is correct.
 	if params.State != os.Getenv("AUTH_STATE") {
-		context.JSON(http.StatusBadRequest, gin.H{
-			"message": "The states don't match.",
-		})
+		err = errors.New("the states don't match")
+		context.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
@@ -74,18 +73,16 @@ func callback(context *gin.Context) {
 	ctx := authContext.Background()
 	token, err := config.Exchange(ctx, params.Code)
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{
-			"message": "The server failed to generate your token.",
-		})
+		err = errors.New("the server failed to generate your token")
+		context.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
 	// Get user info
 	req, err := http.NewRequest("GET", "https://api.github.com/user", nil)
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Failed to fetch GitHub user account.",
-		})
+		err = errors.New("failed to fetch GitHub user account")
+		context.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
@@ -93,9 +90,8 @@ func callback(context *gin.Context) {
 	client := config.Client(ctx, token)
 	res, err := client.Do(req)
 	if err != nil {
-		context.JSON(res.StatusCode, gin.H{
-			"message": "Failed to fetch GitHub user account.",
-		})
+		err = errors.New("failed to fetch GitHub user account")
+		context.AbortWithError(res.StatusCode, err)
 		return
 	}
 
@@ -103,9 +99,8 @@ func callback(context *gin.Context) {
 	var githubUser GithubUser
 	err = json.NewDecoder(res.Body).Decode(&githubUser)
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Failed to decode GitHub user account.",
-		})
+		err = errors.New("failed to decode GitHub user account")
+		context.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
@@ -115,9 +110,8 @@ func callback(context *gin.Context) {
 	if err == sql.ErrNoRows {
 		user, err = db.CreateUserFromGithub(githubUser)
 		if err != nil {
-			context.JSON(http.StatusInternalServerError, gin.H{
-				"message": "Failed to create the new user.",
-			})
+			err = errors.New("failed to create the new user")
+			context.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 
@@ -127,18 +121,16 @@ func callback(context *gin.Context) {
 		}
 	}
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Failed to retrieve the user.",
-		})
+		err = errors.New("failed to retrieve the user")
+		context.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
 	// Open session
 	session, err := db.CreateSession(user.Id)
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Failed to create user session.",
-		})
+		err = errors.New("failed to create user session")
+		context.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 

@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"net/http"
 	"self-hosted-cloud/server/database"
 	"self-hosted-cloud/server/models"
@@ -33,25 +34,19 @@ func getFiles(context *gin.Context) {
 
 	user, err := db.GetUserFromSession(token)
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{
-			"message": err.Error(),
-		})
+		context.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
 	bucket, err := db.GetUserBucket(user.Id)
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{
-			"message": err.Error(),
-		})
+		context.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
 	files, err := db.GetFiles(bucket, path)
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{
-			"message": err.Error(),
-		})
+		context.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
@@ -71,16 +66,13 @@ func createFile(context *gin.Context) {
 	var params CreateFilesParams
 	err := context.BindJSON(&params)
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{
-			"message": err.Error(),
-		})
+		context.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
 	if strings.TrimSpace(params.Name) == "" {
-		context.JSON(http.StatusBadRequest, gin.H{
-			"message": "Filename cannot be empty.",
-		})
+		err = errors.New("filename cannot be empty")
+		context.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
@@ -91,25 +83,19 @@ func createFile(context *gin.Context) {
 
 	user, err := db.GetUserFromSession(token)
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{
-			"message": err.Error(),
-		})
+		context.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
 	bucket, err := db.GetUserBucket(user.Id)
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{
-			"message": err.Error(),
-		})
+		context.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
 	directory, err := db.GetNode(bucket, path)
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{
-			"message": err.Error(),
-		})
+		context.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
@@ -121,9 +107,7 @@ func createFile(context *gin.Context) {
 
 	err = db.CreateNode(directory.Id, node)
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{
-			"message": err.Error(),
-		})
+		context.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 }

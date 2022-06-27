@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"net/http"
 	"self-hosted-cloud/server/database"
 	. "self-hosted-cloud/server/models"
@@ -22,18 +23,16 @@ func logout(context *gin.Context) {
 
 	err := context.BindJSON(&session)
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{
-			"message": "Body can't be decoded into a Session object.",
-		})
+		err = errors.New("body can't be decoded into a Session object")
+		context.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
 	db := context.MustGet(database.KeyDatabase).(database.Database)
 	err = db.CloseSession(session)
 	if err != nil {
-		context.JSON(http.StatusNotFound, gin.H{
-			"message": "This session doesn't exists.",
-		})
+		err = errors.New("this session doesn't exists")
+		context.AbortWithError(http.StatusNotFound, err)
 		return
 	}
 

@@ -6,6 +6,7 @@ import (
 	"self-hosted-cloud/server/database"
 	"self-hosted-cloud/server/routes/auth"
 	"self-hosted-cloud/server/routes/storage"
+	"self-hosted-cloud/server/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -26,6 +27,7 @@ func main() {
 
 	router.Use(cors.AllowAll())
 	router.Use(database.Middleware(db))
+	router.Use(utils.ErrorMiddleware())
 
 	auth.LoadRoutes(router)
 	storage.LoadRoutes(router)

@@ -2,6 +2,7 @@ package user
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 	"self-hosted-cloud/server/database"
@@ -22,15 +23,13 @@ func getUser(context *gin.Context) {
 	db := context.MustGet(database.KeyDatabase).(database.Database)
 	user, err := db.GetUser(username)
 	if err == sql.ErrNoRows {
-		context.JSON(http.StatusNotFound, gin.H{
-			"message": fmt.Sprintf("User '%s' doesn't exists.", username),
-		})
+		err = errors.New(fmt.Sprintf("the user '%s' doesn't exists", username))
+		context.AbortWithError(http.StatusNotFound, err)
 		return
 	}
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{
-			"message": fmt.Sprintf("Couldn't retrieve the user '%s'.", username),
-		})
+		err = errors.New(fmt.Sprintf("Couldn't retrieve the user '%s'.", username))
+		context.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 

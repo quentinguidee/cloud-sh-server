@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"self-hosted-cloud/server/database"
+	"self-hosted-cloud/server/utils"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -45,6 +46,7 @@ func TestGetNonExistingUser(testing *testing.T) {
 
 	router := gin.New()
 	router.Use(database.Middleware(database.New(db)))
+	router.Use(utils.ErrorMiddleware())
 
 	LoadRoutes(router)
 
@@ -54,5 +56,5 @@ func TestGetNonExistingUser(testing *testing.T) {
 	router.ServeHTTP(recorder, req)
 
 	assert.Equal(testing, http.StatusNotFound, recorder.Code)
-	assert.Equal(testing, `{"message":"User 'username' doesn't exists."}`, recorder.Body.String())
+	assert.Equal(testing, `{"message":"the user 'username' doesn't exists"}`, recorder.Body.String())
 }
