@@ -45,19 +45,19 @@ func login(c *gin.Context) {
 	})
 }
 
-type AuthorizeParams struct {
+type CallbackParams struct {
 	Code  string
 	State string
 }
 
 func callback(c *gin.Context) {
 	var config = getConfig()
-	var params AuthorizeParams
+	var params CallbackParams
 
 	// Decode JSON
 	err := c.BindJSON(&params)
 	if err != nil {
-		err = errors.New("body can't be decoded into an AuthorizeParams object")
+		err = errors.New("body can't be decoded into an CallbackParams object")
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
