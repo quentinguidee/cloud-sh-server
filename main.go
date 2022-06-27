@@ -6,6 +6,7 @@ import (
 	"self-hosted-cloud/server/database"
 	"self-hosted-cloud/server/routes/auth"
 	"self-hosted-cloud/server/routes/storage"
+	"self-hosted-cloud/server/routes/user"
 	"self-hosted-cloud/server/utils"
 
 	"github.com/gin-gonic/gin"
@@ -30,6 +31,7 @@ func main() {
 	router.Use(utils.ErrorMiddleware())
 
 	auth.LoadRoutes(router)
+	user.LoadRoutes(router)
 	storage.LoadRoutes(router)
 
 	err = router.Run("localhost:" + os.Getenv("SERVER_PORT"))
