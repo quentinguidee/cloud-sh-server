@@ -17,8 +17,11 @@ func GetUserFromContext(c *gin.Context) (models.User, error) {
 	token := GetTokenFromContext(c)
 	db := database.GetDatabaseFromContext(c)
 	user, err := db.GetUserFromSession(token)
-	if err != sql.ErrNoRows {
+	if err == sql.ErrNoRows {
 		return models.User{}, errors.New("user not connected")
+	}
+	if err != nil {
+		return models.User{}, err
 	}
 	return user, nil
 }
