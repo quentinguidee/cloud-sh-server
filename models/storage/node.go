@@ -19,11 +19,15 @@ func (node Node) Create(path string) error {
 		path = path[1:]
 	}
 
+	if len(path) > 0 {
+		path += "/"
+	}
+
 	var err error
 
 	switch node.Filetype {
 	case "directory":
-		err = os.Mkdir(fmt.Sprintf("localstorage/%d/%s/%s", node.BucketId, path, node.Filename), os.ModePerm)
+		err = os.Mkdir(fmt.Sprintf("%s/buckets/%d/%s%s", os.Getenv("DATA_PATH"), node.BucketId, path, node.Filename), os.ModePerm)
 	default:
 		err = errors.New("this filetype is not supported")
 	}

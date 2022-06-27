@@ -14,7 +14,7 @@ type Bucket struct {
 
 // Create creates the bucket in the localstorage.
 func (bucket Bucket) Create() error {
-	err := os.Mkdir(fmt.Sprintf("localstorage/%d", bucket.Id), os.ModePerm)
+	err := os.MkdirAll(fmt.Sprintf("%s/buckets/%d", os.Getenv("DATA_PATH"), bucket.Id), os.ModePerm)
 	if err != nil {
 		return err
 	}

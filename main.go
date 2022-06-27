@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"self-hosted-cloud/server/database"
@@ -19,14 +20,16 @@ func main() {
 		log.Fatal(".env Couldn't be loaded.")
 	}
 
-	db, err := database.GetDatabase("database.sqlite")
-	if err != nil {
+	dataPath := os.Getenv("DATA_PATH")
+
+	err := os.Mkdir(dataPath, os.ModePerm)
+	if err != nil && !os.IsExist(err) {
 		log.Fatal(err.Error())
 		return
 	}
 
-	err = os.Mkdir("localstorage", os.ModePerm)
-	if err != nil && !os.IsExist(err) {
+	db, err := database.GetDatabase(fmt.Sprintf("%s/database.sqlite", dataPath))
+	if err != nil {
 		log.Fatal(err.Error())
 		return
 	}
