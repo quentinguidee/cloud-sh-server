@@ -18,20 +18,20 @@ func LoadRoutes(router *gin.Engine) {
 	}
 }
 
-func getUser(context *gin.Context) {
-	username := context.Param("username")
-	db := context.MustGet(database.KeyDatabase).(database.Database)
+func getUser(c *gin.Context) {
+	username := c.Param("username")
+	db := c.MustGet(database.KeyDatabase).(database.Database)
 	user, err := db.GetUser(username)
 	if err == sql.ErrNoRows {
 		err = errors.New(fmt.Sprintf("the user '%s' doesn't exists", username))
-		context.AbortWithError(http.StatusNotFound, err)
+		c.AbortWithError(http.StatusNotFound, err)
 		return
 	}
 	if err != nil {
 		err = errors.New(fmt.Sprintf("Couldn't retrieve the user '%s'.", username))
-		context.AbortWithError(http.StatusInternalServerError, err)
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	context.JSON(http.StatusOK, user)
+	c.JSON(http.StatusOK, user)
 }

@@ -18,25 +18,25 @@ func LoadRoutes(router *gin.Engine) {
 	}
 }
 
-func logout(context *gin.Context) {
+func logout(c *gin.Context) {
 	var session Session
 
-	err := context.BindJSON(&session)
+	err := c.BindJSON(&session)
 	if err != nil {
 		err = errors.New("body can't be decoded into a Session object")
-		context.AbortWithError(http.StatusBadRequest, err)
+		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
-	db := context.MustGet(database.KeyDatabase).(database.Database)
+	db := c.MustGet(database.KeyDatabase).(database.Database)
 	err = db.CloseSession(session)
 	if err != nil {
 		err = errors.New("this session doesn't exists")
-		context.AbortWithError(http.StatusNotFound, err)
+		c.AbortWithError(http.StatusNotFound, err)
 		return
 	}
 
-	context.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"message": "Disconnected successfully.",
 	})
 }

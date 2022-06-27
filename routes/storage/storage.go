@@ -24,33 +24,33 @@ type GetFilesParams struct {
 	Session models.Session `json:"session"`
 }
 
-func getFiles(context *gin.Context) {
-	db := context.MustGet(database.KeyDatabase).(database.Database)
+func getFiles(c *gin.Context) {
+	db := c.MustGet(database.KeyDatabase).(database.Database)
 
-	path := context.Query("path")
-	token := context.GetHeader("Authorization")
+	path := c.Query("path")
+	token := c.GetHeader("Authorization")
 
 	// TODO: db.VerifySession()
 
 	user, err := db.GetUserFromSession(token)
 	if err != nil {
-		context.AbortWithError(http.StatusInternalServerError, err)
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
 	bucket, err := db.GetUserBucket(user.Id)
 	if err != nil {
-		context.AbortWithError(http.StatusInternalServerError, err)
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
 	files, err := db.GetFiles(bucket, path)
 	if err != nil {
-		context.AbortWithError(http.StatusInternalServerError, err)
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	context.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"files": files,
 	})
 }
@@ -60,42 +60,42 @@ type CreateFilesParams struct {
 	Name string `json:"name,omitempty"`
 }
 
-func createFile(context *gin.Context) {
-	db := context.MustGet(database.KeyDatabase).(database.Database)
+func createFile(c *gin.Context) {
+	db := c.MustGet(database.KeyDatabase).(database.Database)
 
 	var params CreateFilesParams
-	err := context.BindJSON(&params)
+	err := c.BindJSON(&params)
 	if err != nil {
-		context.AbortWithError(http.StatusBadRequest, err)
+		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
 	if strings.TrimSpace(params.Name) == "" {
 		err = errors.New("filename cannot be empty")
-		context.AbortWithError(http.StatusBadRequest, err)
+		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
 	// TODO: db.VerifySession()
 
-	path := context.Query("path")
-	token := context.GetHeader("Authorization")
+	path := c.Query("path")
+	token := c.GetHeader("Authorization")
 
 	user, err := db.GetUserFromSession(token)
 	if err != nil {
-		context.AbortWithError(http.StatusInternalServerError, err)
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
 	bucket, err := db.GetUserBucket(user.Id)
 	if err != nil {
-		context.AbortWithError(http.StatusInternalServerError, err)
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
 	directory, err := db.GetNode(bucket, path)
 	if err != nil {
-		context.AbortWithError(http.StatusInternalServerError, err)
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
@@ -107,7 +107,7 @@ func createFile(context *gin.Context) {
 
 	err = db.CreateNode(directory.Id, node)
 	if err != nil {
-		context.AbortWithError(http.StatusInternalServerError, err)
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 }

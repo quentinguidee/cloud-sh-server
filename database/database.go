@@ -37,8 +37,8 @@ func (db *Database) Initialize() {
 const KeyDatabase = "KEY_DATABASE"
 
 func Middleware(database Database) gin.HandlerFunc {
-	return func(context *gin.Context) {
-		context.Set(KeyDatabase, database)
-		context.Next()
+	return func(c *gin.Context) {
+		c.Set(KeyDatabase, database)
+		c.Next()
 	}
 }
