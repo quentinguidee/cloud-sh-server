@@ -21,6 +21,13 @@ func main() {
 
 	db, err := database.GetDatabase("database.sqlite")
 	if err != nil {
+		log.Fatal(err.Error())
+		return
+	}
+
+	err = os.Mkdir("localstorage", os.ModePerm)
+	if err != nil && !os.IsExist(err) {
+		log.Fatal(err.Error())
 		return
 	}
 

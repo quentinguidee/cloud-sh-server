@@ -2,7 +2,6 @@ package database
 
 import (
 	"database/sql"
-	"fmt"
 	"self-hosted-cloud/server/models/storage"
 	"strings"
 )
@@ -181,12 +180,10 @@ func (db *Database) GetFiles(bucket storage.Bucket, path string) ([]storage.Node
 	return nodes, nil
 }
 
-func (db *Database) CreateBucket(userId int) (storage.Bucket, error) {
-	request := "INSERT INTO buckets(name, type) VALUES (?, 'user_bucket') RETURNING id"
-	bucket := storage.Bucket{
-		Name: fmt.Sprintf("Main bucket"),
-	}
-	err := db.instance.QueryRow(request, bucket.Name).Scan(&bucket.Id)
+func (db *Database) CreateBucket(bucket storage.Bucket, userId int) (storage.Bucket, error) {
+	request := "INSERT INTO buckets(name, type) VALUES (?, ?) RETURNING id"
+
+	err := db.instance.QueryRow(request, bucket.Name, bucket.Type).Scan(&bucket.Id)
 	if err != nil {
 		return storage.Bucket{}, err
 	}

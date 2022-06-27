@@ -5,10 +5,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"self-hosted-cloud/server/database"
 	. "self-hosted-cloud/server/models"
+	"self-hosted-cloud/server/models/storage"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
@@ -115,8 +117,19 @@ func callback(c *gin.Context) {
 			return
 		}
 
-		_, err := db.CreateBucket(user.Id)
+		bucket := storage.Bucket{
+			Name: fmt.Sprintf("Main bucket"),
+			Type: "user_bucket",
+		}
+		bucket, err := db.CreateBucket(bucket, user.Id)
 		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		err = bucket.Create()
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 	}
