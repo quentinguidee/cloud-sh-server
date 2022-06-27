@@ -6,6 +6,7 @@ import (
 	"self-hosted-cloud/server/database"
 	"self-hosted-cloud/server/models"
 	"self-hosted-cloud/server/models/storage"
+	"self-hosted-cloud/server/utils"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -28,11 +29,8 @@ func getFiles(c *gin.Context) {
 	db := database.GetDatabaseFromContext(c)
 
 	path := c.Query("path")
-	token := c.GetHeader("Authorization")
 
-	// TODO: db.VerifySession()
-
-	user, err := db.GetUserFromSession(token)
+	user, err := utils.GetUserFromContext(c)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -76,12 +74,8 @@ func createFile(c *gin.Context) {
 		return
 	}
 
-	// TODO: db.VerifySession()
-
 	path := c.Query("path")
-	token := c.GetHeader("Authorization")
-
-	user, err := db.GetUserFromSession(token)
+	user, err := utils.GetUserFromContext(c)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
