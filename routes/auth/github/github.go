@@ -109,15 +109,22 @@ func callback(c *gin.Context) {
 		return
 	}
 
-	// Create account if it doesn't exist
 	db := database.GetDatabaseFromContext(c)
-	user, err := db.GetUserFromGithub(githubUser.Login)
-	if err != sql.ErrNoRows && err != nil {
+
+	// Create account if it doesn't exist
+	var user User
+	commandError := auth.GetUserFromGithubCommand{
+		Database:       db,
+		GithubUsername: githubUser.Login,
+		ReturnedUser:   &user,
+	}.Run()
+
+	if commandError != nil && commandError.Error() != sql.ErrNoRows {
 		err = errors.New("failed to retrieve the user")
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	if err == sql.ErrNoRows {
+	if commandError != nil && commandError.Error() == sql.ErrNoRows {
 		user := User{
 			Username:       githubUser.Login,
 			Name:           githubUser.Name,
