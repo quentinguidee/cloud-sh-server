@@ -166,10 +166,14 @@ func callback(c *gin.Context) {
 	}
 
 	// Open session
-	session, err := db.CreateSession(user.Id)
+	var session Session
+	commandError = auth.CreateSessionCommand{
+		Database:        db,
+		UserId:          user.Id,
+		ReturnedSession: &session,
+	}.Run()
 	if err != nil {
-		err = errors.New("failed to create user session")
-		c.AbortWithError(http.StatusInternalServerError, err)
+		c.AbortWithError(commandError.Code(), commandError.Error())
 		return
 	}
 

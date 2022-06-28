@@ -70,3 +70,37 @@ func (c GetUserFromGithubCommand) Run() ICommandError {
 func (c GetUserFromGithubCommand) Revert() ICommandError {
 	return nil
 }
+
+type GetUserFromTokenCommand struct {
+	Database     Database
+	Token        string
+	ReturnedUser *User
+}
+
+func (c GetUserFromTokenCommand) Run() ICommandError {
+	request := `
+		SELECT users.id, users.username, users.name, users.profile_picture
+		FROM users, sessions
+		WHERE sessions.user_id = users.id
+		  AND sessions.token = ?
+	`
+
+	err := c.Database.Instance.QueryRow(request, c.Token).Scan(
+		&c.ReturnedUser.Id,
+		&c.ReturnedUser.Username,
+		&c.ReturnedUser.Name,
+		&c.ReturnedUser.ProfilePicture)
+
+	if err == sql.ErrNoRows {
+		err := errors.New("the user is not connected")
+		return NewError(http.StatusNotFound, err)
+	}
+	if err != nil {
+		return NewError(http.StatusInternalServerError, err)
+	}
+	return nil
+}
+
+func (c GetUserFromTokenCommand) Revert() ICommandError {
+	return nil
+}
