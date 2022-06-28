@@ -8,7 +8,7 @@ func NewTransaction(commands []Command) Transaction {
 	return Transaction{commands}
 }
 
-func (t Transaction) Run() ICommandError {
+func (t Transaction) Try() ICommandError {
 	for i, command := range t.commands {
 		err := command.Run()
 		if err != nil {

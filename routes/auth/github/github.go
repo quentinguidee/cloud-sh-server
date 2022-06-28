@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	. "self-hosted-cloud/server/commands"
+	"self-hosted-cloud/server/commands/auth"
 	"self-hosted-cloud/server/commands/storage"
 	"self-hosted-cloud/server/database"
 	. "self-hosted-cloud/server/models"
@@ -110,11 +112,32 @@ func callback(c *gin.Context) {
 	// Create account if it doesn't exist
 	db := database.GetDatabaseFromContext(c)
 	user, err := db.GetUserFromGithub(githubUser.Login)
+	if err != sql.ErrNoRows && err != nil {
+		err = errors.New("failed to retrieve the user")
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
 	if err == sql.ErrNoRows {
-		user, err = db.CreateUserFromGithub(githubUser)
+		user := User{
+			Username:       githubUser.Login,
+			Name:           githubUser.Name,
+			ProfilePicture: githubUser.AvatarUrl,
+		}
+
+		err := NewTransaction([]Command{
+			auth.CreateUserCommand{
+				User:     &user,
+				Database: db,
+			},
+			auth.CreateGithubUserCommand{
+				User:           &user,
+				Database:       db,
+				GithubUsername: githubUser.Login,
+			},
+		}).Try()
+
 		if err != nil {
-			err = errors.New("failed to create the new user")
-			c.AbortWithError(http.StatusInternalServerError, err)
+			c.AbortWithError(err.Code(), err.Error())
 			return
 		}
 
@@ -123,7 +146,7 @@ func callback(c *gin.Context) {
 			Type: "user_bucket",
 		}
 
-		err := commands.CreateBucketTransaction{
+		err = commands.CreateBucketTransaction{
 			Bucket:   &bucket,
 			Database: db,
 			UserId:   user.Id,
@@ -133,11 +156,6 @@ func callback(c *gin.Context) {
 			c.AbortWithError(err.Code(), err.Error())
 			return
 		}
-	}
-	if err != nil {
-		err = errors.New("failed to retrieve the user")
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
 	}
 
 	// Open session

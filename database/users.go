@@ -26,15 +26,3 @@ func (db *Database) GetUser(username string) (User, error) {
 
 	return user, nil
 }
-
-func (db *Database) CreateUser(user User) (int, error) {
-	request := "INSERT INTO users(username, name, profile_picture) VALUES (?, ?, ?) RETURNING id"
-
-	var id int
-	err := db.Instance.QueryRow(request, user.Username, user.Name, user.ProfilePicture).Scan(&id)
-	if err != nil {
-		return 0, err
-	}
-
-	return id, nil
-}

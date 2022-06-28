@@ -46,7 +46,7 @@ func (c CreateBucketTransaction) Try() ICommandError {
 			Bucket: c.Bucket,
 		},
 	}
-	return NewTransaction(commands).Run()
+	return NewTransaction(commands).Try()
 }
 
 type CreateBucketInFileSystemCommand struct {
