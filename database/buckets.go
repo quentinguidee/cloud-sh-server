@@ -183,36 +183,6 @@ func (db *Database) GetFiles(bucket storage.Bucket, path string) ([]storage.Node
 	return nodes, nil
 }
 
-func (db *Database) CreateNode(directoryId int, node storage.Node) error {
-	request := `
-		INSERT INTO buckets_nodes(filename, filetype, bucket_id)
-		VALUES (?, ?, ?)
-		RETURNING id
-	`
-
-	err := db.Instance.QueryRow(request,
-		node.Filename,
-		node.Filetype,
-		node.BucketId,
-	).Scan(&node.Id)
-
-	if err != nil {
-		return err
-	}
-
-	request = `
-		INSERT INTO buckets_nodes_associations(from_node, to_node)
-		VALUES (?, ?)
-	`
-
-	_, err = db.Instance.Exec(request, directoryId, node.Id)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (db *Database) Delete(node storage.Node, path string) error {
 	request := `
 		BEGIN TRANSACTION;

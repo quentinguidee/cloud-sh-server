@@ -17,12 +17,12 @@ type CreateBucketTransaction struct {
 
 func (c CreateBucketTransaction) Try() ICommandError {
 	node := Node{
-		Filename: "/",
+		Filename: "root",
 		Filetype: "directory",
 	}
 
 	commands := []Command{
-		CreateBucketInDatabaseCommand{
+		CreateBucketCommand{
 			Bucket:   c.Bucket,
 			Database: c.Database,
 			UserId:   c.UserId,
@@ -69,13 +69,13 @@ func (c CreateBucketInFileSystemCommand) Revert() ICommandError {
 	return nil
 }
 
-type CreateBucketInDatabaseCommand struct {
+type CreateBucketCommand struct {
 	Bucket   *Bucket
 	Database Database
 	UserId   int
 }
 
-func (c CreateBucketInDatabaseCommand) Run() ICommandError {
+func (c CreateBucketCommand) Run() ICommandError {
 	request := "INSERT INTO buckets(name, type) VALUES (?, ?) RETURNING id"
 
 	err := c.Database.Instance.QueryRow(request, c.Bucket.Name, c.Bucket.Type).Scan(&c.Bucket.Id)
@@ -85,7 +85,7 @@ func (c CreateBucketInDatabaseCommand) Run() ICommandError {
 	return nil
 }
 
-func (c CreateBucketInDatabaseCommand) Revert() ICommandError {
+func (c CreateBucketCommand) Revert() ICommandError {
 	request := "DELETE FROM buckets WHERE id = ?"
 
 	_, err := c.Database.Instance.Exec(request, c.Bucket.Id)

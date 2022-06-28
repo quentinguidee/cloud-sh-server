@@ -3,6 +3,8 @@ package storage
 import (
 	"errors"
 	"net/http"
+	. "self-hosted-cloud/server/commands"
+	commands "self-hosted-cloud/server/commands/storage"
 	"self-hosted-cloud/server/database"
 	"self-hosted-cloud/server/models"
 	"self-hosted-cloud/server/models/storage"
@@ -100,14 +102,24 @@ func createNode(c *gin.Context) {
 		BucketId: bucket.Id,
 	}
 
-	err = db.CreateNode(directory.Id, node)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
+	transactionError := NewTransaction([]Command{
+		commands.CreateBucketNodeCommand{
+			Node:     &node,
+			Bucket:   &bucket,
+			Database: db,
+		},
+		commands.CreateBucketNodeAssociationCommand{
+			FromNode: &directory,
+			ToNode:   &node,
+			Database: db,
+		},
+		commands.CreateBucketNodeInFileSystemCommand{
+			Node: node,
+			Path: path,
+		},
+	}).Try()
 
-	err = node.Create(path)
-	if err != nil {
+	if transactionError != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
