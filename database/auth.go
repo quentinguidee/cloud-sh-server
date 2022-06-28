@@ -5,7 +5,7 @@ import (
 )
 
 func (db *Database) CreateGithubAuthTable() {
-	_, _ = db.instance.Exec(`
+	_, _ = db.Instance.Exec(`
 		CREATE TABLE IF NOT EXISTS auth_github (
 			username VARCHAR(255) UNIQUE PRIMARY KEY,
 			user_id  INTEGER,
@@ -23,7 +23,7 @@ func (db *Database) GetUserFromGithub(username string) (User, error) {
 	`
 
 	var user User
-	err := db.instance.QueryRow(request, username).Scan(&user.Id, &user.Username, &user.Name, &user.ProfilePicture)
+	err := db.Instance.QueryRow(request, username).Scan(&user.Id, &user.Username, &user.Name, &user.ProfilePicture)
 	if err != nil {
 		return User{}, err
 	}
@@ -45,7 +45,7 @@ func (db *Database) CreateUserFromGithub(githubUser GithubUser) (User, error) {
 
 	user.Id = userId
 
-	_, err = db.instance.Exec(`INSERT INTO auth_github(username, user_id) VALUES (?, ?)`, githubUser.Login, user.Id)
+	_, err = db.Instance.Exec(`INSERT INTO auth_github(username, user_id) VALUES (?, ?)`, githubUser.Login, user.Id)
 	if err != nil {
 		return User{}, err
 	}

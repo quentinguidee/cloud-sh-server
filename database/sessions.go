@@ -8,7 +8,7 @@ import (
 )
 
 func (db *Database) CreateSessionsTable() {
-	_, _ = db.instance.Exec(`
+	_, _ = db.Instance.Exec(`
 		CREATE TABLE IF NOT EXISTS sessions (
 			id      INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT,
 			user_id INTEGER,
@@ -31,7 +31,7 @@ func (db *Database) CreateSession(userId int) (Session, error) {
 		Token:  fmt.Sprintf("%X", token),
 	}
 
-	_, err = db.instance.Exec(request, session.UserId, session.Token)
+	_, err = db.Instance.Exec(request, session.UserId, session.Token)
 	if err != nil {
 		return Session{}, err
 	}
@@ -42,7 +42,7 @@ func (db *Database) CreateSession(userId int) (Session, error) {
 func (db *Database) CloseSession(session Session) error {
 	request := "DELETE FROM sessions WHERE token = ? AND user_id = ?"
 
-	res, err := db.instance.Exec(request, session.Token, session.UserId)
+	res, err := db.Instance.Exec(request, session.Token, session.UserId)
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (db *Database) GetUserFromSession(token string) (User, error) {
 	`
 
 	var user User
-	err := db.instance.QueryRow(request, token).Scan(
+	err := db.Instance.QueryRow(request, token).Scan(
 		&user.Id,
 		&user.Username,
 		&user.Name,
@@ -81,7 +81,7 @@ func (db *Database) ValidateToken(token string, userId int) (bool, error) {
 	request := "SELECT id, user_id, token FROM sessions WHERE token = ?"
 
 	var session Session
-	err := db.instance.QueryRow(request, token).Scan(&session.Id, &session.UserId, &session.Token)
+	err := db.Instance.QueryRow(request, token).Scan(&session.Id, &session.UserId, &session.Token)
 	if err != nil {
 		// Token not found
 		return false, err

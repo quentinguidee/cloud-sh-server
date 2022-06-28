@@ -8,7 +8,7 @@ import (
 )
 
 func (db *Database) CreateBucketsTable() {
-	_, _ = db.instance.Exec(`
+	_, _ = db.Instance.Exec(`
 		CREATE TABLE IF NOT EXISTS buckets (
 			id        INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT,
 			name      VARCHAR(255),
@@ -18,7 +18,7 @@ func (db *Database) CreateBucketsTable() {
 		)
 	`)
 
-	_, _ = db.instance.Exec(`
+	_, _ = db.Instance.Exec(`
 		CREATE TABLE IF NOT EXISTS buckets_access (
 		    id          INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT,
 		    bucket_id   INTEGER,
@@ -29,7 +29,7 @@ func (db *Database) CreateBucketsTable() {
 		)
 	`)
 
-	_, _ = db.instance.Exec(`
+	_, _ = db.Instance.Exec(`
 		CREATE TABLE IF NOT EXISTS buckets_nodes (
 		    id                INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT,
 		    filename          VARCHAR(255),
@@ -39,7 +39,7 @@ func (db *Database) CreateBucketsTable() {
 		)
 	`)
 
-	_, _ = db.instance.Exec(`
+	_, _ = db.Instance.Exec(`
 		CREATE TABLE IF NOT EXISTS buckets_nodes_associations (
 		    id        INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT,
 		    from_node INTEGER,
@@ -60,7 +60,7 @@ func (db *Database) GetUserBucket(userId int) (storage.Bucket, error) {
 	`
 
 	var bucket storage.Bucket
-	err := db.instance.QueryRow(request, userId).Scan(
+	err := db.Instance.QueryRow(request, userId).Scan(
 		&bucket.Id,
 		&bucket.Name,
 		&bucket.RootNode,
@@ -77,7 +77,7 @@ func (db *Database) GetBucket(bucketId int) (storage.Bucket, error) {
 	request := "SELECT id, name, root_node, type FROM buckets WHERE buckets.id = ?"
 
 	var bucket storage.Bucket
-	err := db.instance.QueryRow(request, bucketId).Scan(&bucket.Id, &bucket.Name, &bucket.RootNode, &bucket.Type)
+	err := db.Instance.QueryRow(request, bucketId).Scan(&bucket.Id, &bucket.Name, &bucket.RootNode, &bucket.Type)
 	if err != nil {
 		return storage.Bucket{}, err
 	}
@@ -92,7 +92,7 @@ func (db *Database) GetNodesFromNode(fromNode int) ([]storage.Node, error) {
           AND associations.to_node = nodes.id
 	`
 
-	rows, err := db.instance.Query(request, fromNode)
+	rows, err := db.Instance.Query(request, fromNode)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func (db *Database) GetNodeFromNode(fromNode int, filename string) (storage.Node
 	`
 
 	var node storage.Node
-	err := db.instance.QueryRow(request, fromNode, filename).Scan(
+	err := db.Instance.QueryRow(request, fromNode, filename).Scan(
 		&node.Id,
 		&node.Filename,
 		&node.Filetype,
@@ -186,7 +186,7 @@ func (db *Database) GetFiles(bucket storage.Bucket, path string) ([]storage.Node
 func (db *Database) CreateBucket(bucket storage.Bucket, userId int) (storage.Bucket, error) {
 	request := "INSERT INTO buckets(name, type) VALUES (?, ?) RETURNING id"
 
-	err := db.instance.QueryRow(request, bucket.Name, bucket.Type).Scan(&bucket.Id)
+	err := db.Instance.QueryRow(request, bucket.Name, bucket.Type).Scan(&bucket.Id)
 	if err != nil {
 		return storage.Bucket{}, err
 	}
@@ -201,7 +201,7 @@ func (db *Database) CreateBucket(bucket storage.Bucket, userId int) (storage.Buc
 		RETURNING id
 	`
 
-	err = db.instance.QueryRow(request, bucket.Id).Scan(&node.Id)
+	err = db.Instance.QueryRow(request, bucket.Id).Scan(&node.Id)
 	if err != nil {
 		return storage.Bucket{}, err
 	}
@@ -212,7 +212,7 @@ func (db *Database) CreateBucket(bucket storage.Bucket, userId int) (storage.Buc
 		WHERE id = ?
 	`
 
-	_, err = db.instance.Exec(request, node.Id, bucket.Id)
+	_, err = db.Instance.Exec(request, node.Id, bucket.Id)
 	if err != nil {
 		return storage.Bucket{}, err
 	}
@@ -222,7 +222,7 @@ func (db *Database) CreateBucket(bucket storage.Bucket, userId int) (storage.Buc
 		VALUES (?, ?, 'admin')
 	`
 
-	_, err = db.instance.Exec(request, bucket.Id, userId)
+	_, err = db.Instance.Exec(request, bucket.Id, userId)
 	if err != nil {
 		return storage.Bucket{}, err
 	}
@@ -237,7 +237,7 @@ func (db *Database) CreateNode(directoryId int, node storage.Node) error {
 		RETURNING id
 	`
 
-	err := db.instance.QueryRow(request,
+	err := db.Instance.QueryRow(request,
 		node.Filename,
 		node.Filetype,
 		node.BucketId,
@@ -252,7 +252,7 @@ func (db *Database) CreateNode(directoryId int, node storage.Node) error {
 		VALUES (?, ?)
 	`
 
-	_, err = db.instance.Exec(request, directoryId, node.Id)
+	_, err = db.Instance.Exec(request, directoryId, node.Id)
 	if err != nil {
 		return err
 	}
@@ -268,7 +268,7 @@ func (db *Database) Delete(node storage.Node, path string) error {
 		COMMIT TRANSACTION;
 	`
 
-	_, err := db.instance.Exec(request, node.Id, node.Id)
+	_, err := db.Instance.Exec(request, node.Id, node.Id)
 	if err != nil {
 		return err
 	}

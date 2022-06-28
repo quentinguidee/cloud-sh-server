@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"self-hosted-cloud/server/commands/storage"
 	"self-hosted-cloud/server/database"
 	. "self-hosted-cloud/server/models"
 	"self-hosted-cloud/server/models/storage"
@@ -121,15 +122,15 @@ func callback(c *gin.Context) {
 			Name: fmt.Sprintf("Main bucket"),
 			Type: "user_bucket",
 		}
-		bucket, err := db.CreateBucket(bucket, user.Id)
-		if err != nil {
-			c.AbortWithError(http.StatusInternalServerError, err)
-			return
-		}
 
-		err = bucket.Create()
+		err := commands.CreateBucketTransaction{
+			Bucket:   &bucket,
+			Database: db,
+			UserId:   user.Id,
+		}.Try()
+
 		if err != nil {
-			c.AbortWithError(http.StatusInternalServerError, err)
+			c.AbortWithError(err.Code(), err.Error())
 			return
 		}
 	}

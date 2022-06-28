@@ -9,11 +9,11 @@ import (
 )
 
 type Database struct {
-	instance *sql.DB
+	Instance *sql.DB
 }
 
 func New(instance *sql.DB) Database {
-	return Database{instance: instance}
+	return Database{Instance: instance}
 }
 
 func GetDatabase(path string) (Database, error) {
@@ -21,7 +21,7 @@ func GetDatabase(path string) (Database, error) {
 	if err != nil {
 		return Database{}, errors.New("couldn't open connection to the database")
 	}
-	db := Database{instance: instance}
+	db := Database{Instance: instance}
 	db.Initialize()
 	return db, nil
 }
