@@ -7,7 +7,7 @@ import (
 	commands "self-hosted-cloud/server/commands/storage"
 	"self-hosted-cloud/server/database"
 	"self-hosted-cloud/server/models"
-	"self-hosted-cloud/server/models/storage"
+	. "self-hosted-cloud/server/models/storage"
 	"self-hosted-cloud/server/utils"
 	"strings"
 
@@ -39,9 +39,14 @@ func getNodes(c *gin.Context) {
 		return
 	}
 
-	bucket, err := db.GetUserBucket(user.Id)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+	var bucket Bucket
+	commandError := commands.GetUserBucketCommand{
+		Database:       db,
+		User:           &user,
+		ReturnedBucket: &bucket,
+	}.Run()
+	if commandError != nil {
+		c.AbortWithError(commandError.Code(), commandError.Error())
 		return
 	}
 
@@ -84,9 +89,14 @@ func createNode(c *gin.Context) {
 		return
 	}
 
-	bucket, err := db.GetUserBucket(user.Id)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+	var bucket Bucket
+	commandError := commands.GetUserBucketCommand{
+		Database:       db,
+		User:           &user,
+		ReturnedBucket: &bucket,
+	}.Run()
+	if commandError != nil {
+		c.AbortWithError(commandError.Code(), commandError.Error())
 		return
 	}
 
@@ -96,7 +106,7 @@ func createNode(c *gin.Context) {
 		return
 	}
 
-	node := storage.Node{
+	node := Node{
 		Filename: params.Name,
 		Filetype: params.Type,
 		BucketId: bucket.Id,
@@ -136,9 +146,14 @@ func deleteNodes(c *gin.Context) {
 		return
 	}
 
-	bucket, err := db.GetUserBucket(user.Id)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+	var bucket Bucket
+	commandError := commands.GetUserBucketCommand{
+		Database:       db,
+		User:           &user,
+		ReturnedBucket: &bucket,
+	}.Run()
+	if commandError != nil {
+		c.AbortWithError(commandError.Code(), commandError.Error())
 		return
 	}
 
@@ -148,14 +163,14 @@ func deleteNodes(c *gin.Context) {
 		return
 	}
 
-	commandError := commands.DeleteBucketNodeRecursivelyCommand{
+	commandError = commands.DeleteBucketNodeRecursivelyCommand{
 		Node:     node,
 		Path:     path,
 		Database: db,
 	}.Run()
 
 	if commandError != nil {
-		c.AbortWithError(http.StatusInternalServerError, commandError.Error())
+		c.AbortWithError(commandError.Code(), commandError.Error())
 		return
 	}
 }
