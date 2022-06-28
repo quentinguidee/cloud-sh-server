@@ -49,17 +49,6 @@ func (db *Database) CreateBucketsTable() {
 	`)
 }
 
-func (db *Database) GetBucket(bucketId int) (storage.Bucket, error) {
-	request := "SELECT id, name, root_node, type FROM buckets WHERE buckets.id = ?"
-
-	var bucket storage.Bucket
-	err := db.Instance.QueryRow(request, bucketId).Scan(&bucket.Id, &bucket.Name, &bucket.RootNode, &bucket.Type)
-	if err != nil {
-		return storage.Bucket{}, err
-	}
-	return bucket, nil
-}
-
 func (db *Database) GetNodesFromNode(fromNode int) ([]storage.Node, error) {
 	request := `
 		SELECT nodes.id, nodes.filename, nodes.filetype, nodes.bucket_id
