@@ -148,9 +148,14 @@ func deleteNodes(c *gin.Context) {
 		return
 	}
 
-	err = db.DeleteRecursively(node, path)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+	commandError := commands.DeleteBucketNodeRecursivelyCommand{
+		Node:     node,
+		Path:     path,
+		Database: db,
+	}.Run()
+
+	if commandError != nil {
+		c.AbortWithError(http.StatusInternalServerError, commandError.Error())
 		return
 	}
 }

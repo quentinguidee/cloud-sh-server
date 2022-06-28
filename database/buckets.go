@@ -2,7 +2,6 @@ package database
 
 import (
 	"database/sql"
-	"path/filepath"
 	"self-hosted-cloud/server/models/storage"
 	"strings"
 )
@@ -181,56 +180,4 @@ func (db *Database) GetFiles(bucket storage.Bucket, path string) ([]storage.Node
 	}
 
 	return nodes, nil
-}
-
-func (db *Database) Delete(node storage.Node, path string) error {
-	request := `
-		BEGIN TRANSACTION;
-		DELETE FROM buckets_nodes WHERE id = ?;
-		DELETE FROM buckets_nodes_associations WHERE to_node = ?;
-		COMMIT TRANSACTION;
-	`
-
-	_, err := db.Instance.Exec(request, node.Id, node.Id)
-	if err != nil {
-		return err
-	}
-
-	err = node.Delete(path)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (db *Database) DeleteRecursively(node storage.Node, path string) error {
-	nodes, err := db.GetNodesFromNode(node.Id)
-	if err != nil && err != sql.ErrNoRows {
-		return err
-	}
-
-	for _, node := range nodes {
-		var err error
-
-		path := filepath.Join(path, node.Filename)
-
-		switch node.Filetype {
-		case "directory":
-			err = db.DeleteRecursively(node, path)
-		default:
-			err = db.Delete(node, path)
-		}
-
-		if err != nil {
-			return err
-		}
-	}
-
-	err = db.Delete(node, path)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
