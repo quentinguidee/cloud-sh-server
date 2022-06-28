@@ -3,9 +3,11 @@ package storage
 import (
 	"errors"
 	"net/http"
+	. "self-hosted-cloud/server/commands"
+	commands "self-hosted-cloud/server/commands/storage"
 	"self-hosted-cloud/server/database"
 	"self-hosted-cloud/server/models"
-	"self-hosted-cloud/server/models/storage"
+	. "self-hosted-cloud/server/models/storage"
 	"self-hosted-cloud/server/utils"
 	"strings"
 
@@ -37,20 +39,32 @@ func getNodes(c *gin.Context) {
 		return
 	}
 
-	bucket, err := db.GetUserBucket(user.Id)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
+	var (
+		bucket Bucket
+		nodes  []Node
+	)
 
-	files, err := db.GetFiles(bucket, path)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+	transactionError := NewTransaction([]Command{
+		commands.GetUserBucketCommand{
+			Database:       db,
+			User:           &user,
+			ReturnedBucket: &bucket,
+		},
+		commands.GetNodesCommand{
+			Database:      db,
+			Path:          path,
+			Bucket:        &bucket,
+			ReturnedNodes: &nodes,
+		},
+	}).Try()
+
+	if transactionError != nil {
+		c.AbortWithError(transactionError.Code(), transactionError.Error())
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"files": files,
+		"files": nodes,
 	})
 }
 
@@ -82,33 +96,46 @@ func createNode(c *gin.Context) {
 		return
 	}
 
-	bucket, err := db.GetUserBucket(user.Id)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
+	var (
+		bucket    Bucket
+		directory Node
+	)
 
-	directory, err := db.GetNode(bucket, path)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-
-	node := storage.Node{
+	node := Node{
 		Filename: params.Name,
 		Filetype: params.Type,
-		BucketId: bucket.Id,
 	}
 
-	err = db.CreateNode(directory.Id, node)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
+	transactionError := NewTransaction([]Command{
+		commands.GetUserBucketCommand{
+			Database:       db,
+			User:           &user,
+			ReturnedBucket: &bucket,
+		},
+		commands.GetNodeCommand{
+			Database:     db,
+			Path:         path,
+			Bucket:       &bucket,
+			ReturnedNode: &directory,
+		},
+		commands.CreateBucketNodeCommand{
+			Node:     &node,
+			Bucket:   &bucket,
+			Database: db,
+		},
+		commands.CreateBucketNodeAssociationCommand{
+			FromNode: &directory,
+			ToNode:   &node,
+			Database: db,
+		},
+		commands.CreateBucketNodeInFileSystemCommand{
+			Node: &node,
+			Path: path,
+		},
+	}).Try()
 
-	err = node.Create(path)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+	if transactionError != nil {
+		c.AbortWithError(transactionError.Code(), transactionError.Error())
 		return
 	}
 }
@@ -124,21 +151,32 @@ func deleteNodes(c *gin.Context) {
 		return
 	}
 
-	bucket, err := db.GetUserBucket(user.Id)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
+	var (
+		node   Node
+		bucket Bucket
+	)
 
-	node, err := db.GetNode(bucket, path)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
+	transactionError := NewTransaction([]Command{
+		commands.GetUserBucketCommand{
+			Database:       db,
+			User:           &user,
+			ReturnedBucket: &bucket,
+		},
+		commands.GetNodeCommand{
+			Database:     db,
+			Path:         path,
+			Bucket:       &bucket,
+			ReturnedNode: &node,
+		},
+		commands.DeleteBucketNodeRecursivelyCommand{
+			Node:     &node,
+			Path:     path,
+			Database: db,
+		},
+	}).Try()
 
-	err = db.DeleteRecursively(node, path)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+	if transactionError != nil {
+		c.AbortWithError(transactionError.Code(), transactionError.Error())
 		return
 	}
 }

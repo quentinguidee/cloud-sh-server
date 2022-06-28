@@ -3,6 +3,7 @@ package auth
 import (
 	"errors"
 	"net/http"
+	"self-hosted-cloud/server/commands/auth"
 	"self-hosted-cloud/server/database"
 	. "self-hosted-cloud/server/models"
 	"self-hosted-cloud/server/routes/auth/github"
@@ -29,10 +30,13 @@ func logout(c *gin.Context) {
 	}
 
 	db := database.GetDatabaseFromContext(c)
-	err = db.CloseSession(session)
+	commandError := auth.DeleteSessionCommand{
+		Database: db,
+		Session:  session,
+	}.Run()
+
 	if err != nil {
-		err = errors.New("this session doesn't exists")
-		c.AbortWithError(http.StatusNotFound, err)
+		c.AbortWithError(commandError.Code(), commandError.Error())
 		return
 	}
 

@@ -8,6 +8,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	. "self-hosted-cloud/server/commands"
+	"self-hosted-cloud/server/commands/auth"
+	"self-hosted-cloud/server/commands/storage"
 	"self-hosted-cloud/server/database"
 	. "self-hosted-cloud/server/models"
 	"self-hosted-cloud/server/models/storage"
@@ -106,14 +109,42 @@ func callback(c *gin.Context) {
 		return
 	}
 
-	// Create account if it doesn't exist
 	db := database.GetDatabaseFromContext(c)
-	user, err := db.GetUserFromGithub(githubUser.Login)
-	if err == sql.ErrNoRows {
-		user, err = db.CreateUserFromGithub(githubUser)
+
+	// Create account if it doesn't exist
+	var user User
+	commandError := auth.GetUserFromGithubCommand{
+		Database:       db,
+		GithubUsername: githubUser.Login,
+		ReturnedUser:   &user,
+	}.Run()
+
+	if commandError != nil && commandError.Error() != sql.ErrNoRows {
+		err = errors.New("failed to retrieve the user")
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	if commandError != nil && commandError.Error() == sql.ErrNoRows {
+		user := User{
+			Username:       githubUser.Login,
+			Name:           githubUser.Name,
+			ProfilePicture: githubUser.AvatarUrl,
+		}
+
+		err := NewTransaction([]Command{
+			auth.CreateUserCommand{
+				User:     &user,
+				Database: db,
+			},
+			auth.CreateGithubUserCommand{
+				User:           &user,
+				Database:       db,
+				GithubUsername: githubUser.Login,
+			},
+		}).Try()
+
 		if err != nil {
-			err = errors.New("failed to create the new user")
-			c.AbortWithError(http.StatusInternalServerError, err)
+			c.AbortWithError(err.Code(), err.Error())
 			return
 		}
 
@@ -121,29 +152,28 @@ func callback(c *gin.Context) {
 			Name: fmt.Sprintf("Main bucket"),
 			Type: "user_bucket",
 		}
-		bucket, err := db.CreateBucket(bucket, user.Id)
-		if err != nil {
-			c.AbortWithError(http.StatusInternalServerError, err)
-			return
-		}
 
-		err = bucket.Create()
+		err = commands.CreateBucketTransaction{
+			Bucket:   &bucket,
+			Database: db,
+			UserId:   user.Id,
+		}.Try()
+
 		if err != nil {
-			c.AbortWithError(http.StatusInternalServerError, err)
+			c.AbortWithError(err.Code(), err.Error())
 			return
 		}
-	}
-	if err != nil {
-		err = errors.New("failed to retrieve the user")
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
 	}
 
 	// Open session
-	session, err := db.CreateSession(user.Id)
+	var session Session
+	commandError = auth.CreateSessionCommand{
+		Database:        db,
+		UserId:          user.Id,
+		ReturnedSession: &session,
+	}.Run()
 	if err != nil {
-		err = errors.New("failed to create user session")
-		c.AbortWithError(http.StatusInternalServerError, err)
+		c.AbortWithError(commandError.Code(), commandError.Error())
 		return
 	}
 
