@@ -183,53 +183,6 @@ func (db *Database) GetFiles(bucket storage.Bucket, path string) ([]storage.Node
 	return nodes, nil
 }
 
-func (db *Database) CreateBucket(bucket storage.Bucket, userId int) (storage.Bucket, error) {
-	request := "INSERT INTO buckets(name, type) VALUES (?, ?) RETURNING id"
-
-	err := db.Instance.QueryRow(request, bucket.Name, bucket.Type).Scan(&bucket.Id)
-	if err != nil {
-		return storage.Bucket{}, err
-	}
-
-	node := storage.Node{
-		Filename: "/",
-		Filetype: "directory",
-	}
-	request = `
-		INSERT INTO buckets_nodes(filename, filetype, bucket_id)
-		VALUES ('/', 'directory', ?)
-		RETURNING id
-	`
-
-	err = db.Instance.QueryRow(request, bucket.Id).Scan(&node.Id)
-	if err != nil {
-		return storage.Bucket{}, err
-	}
-
-	request = `
-		UPDATE buckets
-		SET root_node = ?
-		WHERE id = ?
-	`
-
-	_, err = db.Instance.Exec(request, node.Id, bucket.Id)
-	if err != nil {
-		return storage.Bucket{}, err
-	}
-
-	request = `
-		INSERT INTO buckets_access(bucket_id, user_id, access_type)
-		VALUES (?, ?, 'admin')
-	`
-
-	_, err = db.Instance.Exec(request, bucket.Id, userId)
-	if err != nil {
-		return storage.Bucket{}, err
-	}
-
-	return bucket, nil
-}
-
 func (db *Database) CreateNode(directoryId int, node storage.Node) error {
 	request := `
 		INSERT INTO buckets_nodes(filename, filetype, bucket_id)
