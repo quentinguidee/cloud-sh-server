@@ -1,11 +1,10 @@
 package user
 
 import (
-	"database/sql"
-	"errors"
-	"fmt"
 	"net/http"
+	"self-hosted-cloud/server/commands/auth"
 	"self-hosted-cloud/server/database"
+	. "self-hosted-cloud/server/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,15 +20,16 @@ func LoadRoutes(router *gin.Engine) {
 func getUser(c *gin.Context) {
 	username := c.Param("username")
 	db := database.GetDatabaseFromContext(c)
-	user, err := db.GetUser(username)
-	if err == sql.ErrNoRows {
-		err = errors.New(fmt.Sprintf("the user '%s' doesn't exists", username))
-		c.AbortWithError(http.StatusNotFound, err)
-		return
-	}
+
+	var user User
+	err := auth.GetUserCommand{
+		Database:     db,
+		Username:     username,
+		ReturnedUser: &user,
+	}.Run()
+
 	if err != nil {
-		err = errors.New(fmt.Sprintf("Couldn't retrieve the user '%s'.", username))
-		c.AbortWithError(http.StatusInternalServerError, err)
+		c.AbortWithError(err.Code(), err.Error())
 		return
 	}
 

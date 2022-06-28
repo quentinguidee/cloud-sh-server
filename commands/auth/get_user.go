@@ -1,11 +1,42 @@
 package auth
 
 import (
+	"database/sql"
+	"errors"
 	"net/http"
-	"self-hosted-cloud/server/commands"
+	. "self-hosted-cloud/server/commands"
 	. "self-hosted-cloud/server/database"
 	. "self-hosted-cloud/server/models"
 )
+
+type GetUserCommand struct {
+	Database     Database
+	Username     string
+	ReturnedUser *User
+}
+
+func (c GetUserCommand) Run() ICommandError {
+	request := "SELECT id, username, name, profile_picture FROM users WHERE username = ?"
+
+	err := c.Database.Instance.QueryRow(request, c.Username).Scan(
+		&c.ReturnedUser.Id,
+		&c.ReturnedUser.Username,
+		&c.ReturnedUser.Name,
+		&c.ReturnedUser.ProfilePicture)
+
+	if err == sql.ErrNoRows {
+		err = errors.New("the user 'username' doesn't exists")
+		return NewError(http.StatusNotFound, err)
+	}
+	if err != nil {
+		return NewError(http.StatusInternalServerError, err)
+	}
+	return nil
+}
+
+func (c GetUserCommand) Revert() ICommandError {
+	return nil
+}
 
 type GetUserFromGithubCommand struct {
 	Database       Database
@@ -13,7 +44,7 @@ type GetUserFromGithubCommand struct {
 	ReturnedUser   *User
 }
 
-func (c GetUserFromGithubCommand) Run() commands.ICommandError {
+func (c GetUserFromGithubCommand) Run() ICommandError {
 	request := `
 		SELECT users.id, users.username, users.name, users.profile_picture
 		FROM users, auth_github
@@ -27,12 +58,15 @@ func (c GetUserFromGithubCommand) Run() commands.ICommandError {
 		&c.ReturnedUser.Name,
 		&c.ReturnedUser.ProfilePicture)
 
+	if err == sql.ErrNoRows {
+		return NewError(http.StatusNotFound, err)
+	}
 	if err != nil {
-		return commands.NewError(http.StatusInternalServerError, err)
+		return NewError(http.StatusInternalServerError, err)
 	}
 	return nil
 }
 
-func (c GetUserFromGithubCommand) Revert() commands.ICommandError {
+func (c GetUserFromGithubCommand) Revert() ICommandError {
 	return nil
 }
