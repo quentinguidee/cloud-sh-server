@@ -18,9 +18,15 @@ type DeleteBucketNodeRecursivelyCommand struct {
 }
 
 func (c DeleteBucketNodeRecursivelyCommand) Run() ICommandError {
-	nodes, err := c.Database.GetNodesFromNode(c.Node.Id)
-	if err != nil && err != sql.ErrNoRows {
-		return NewError(http.StatusInternalServerError, err)
+	var nodes []Node
+	err := GetNodesInDirectoryCommand{
+		Database:      c.Database,
+		FromNode:      c.Node.Id,
+		ReturnedNodes: &nodes,
+	}.Run()
+
+	if err != nil && err.Error() != sql.ErrNoRows {
+		return NewError(http.StatusInternalServerError, err.Error())
 	}
 
 	for _, node := range nodes {

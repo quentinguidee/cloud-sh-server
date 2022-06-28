@@ -50,14 +50,20 @@ func getNodes(c *gin.Context) {
 		return
 	}
 
-	files, err := db.GetFiles(bucket, path)
+	var nodes []Node
+	commandError = commands.GetNodesCommand{
+		Database:      db,
+		Path:          path,
+		Bucket:        bucket,
+		ReturnedNodes: &nodes,
+	}.Run()
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"files": files,
+		"files": nodes,
 	})
 }
 
@@ -100,9 +106,15 @@ func createNode(c *gin.Context) {
 		return
 	}
 
-	directory, err := db.GetNode(bucket, path)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+	var directory Node
+	commandError = commands.GetNodeCommand{
+		Database:     db,
+		Path:         path,
+		Bucket:       bucket,
+		ReturnedNode: &directory,
+	}.Run()
+	if commandError != nil {
+		c.AbortWithError(commandError.Code(), commandError.Error())
 		return
 	}
 
@@ -157,9 +169,15 @@ func deleteNodes(c *gin.Context) {
 		return
 	}
 
-	node, err := db.GetNode(bucket, path)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+	var node Node
+	commandError = commands.GetNodeCommand{
+		Database:     db,
+		Path:         path,
+		Bucket:       bucket,
+		ReturnedNode: &node,
+	}.Run()
+	if commandError != nil {
+		c.AbortWithError(commandError.Code(), commandError.Error())
 		return
 	}
 
@@ -168,7 +186,6 @@ func deleteNodes(c *gin.Context) {
 		Path:     path,
 		Database: db,
 	}.Run()
-
 	if commandError != nil {
 		c.AbortWithError(commandError.Code(), commandError.Error())
 		return
