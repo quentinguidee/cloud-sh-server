@@ -47,7 +47,7 @@ func (c CreateBucketNodeCommand) Revert() ICommandError {
 }
 
 type CreateBucketNodeInFileSystemCommand struct {
-	Node Node
+	Node *Node
 	Path string
 
 	filePath string

@@ -11,7 +11,7 @@ import (
 type GetNodeCommand struct {
 	Database     Database
 	Path         string
-	Bucket       Bucket
+	Bucket       *Bucket
 	ReturnedNode *Node
 }
 
@@ -52,7 +52,7 @@ func (c GetNodeCommand) Revert() ICommandError {
 type GetNodesCommand struct {
 	Database      Database
 	Path          string
-	Bucket        Bucket
+	Bucket        *Bucket
 	ReturnedNodes *[]Node
 }
 

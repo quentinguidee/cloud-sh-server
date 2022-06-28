@@ -12,7 +12,7 @@ import (
 )
 
 type DeleteBucketNodeRecursivelyCommand struct {
-	Node     Node
+	Node     *Node
 	Path     string
 	Database Database
 }
@@ -37,18 +37,18 @@ func (c DeleteBucketNodeRecursivelyCommand) Run() ICommandError {
 		switch node.Filetype {
 		case "directory":
 			err = DeleteBucketNodeRecursivelyCommand{
-				Node:     node,
+				Node:     &node,
 				Path:     path,
 				Database: c.Database,
 			}.Run()
 		default:
 			err = NewTransaction([]Command{
 				DeleteBucketNodeCommand{
-					Node:     node,
+					Node:     &node,
 					Database: c.Database,
 				},
 				DeleteBucketNodeInFileSystemCommand{
-					Node:     node,
+					Node:     &node,
 					Path:     path,
 					Database: c.Database,
 				},
@@ -84,7 +84,7 @@ func (c DeleteBucketNodeRecursivelyCommand) Revert() ICommandError {
 }
 
 type DeleteBucketNodeCommand struct {
-	Node     Node
+	Node     *Node
 	Database Database
 }
 
@@ -109,7 +109,7 @@ func (c DeleteBucketNodeCommand) Revert() ICommandError {
 }
 
 type DeleteBucketNodeInFileSystemCommand struct {
-	Node     Node
+	Node     *Node
 	Path     string
 	Database Database
 }
