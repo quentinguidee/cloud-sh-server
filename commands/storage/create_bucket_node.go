@@ -90,7 +90,7 @@ func (c CreateBucketNodeInFileSystemCommand) Run() ICommandError {
 func (c CreateBucketNodeInFileSystemCommand) Revert() ICommandError {
 	err := os.RemoveAll(c.filePath)
 	if err != nil {
-		err = errors.New("error while creating node in file system")
+		err = errors.New("error while deleting node in file system")
 		return NewError(http.StatusInternalServerError, err)
 	}
 	return nil
