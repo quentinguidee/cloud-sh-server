@@ -68,6 +68,8 @@ func (c CreateBucketNodeInFileSystemCommand) Run() ICommandError {
 	switch c.Node.Filetype {
 	case "directory":
 		err = os.Mkdir(c.filePath, os.ModePerm)
+	case "file":
+		_, err = os.Create(c.filePath)
 	default:
 		err = errors.New("this filetype is not supported")
 	}
