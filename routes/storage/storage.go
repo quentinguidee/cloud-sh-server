@@ -19,6 +19,7 @@ func LoadRoutes(router *gin.Engine) {
 		group.GET("", getNodes)
 		group.PUT("", createNode)
 		group.DELETE("", deleteNodes)
+		group.PATCH("", renameNode)
 		group.GET("/download", downloadNodes)
 	}
 }
@@ -176,6 +177,58 @@ func deleteNodes(c *gin.Context) {
 	}
 }
 
+func renameNode(c *gin.Context) {
+	db := database.GetDatabaseFromContext(c)
+	path := c.Query("path")
+	newFilename := c.Query("new_filename")
+
+	user, err := utils.GetUserFromContext(c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	var (
+		bucket       Bucket
+		completePath string
+		node         Node
+	)
+
+	transactionError := NewTransaction([]Command{
+		commands.GetUserBucketCommand{
+			Database:       db,
+			User:           &user,
+			ReturnedBucket: &bucket,
+		},
+		commands.GetBucketNodeCommand{
+			Database:     db,
+			Path:         path,
+			Bucket:       &bucket,
+			ReturnedNode: &node,
+		},
+		commands.GetBucketNodePathCommand{
+			Database:     db,
+			Path:         path,
+			Bucket:       &bucket,
+			CompletePath: &completePath,
+		},
+		commands.UpdateBucketNodeCommand{
+			Database:    db,
+			Node:        &node,
+			NewFilename: newFilename,
+		},
+		commands.UpdateBucketNodeInFileSystemCommand{
+			CompletePath: &completePath,
+			NewFilename:  newFilename,
+		},
+	}).Try()
+
+	if transactionError != nil {
+		c.AbortWithError(transactionError.Code(), transactionError.Error())
+		return
+	}
+}
+
 func downloadNodes(c *gin.Context) {
 	db := database.GetDatabaseFromContext(c)
 	path := c.Query("path")
@@ -197,7 +250,7 @@ func downloadNodes(c *gin.Context) {
 			User:           &user,
 			ReturnedBucket: &bucket,
 		},
-		commands.GetBucketNodePath{
+		commands.GetBucketNodePathCommand{
 			Database:     db,
 			Path:         path,
 			Bucket:       &bucket,

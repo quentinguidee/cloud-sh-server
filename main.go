@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"self-hosted-cloud/server/database"
 	"self-hosted-cloud/server/routes/auth"
 	"self-hosted-cloud/server/routes/storage"
@@ -29,7 +29,7 @@ func main() {
 		return
 	}
 
-	db, err := database.GetDatabase(fmt.Sprintf("%s/database.sqlite", dataPath))
+	db, err := database.GetDatabase(filepath.Join(dataPath, "database.sqlite"))
 	if err != nil {
 		log.Fatal(err.Error())
 		return
@@ -38,7 +38,7 @@ func main() {
 	router := gin.Default()
 
 	router.Use(cors.New(cors.Options{
-		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowedHeaders: []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
 		MaxAge:         int(12 * time.Hour),
 	}))

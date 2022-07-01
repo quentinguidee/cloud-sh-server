@@ -9,14 +9,14 @@ import (
 	"strconv"
 )
 
-type GetBucketNodePath struct {
+type GetBucketNodePathCommand struct {
 	Database     Database
 	Path         string
 	Bucket       *Bucket
 	CompletePath *string
 }
 
-func (c GetBucketNodePath) Run() ICommandError {
+func (c GetBucketNodePathCommand) Run() ICommandError {
 	// TODO before release: Check if user has permission to get this link
 
 	*c.CompletePath = filepath.Join(os.Getenv("DATA_PATH"), "buckets", strconv.Itoa(c.Bucket.Id), c.Path)
@@ -24,6 +24,6 @@ func (c GetBucketNodePath) Run() ICommandError {
 	return nil
 }
 
-func (c GetBucketNodePath) Revert() ICommandError {
+func (c GetBucketNodePathCommand) Revert() ICommandError {
 	return nil
 }
