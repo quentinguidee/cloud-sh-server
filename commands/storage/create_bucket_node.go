@@ -64,7 +64,12 @@ func (c CreateBucketNodeInFileSystemCommand) Run() ICommandError {
 
 	c.filePath = fmt.Sprintf("%s/buckets/%d/%s%s", os.Getenv("DATA_PATH"), c.Node.BucketId, c.Path, c.Node.Filename)
 
-	var err error
+	_, err := os.Stat(c.filePath)
+	if err == nil {
+		err := errors.New("this file already exists")
+		return NewError(http.StatusInternalServerError, err)
+	}
+
 	switch c.Node.Filetype {
 	case "directory":
 		err = os.Mkdir(c.filePath, os.ModePerm)
