@@ -75,8 +75,7 @@ func (c DeleteBucketNodeRecursivelyCommand) Run() ICommandError {
 	}).Try()
 
 	if transactionError != nil {
-		err := errors.New("error while executing transaction")
-		return NewError(http.StatusInternalServerError, err)
+		return NewError(transactionError.Code(), transactionError.Error())
 	}
 	return nil
 }
