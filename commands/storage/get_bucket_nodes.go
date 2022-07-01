@@ -8,14 +8,14 @@ import (
 	"strings"
 )
 
-type GetNodeCommand struct {
+type GetBucketNodeCommand struct {
 	Database     Database
 	Path         string
 	Bucket       *Bucket
 	ReturnedNode *Node
 }
 
-func (c GetNodeCommand) Run() ICommandError {
+func (c GetBucketNodeCommand) Run() ICommandError {
 	c.ReturnedNode.Id = c.Bucket.RootNode
 
 	if len(c.Path) > 0 && c.Path[0] == '/' {
@@ -45,7 +45,7 @@ func (c GetNodeCommand) Run() ICommandError {
 	return nil
 }
 
-func (c GetNodeCommand) Revert() ICommandError {
+func (c GetBucketNodeCommand) Revert() ICommandError {
 	return nil
 }
 
@@ -58,7 +58,7 @@ type GetNodesCommand struct {
 
 func (c GetNodesCommand) Run() ICommandError {
 	var node Node
-	err := GetNodeCommand{
+	err := GetBucketNodeCommand{
 		Database:     c.Database,
 		Path:         c.Path,
 		Bucket:       c.Bucket,

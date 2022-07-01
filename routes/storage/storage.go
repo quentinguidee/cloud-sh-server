@@ -112,7 +112,7 @@ func createNode(c *gin.Context) {
 			User:           &user,
 			ReturnedBucket: &bucket,
 		},
-		commands.GetNodeCommand{
+		commands.GetBucketNodeCommand{
 			Database:     db,
 			Path:         path,
 			Bucket:       &bucket,
@@ -162,7 +162,7 @@ func deleteNodes(c *gin.Context) {
 			User:           &user,
 			ReturnedBucket: &bucket,
 		},
-		commands.GetNodeCommand{
+		commands.GetBucketNodeCommand{
 			Database:     db,
 			Path:         path,
 			Bucket:       &bucket,
