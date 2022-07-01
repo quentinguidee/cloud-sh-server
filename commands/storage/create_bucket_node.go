@@ -68,7 +68,7 @@ func (c CreateBucketNodeInFileSystemCommand) Run() ICommandError {
 
 	_, err := os.Stat(c.filePath)
 	if err == nil {
-		err := errors.New("error while creating node in file system")
+		err := errors.New("error while creating node in file system: this file already exists")
 		return NewError(http.StatusInternalServerError, err)
 	}
 
