@@ -31,6 +31,7 @@ func (c CreateBucketNodeCommand) Run() ICommandError {
 	).Scan(&c.Node.Id)
 
 	if err != nil {
+		err := errors.New("error while creating node")
 		return NewError(http.StatusInternalServerError, err)
 	}
 	return nil
@@ -41,6 +42,7 @@ func (c CreateBucketNodeCommand) Revert() ICommandError {
 
 	_, err := c.Database.Instance.Exec(request, c.Node.Id)
 	if err != nil {
+		err := errors.New("error while deleting node")
 		return NewError(http.StatusInternalServerError, err)
 	}
 	return nil
@@ -66,7 +68,7 @@ func (c CreateBucketNodeInFileSystemCommand) Run() ICommandError {
 
 	_, err := os.Stat(c.filePath)
 	if err == nil {
-		err := errors.New("this file already exists")
+		err := errors.New("error while creating node in file system")
 		return NewError(http.StatusInternalServerError, err)
 	}
 
@@ -88,6 +90,7 @@ func (c CreateBucketNodeInFileSystemCommand) Run() ICommandError {
 func (c CreateBucketNodeInFileSystemCommand) Revert() ICommandError {
 	err := os.RemoveAll(c.filePath)
 	if err != nil {
+		err = errors.New("error while creating node in file system")
 		return NewError(http.StatusInternalServerError, err)
 	}
 	return nil

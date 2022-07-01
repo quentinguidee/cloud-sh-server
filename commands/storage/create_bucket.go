@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -56,6 +57,7 @@ type CreateBucketInFileSystemCommand struct {
 func (c CreateBucketInFileSystemCommand) Run() ICommandError {
 	err := os.MkdirAll(fmt.Sprintf("%s/buckets/%d", os.Getenv("DATA_PATH"), c.Bucket.Id), os.ModePerm)
 	if err != nil {
+		err = errors.New("error while creating bucket in file system")
 		return NewError(http.StatusInternalServerError, err)
 	}
 	return nil
@@ -64,6 +66,7 @@ func (c CreateBucketInFileSystemCommand) Run() ICommandError {
 func (c CreateBucketInFileSystemCommand) Revert() ICommandError {
 	err := os.RemoveAll(fmt.Sprintf("%s/buckets/%d", os.Getenv("DATA_PATH"), c.Bucket.Id))
 	if err != nil {
+		err = errors.New("error while deleting bucket in file system")
 		return NewError(http.StatusInternalServerError, err)
 	}
 	return nil
@@ -80,6 +83,7 @@ func (c CreateBucketCommand) Run() ICommandError {
 
 	err := c.Database.Instance.QueryRow(request, c.Bucket.Name, c.Bucket.Type).Scan(&c.Bucket.Id)
 	if err != nil {
+		err := errors.New("error while creating bucket")
 		return NewError(http.StatusInternalServerError, err)
 	}
 	return nil
@@ -90,6 +94,7 @@ func (c CreateBucketCommand) Revert() ICommandError {
 
 	_, err := c.Database.Instance.Exec(request, c.Bucket.Id)
 	if err != nil {
+		err := errors.New("error while deleting bucket")
 		return NewError(http.StatusInternalServerError, err)
 	}
 	return nil
