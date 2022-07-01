@@ -9,6 +9,7 @@ import (
 	"self-hosted-cloud/server/routes/storage"
 	"self-hosted-cloud/server/routes/user"
 	"self-hosted-cloud/server/utils"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -36,7 +37,11 @@ func main() {
 
 	router := gin.Default()
 
-	router.Use(cors.AllowAll())
+	router.Use(cors.New(cors.Options{
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders: []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
+		MaxAge:         int(12 * time.Hour),
+	}))
 	router.Use(database.Middleware(db))
 	router.Use(utils.ErrorMiddleware())
 

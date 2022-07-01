@@ -6,7 +6,6 @@ import (
 	. "self-hosted-cloud/server/commands"
 	commands "self-hosted-cloud/server/commands/storage"
 	"self-hosted-cloud/server/database"
-	"self-hosted-cloud/server/models"
 	. "self-hosted-cloud/server/models/storage"
 	"self-hosted-cloud/server/utils"
 	"strings"
@@ -20,12 +19,8 @@ func LoadRoutes(router *gin.Engine) {
 		group.GET("", getNodes)
 		group.PUT("", createNode)
 		group.DELETE("", deleteNodes)
+		group.GET("/download", downloadNodes)
 	}
-}
-
-type GetFilesParams struct {
-	Path    string         `json:"path,omitempty"`
-	Session models.Session `json:"session"`
 }
 
 func getNodes(c *gin.Context) {
@@ -179,4 +174,42 @@ func deleteNodes(c *gin.Context) {
 		c.AbortWithError(transactionError.Code(), transactionError.Error())
 		return
 	}
+}
+
+func downloadNodes(c *gin.Context) {
+	db := database.GetDatabaseFromContext(c)
+	path := c.Query("path")
+
+	user, err := utils.GetUserFromContext(c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	var (
+		bucket       Bucket
+		completePath string
+	)
+
+	transactionError := NewTransaction([]Command{
+		commands.GetUserBucketCommand{
+			Database:       db,
+			User:           &user,
+			ReturnedBucket: &bucket,
+		},
+		commands.GetBucketNodePath{
+			Database:     db,
+			Path:         path,
+			Bucket:       &bucket,
+			CompletePath: &completePath,
+		},
+	}).Try()
+
+	if transactionError != nil {
+		c.AbortWithError(transactionError.Code(), transactionError.Error())
+		return
+	}
+
+	println(completePath)
+	c.File(completePath)
 }
