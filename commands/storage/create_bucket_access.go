@@ -36,7 +36,8 @@ func (c CreateBucketAccess) Run() ICommandError {
 	).Scan(&c.BucketAccess.Id)
 
 	if err != nil {
-		return NewError(http.StatusInternalServerError, errors.New("error while creating bucket access"))
+		err = errors.New("error while creating bucket access")
+		return NewError(http.StatusInternalServerError, err)
 	}
 	return nil
 }
@@ -46,7 +47,8 @@ func (c CreateBucketAccess) Revert() ICommandError {
 
 	_, err := c.Database.Instance.Exec(request, c.BucketAccess.Id)
 	if err != nil {
-		return NewError(http.StatusInternalServerError, errors.New("error while deleting bucket access"))
+		err = errors.New("error while deleting bucket access")
+		return NewError(http.StatusInternalServerError, err)
 	}
 	return nil
 }
