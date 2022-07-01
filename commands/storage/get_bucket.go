@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"net/http"
 	. "self-hosted-cloud/server/commands"
 	. "self-hosted-cloud/server/database"
@@ -30,6 +31,7 @@ func (c GetUserBucketCommand) Run() ICommandError {
 		&c.ReturnedBucket.Type)
 
 	if err != nil {
+		err = errors.New("error while getting user bucket")
 		return NewError(http.StatusNotFound, err)
 	}
 	return nil

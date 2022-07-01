@@ -2,6 +2,7 @@ package commands
 
 import (
 	"database/sql"
+	"errors"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -26,7 +27,8 @@ func (c DeleteBucketNodeRecursivelyCommand) Run() ICommandError {
 	}.Run()
 
 	if err != nil && err.Error() != sql.ErrNoRows {
-		return NewError(http.StatusInternalServerError, err.Error())
+		err := errors.New("error while deleting nodes")
+		return NewError(http.StatusInternalServerError, err)
 	}
 
 	for _, node := range nodes {
@@ -73,7 +75,7 @@ func (c DeleteBucketNodeRecursivelyCommand) Run() ICommandError {
 	}).Try()
 
 	if transactionError != nil {
-		return NewError(http.StatusInternalServerError, transactionError.Error())
+		return NewError(transactionError.Code(), transactionError.Error())
 	}
 	return nil
 }
@@ -98,6 +100,7 @@ func (c DeleteBucketNodeCommand) Run() ICommandError {
 
 	_, err := c.Database.Instance.Exec(request, c.Node.Id, c.Node.Id)
 	if err != nil {
+		err = errors.New("error while deleting node")
 		return NewError(http.StatusInternalServerError, err)
 	}
 	return nil
@@ -122,6 +125,7 @@ func (c DeleteBucketNodeInFileSystemCommand) Run() ICommandError {
 	c.Path = filepath.Join(os.Getenv("DATA_PATH"), "buckets", strconv.Itoa(c.Node.BucketId), c.Path)
 	err := os.RemoveAll(c.Path)
 	if err != nil {
+		err = errors.New("error while deleting node in file system")
 		return NewError(http.StatusInternalServerError, err)
 	}
 	return nil

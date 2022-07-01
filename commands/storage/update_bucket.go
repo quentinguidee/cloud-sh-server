@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"net/http"
 	. "self-hosted-cloud/server/commands"
 	. "self-hosted-cloud/server/database"
@@ -20,6 +21,7 @@ func (c UpdateBucketRootNodeCommand) Run() ICommandError {
 
 	_, err := c.Database.Instance.Exec(request, c.Node.Id, c.Bucket.Id)
 	if err != nil {
+		err = errors.New("error while updating bucket")
 		return NewError(http.StatusInternalServerError, err)
 	}
 	c.oldRootNode = c.Bucket.RootNode
@@ -32,6 +34,7 @@ func (c UpdateBucketRootNodeCommand) Revert() ICommandError {
 
 	_, err := c.Database.Instance.Exec(request, c.oldRootNode, c.Bucket.Id)
 	if err != nil {
+		err = errors.New("error while updating bucket")
 		return NewError(http.StatusInternalServerError, err)
 	}
 	return nil
