@@ -125,7 +125,7 @@ func callback(c *gin.Context) {
 		return
 	}
 	if commandError != nil && commandError.Error() == sql.ErrNoRows {
-		user := User{
+		user = User{
 			Username:       githubUser.Login,
 			Name:           githubUser.Name,
 			ProfilePicture: githubUser.AvatarUrl,
