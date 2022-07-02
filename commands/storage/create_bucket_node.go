@@ -22,15 +22,15 @@ func (c CreateBucketNodeCommand) Run() ICommandError {
 	c.Node.Uuid = uuid.NewString()
 
 	request := `
-		INSERT INTO buckets_nodes(uuid, filename, filetype, bucket_id)
+		INSERT INTO buckets_nodes(uuid, name, type, bucket_id)
 		VALUES (?, ?, ?, ?)
 	`
 
 	c.Node.BucketId = c.Bucket.Id
 	_, err := c.Database.Instance.Exec(request,
 		c.Node.Uuid,
-		c.Node.Filename,
-		c.Node.Filetype,
+		c.Node.Name,
+		c.Node.Type,
 		c.Node.BucketId)
 
 	if err != nil {
@@ -68,7 +68,7 @@ func (c CreateBucketNodeInFileSystemCommand) Run() ICommandError {
 		c.Path += "/"
 	}
 
-	c.filePath = fmt.Sprintf("%s/buckets/%d/%s%s", os.Getenv("DATA_PATH"), c.Node.BucketId, c.Path, c.Node.Filename)
+	c.filePath = fmt.Sprintf("%s/buckets/%d/%s%s", os.Getenv("DATA_PATH"), c.Node.BucketId, c.Path, c.Node.Name)
 
 	_, err := os.Stat(c.filePath)
 	if err == nil {
@@ -76,7 +76,7 @@ func (c CreateBucketNodeInFileSystemCommand) Run() ICommandError {
 		return NewError(http.StatusInternalServerError, err)
 	}
 
-	switch c.Node.Filetype {
+	switch c.Node.Type {
 	case "directory":
 		err = os.Mkdir(c.filePath, os.ModePerm)
 	case "file":
@@ -92,7 +92,7 @@ func (c CreateBucketNodeInFileSystemCommand) Run() ICommandError {
 			}
 		}
 	default:
-		err = errors.New(fmt.Sprintf("the filetype '%s' is not supported", c.Node.Filetype))
+		err = errors.New(fmt.Sprintf("the filetype '%s' is not supported", c.Node.Type))
 	}
 
 	if err != nil {

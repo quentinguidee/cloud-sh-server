@@ -61,7 +61,7 @@ func getNodes(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"files": nodes,
+		"nodes": nodes,
 	})
 }
 
@@ -99,8 +99,8 @@ func createNode(c *gin.Context) {
 	)
 
 	node := Node{
-		Filename: params.Name,
-		Filetype: params.Type,
+		Name: params.Name,
+		Type: params.Type,
 	}
 
 	transactionError := NewTransaction([]Command{
@@ -181,7 +181,7 @@ func deleteNodes(c *gin.Context) {
 func renameNode(c *gin.Context) {
 	db := database.GetDatabaseFromContext(c)
 	path := c.Query("path")
-	newFilename := c.Query("new_filename")
+	newFilename := c.Query("new_name")
 
 	user, err := utils.GetUserFromContext(c)
 	if err != nil {
@@ -297,8 +297,8 @@ func uploadNode(c *gin.Context) {
 	)
 
 	node := Node{
-		Filename: params.Name,
-		Filetype: params.Type,
+		Name: params.Name,
+		Type: params.Type,
 	}
 
 	transactionError := NewTransaction([]Command{

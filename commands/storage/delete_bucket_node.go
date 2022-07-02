@@ -34,9 +34,9 @@ func (c DeleteBucketNodeRecursivelyCommand) Run() ICommandError {
 	for _, node := range nodes {
 		var err ICommandError
 
-		path := filepath.Join(c.Path, node.Filename)
+		path := filepath.Join(c.Path, node.Name)
 
-		switch node.Filetype {
+		switch node.Type {
 		case "directory":
 			err = DeleteBucketNodeRecursivelyCommand{
 				Node:     &node,

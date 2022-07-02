@@ -30,14 +30,14 @@ func (c GetBucketNodeCommand) Run() ICommandError {
 		err := GetNodeInDirectory{
 			Database:     c.Database,
 			FromNodeUuid: c.ReturnedNode.Uuid,
-			Filename:     filename,
+			Name:         filename,
 			ReturnedNode: c.ReturnedNode,
 		}.Run()
 
 		if err != nil {
 			return NewError(err.Code(), err.Error())
 		}
-		if c.ReturnedNode.Filetype != "directory" {
+		if c.ReturnedNode.Type != "directory" {
 			return nil
 		}
 	}
@@ -88,23 +88,23 @@ func (c GetNodesCommand) Revert() ICommandError {
 type GetNodeInDirectory struct {
 	Database     Database
 	FromNodeUuid string
-	Filename     string
+	Name         string
 	ReturnedNode *Node
 }
 
 func (c GetNodeInDirectory) Run() ICommandError {
 	request := `
-		SELECT nodes.uuid, nodes.filename, nodes.filetype, nodes.bucket_id
+		SELECT nodes.uuid, nodes.name, nodes.type, nodes.bucket_id
 		FROM buckets_nodes nodes, buckets_nodes_associations associations
 		WHERE associations.from_node = ?
 		  AND associations.to_node = nodes.uuid
-		  AND nodes.filename = ?
+		  AND nodes.name = ?
 	`
 
-	err := c.Database.Instance.QueryRow(request, c.FromNodeUuid, c.Filename).Scan(
+	err := c.Database.Instance.QueryRow(request, c.FromNodeUuid, c.Name).Scan(
 		&c.ReturnedNode.Uuid,
-		&c.ReturnedNode.Filename,
-		&c.ReturnedNode.Filetype,
+		&c.ReturnedNode.Name,
+		&c.ReturnedNode.Type,
 		&c.ReturnedNode.BucketId)
 
 	if err != nil {
@@ -125,7 +125,7 @@ type GetNodesInDirectoryCommand struct {
 
 func (c GetNodesInDirectoryCommand) Run() ICommandError {
 	request := `
-		SELECT nodes.uuid, nodes.filename, nodes.filetype, nodes.bucket_id
+		SELECT nodes.uuid, nodes.name, nodes.type, nodes.bucket_id
 		FROM buckets_nodes nodes, buckets_nodes_associations associations
 		WHERE associations.from_node = ?
           AND associations.to_node = nodes.uuid
@@ -140,8 +140,8 @@ func (c GetNodesInDirectoryCommand) Run() ICommandError {
 		var node Node
 		err := rows.Scan(
 			&node.Uuid,
-			&node.Filename,
-			&node.Filetype,
+			&node.Name,
+			&node.Type,
 			&node.BucketId)
 
 		if err != nil {

@@ -25,8 +25,8 @@ func (db *Database) CreateBucketsTable() {
 	_, _ = db.Instance.Exec(`
 		CREATE TABLE IF NOT EXISTS buckets_nodes (
 		    uuid      VARCHAR(63) UNIQUE PRIMARY KEY,
-		    filename  VARCHAR(255),
-		    filetype  VARCHAR(63),
+		    name      VARCHAR(255),
+		    type      VARCHAR(63),
 		    bucket_id INTEGER,
 		    FOREIGN KEY(bucket_id) REFERENCES buckets(id)
 		)

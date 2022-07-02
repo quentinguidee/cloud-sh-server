@@ -18,8 +18,8 @@ type CreateBucketTransaction struct {
 
 func (c CreateBucketTransaction) Try() ICommandError {
 	node := Node{
-		Filename: "root",
-		Filetype: "directory",
+		Name: "root",
+		Type: "directory",
 	}
 
 	commands := []Command{

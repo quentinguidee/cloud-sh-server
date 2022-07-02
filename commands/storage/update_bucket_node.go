@@ -19,7 +19,7 @@ type UpdateBucketNodeFilenameCommand struct {
 }
 
 func (c UpdateBucketNodeFilenameCommand) Run() ICommandError {
-	request := "UPDATE buckets_nodes SET filename = ? WHERE uuid = ?"
+	request := "UPDATE buckets_nodes SET name = ? WHERE uuid = ?"
 
 	res, err := c.Database.Instance.Exec(request, c.NewFilename, c.Node.Uuid)
 	if err != nil {
@@ -33,8 +33,8 @@ func (c UpdateBucketNodeFilenameCommand) Run() ICommandError {
 		return NewError(http.StatusNotFound, err)
 	}
 
-	c.oldFilename = c.Node.Filename
-	c.Node.Filename = c.NewFilename
+	c.oldFilename = c.Node.Name
+	c.Node.Name = c.NewFilename
 
 	return nil
 }
