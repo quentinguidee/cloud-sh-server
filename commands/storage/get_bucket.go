@@ -27,7 +27,7 @@ func (c GetUserBucketCommand) Run() ICommandError {
 	err := c.Database.Instance.QueryRow(request, c.User.Id).Scan(
 		&c.ReturnedBucket.Id,
 		&c.ReturnedBucket.Name,
-		&c.ReturnedBucket.RootNode,
+		&c.ReturnedBucket.RootNodeUuid,
 		&c.ReturnedBucket.Type)
 
 	if err != nil {

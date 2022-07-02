@@ -22,7 +22,7 @@ func (c DeleteBucketNodeRecursivelyCommand) Run() ICommandError {
 	var nodes []Node
 	err := GetNodesInDirectoryCommand{
 		Database:      c.Database,
-		FromNode:      c.Node.Id,
+		FromNodeUuid:  c.Node.Uuid,
 		ReturnedNodes: &nodes,
 	}.Run()
 
@@ -93,12 +93,12 @@ type DeleteBucketNodeCommand struct {
 func (c DeleteBucketNodeCommand) Run() ICommandError {
 	request := `
 		BEGIN TRANSACTION;
-		DELETE FROM buckets_nodes WHERE id = ?;
+		DELETE FROM buckets_nodes WHERE uuid = ?;
 		DELETE FROM buckets_nodes_associations WHERE to_node = ?;
 		COMMIT TRANSACTION;
 	`
 
-	_, err := c.Database.Instance.Exec(request, c.Node.Id, c.Node.Id)
+	_, err := c.Database.Instance.Exec(request, c.Node.Uuid, c.Node.Uuid)
 	if err != nil {
 		err = errors.New("error while deleting node")
 		return NewError(http.StatusInternalServerError, err)

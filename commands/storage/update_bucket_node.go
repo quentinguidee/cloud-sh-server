@@ -19,9 +19,9 @@ type UpdateBucketNodeFilenameCommand struct {
 }
 
 func (c UpdateBucketNodeFilenameCommand) Run() ICommandError {
-	request := "UPDATE buckets_nodes SET filename = ? WHERE id = ?"
+	request := "UPDATE buckets_nodes SET filename = ? WHERE uuid = ?"
 
-	res, err := c.Database.Instance.Exec(request, c.NewFilename, c.Node.Id)
+	res, err := c.Database.Instance.Exec(request, c.NewFilename, c.Node.Uuid)
 	if err != nil {
 		err = errors.New("failed to update the node")
 		return NewError(http.StatusInternalServerError, err)

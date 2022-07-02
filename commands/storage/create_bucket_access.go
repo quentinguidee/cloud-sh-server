@@ -43,7 +43,7 @@ func (c CreateBucketAccess) Run() ICommandError {
 }
 
 func (c CreateBucketAccess) Revert() ICommandError {
-	request := "DELETE FROM buckets_nodes WHERE id = ?"
+	request := "DELETE FROM buckets_access WHERE id = ?"
 
 	_, err := c.Database.Instance.Exec(request, c.BucketAccess.Id)
 	if err != nil {

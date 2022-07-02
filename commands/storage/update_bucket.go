@@ -13,19 +13,19 @@ type UpdateBucketRootNodeCommand struct {
 	Database Database
 	Node     *Node
 
-	oldRootNode int
+	oldRootNode string
 }
 
 func (c UpdateBucketRootNodeCommand) Run() ICommandError {
 	request := "UPDATE buckets SET root_node = ? WHERE id = ?"
 
-	_, err := c.Database.Instance.Exec(request, c.Node.Id, c.Bucket.Id)
+	_, err := c.Database.Instance.Exec(request, c.Node.Uuid, c.Bucket.Id)
 	if err != nil {
 		err = errors.New("error while updating bucket")
 		return NewError(http.StatusInternalServerError, err)
 	}
-	c.oldRootNode = c.Bucket.RootNode
-	c.Bucket.RootNode = c.Node.Id
+	c.oldRootNode = c.Bucket.RootNodeUuid
+	c.Bucket.RootNodeUuid = c.Node.Uuid
 	return nil
 }
 

@@ -16,7 +16,7 @@ type GetBucketNodeCommand struct {
 }
 
 func (c GetBucketNodeCommand) Run() ICommandError {
-	c.ReturnedNode.Id = c.Bucket.RootNode
+	c.ReturnedNode.Uuid = c.Bucket.RootNodeUuid
 
 	if len(c.Path) > 0 && c.Path[0] == '/' {
 		c.Path = c.Path[1:]
@@ -29,7 +29,7 @@ func (c GetBucketNodeCommand) Run() ICommandError {
 	for _, filename := range strings.Split(c.Path, "/") {
 		err := GetNodeInDirectory{
 			Database:     c.Database,
-			FromNode:     c.ReturnedNode.Id,
+			FromNodeUuid: c.ReturnedNode.Uuid,
 			Filename:     filename,
 			ReturnedNode: c.ReturnedNode,
 		}.Run()
@@ -71,7 +71,7 @@ func (c GetNodesCommand) Run() ICommandError {
 
 	commandError := GetNodesInDirectoryCommand{
 		Database:      c.Database,
-		FromNode:      node.Id,
+		FromNodeUuid:  node.Uuid,
 		ReturnedNodes: c.ReturnedNodes,
 	}.Run()
 
@@ -87,22 +87,22 @@ func (c GetNodesCommand) Revert() ICommandError {
 
 type GetNodeInDirectory struct {
 	Database     Database
-	FromNode     int
+	FromNodeUuid string
 	Filename     string
 	ReturnedNode *Node
 }
 
 func (c GetNodeInDirectory) Run() ICommandError {
 	request := `
-		SELECT nodes.id, nodes.filename, nodes.filetype, nodes.bucket_id
+		SELECT nodes.uuid, nodes.filename, nodes.filetype, nodes.bucket_id
 		FROM buckets_nodes nodes, buckets_nodes_associations associations
 		WHERE associations.from_node = ?
-		  AND associations.to_node = nodes.id
+		  AND associations.to_node = nodes.uuid
 		  AND nodes.filename = ?
 	`
 
-	err := c.Database.Instance.QueryRow(request, c.FromNode, c.Filename).Scan(
-		&c.ReturnedNode.Id,
+	err := c.Database.Instance.QueryRow(request, c.FromNodeUuid, c.Filename).Scan(
+		&c.ReturnedNode.Uuid,
 		&c.ReturnedNode.Filename,
 		&c.ReturnedNode.Filetype,
 		&c.ReturnedNode.BucketId)
@@ -110,7 +110,6 @@ func (c GetNodeInDirectory) Run() ICommandError {
 	if err != nil {
 		return NewError(http.StatusInternalServerError, err)
 	}
-
 	return nil
 }
 
@@ -120,19 +119,19 @@ func (c GetNodeInDirectory) Revert() ICommandError {
 
 type GetNodesInDirectoryCommand struct {
 	Database      Database
-	FromNode      int
+	FromNodeUuid  string
 	ReturnedNodes *[]Node
 }
 
 func (c GetNodesInDirectoryCommand) Run() ICommandError {
 	request := `
-		SELECT nodes.id, nodes.filename, nodes.filetype, nodes.bucket_id
+		SELECT nodes.uuid, nodes.filename, nodes.filetype, nodes.bucket_id
 		FROM buckets_nodes nodes, buckets_nodes_associations associations
 		WHERE associations.from_node = ?
-          AND associations.to_node = nodes.id
+          AND associations.to_node = nodes.uuid
 	`
 
-	rows, err := c.Database.Instance.Query(request, c.FromNode)
+	rows, err := c.Database.Instance.Query(request, c.FromNodeUuid)
 	if err != nil {
 		return NewError(http.StatusInternalServerError, err)
 	}
@@ -140,7 +139,7 @@ func (c GetNodesInDirectoryCommand) Run() ICommandError {
 	for rows.Next() {
 		var node Node
 		err := rows.Scan(
-			&node.Id,
+			&node.Uuid,
 			&node.Filename,
 			&node.Filetype,
 			&node.BucketId)
@@ -148,10 +147,8 @@ func (c GetNodesInDirectoryCommand) Run() ICommandError {
 		if err != nil {
 			return NewError(http.StatusInternalServerError, err)
 		}
-
 		*c.ReturnedNodes = append(*c.ReturnedNodes, node)
 	}
-
 	return nil
 }
 

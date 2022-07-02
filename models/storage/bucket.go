@@ -1,8 +1,8 @@
 package storage
 
 type Bucket struct {
-	Id       int
-	Name     string
-	RootNode int
-	Type     string
+	Id           int
+	Name         string
+	RootNodeUuid string
+	Type         string
 }
