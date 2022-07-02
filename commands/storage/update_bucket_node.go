@@ -10,7 +10,7 @@ import (
 	. "self-hosted-cloud/server/models/storage"
 )
 
-type UpdateBucketNodeCommand struct {
+type UpdateBucketNodeFilenameCommand struct {
 	Database    Database
 	Node        *Node
 	NewFilename string
@@ -18,7 +18,7 @@ type UpdateBucketNodeCommand struct {
 	oldFilename string
 }
 
-func (c UpdateBucketNodeCommand) Run() ICommandError {
+func (c UpdateBucketNodeFilenameCommand) Run() ICommandError {
 	request := "UPDATE buckets_nodes SET filename = ? WHERE id = ?"
 
 	res, err := c.Database.Instance.Exec(request, c.NewFilename, c.Node.Id)
@@ -39,8 +39,8 @@ func (c UpdateBucketNodeCommand) Run() ICommandError {
 	return nil
 }
 
-func (c UpdateBucketNodeCommand) Revert() ICommandError {
-	err := UpdateBucketNodeCommand{
+func (c UpdateBucketNodeFilenameCommand) Revert() ICommandError {
+	err := UpdateBucketNodeFilenameCommand{
 		Database:    c.Database,
 		Node:        c.Node,
 		NewFilename: c.oldFilename,
@@ -53,7 +53,7 @@ func (c UpdateBucketNodeCommand) Revert() ICommandError {
 	return nil
 }
 
-type UpdateBucketNodeInFileSystemCommand struct {
+type UpdateBucketNodeFilenameInFileSystemCommand struct {
 	CompletePath *string
 	NewFilename  string
 
@@ -61,7 +61,7 @@ type UpdateBucketNodeInFileSystemCommand struct {
 	newPath string
 }
 
-func (c UpdateBucketNodeInFileSystemCommand) Run() ICommandError {
+func (c UpdateBucketNodeFilenameInFileSystemCommand) Run() ICommandError {
 	c.oldPath = *c.CompletePath
 
 	c.newPath = path.Dir(c.oldPath)
@@ -75,8 +75,8 @@ func (c UpdateBucketNodeInFileSystemCommand) Run() ICommandError {
 	return nil
 }
 
-func (c UpdateBucketNodeInFileSystemCommand) Revert() ICommandError {
-	err := UpdateBucketNodeInFileSystemCommand{
+func (c UpdateBucketNodeFilenameInFileSystemCommand) Revert() ICommandError {
+	err := UpdateBucketNodeFilenameInFileSystemCommand{
 		CompletePath: &c.newPath,
 		NewFilename:  path.Base(c.oldPath),
 	}.Run()

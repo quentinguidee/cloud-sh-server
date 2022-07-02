@@ -49,8 +49,9 @@ func (c CreateBucketNodeCommand) Revert() ICommandError {
 }
 
 type CreateBucketNodeInFileSystemCommand struct {
-	Node *Node
-	Path string
+	Node    *Node
+	Path    string
+	Content string
 
 	filePath string
 }
@@ -76,9 +77,19 @@ func (c CreateBucketNodeInFileSystemCommand) Run() ICommandError {
 	case "directory":
 		err = os.Mkdir(c.filePath, os.ModePerm)
 	case "file":
-		_, err = os.Create(c.filePath)
+		var file *os.File
+		file, err = os.Create(c.filePath)
+		defer func(file *os.File) {
+			_ = file.Close()
+		}(file)
+		if len(c.Content) > 0 {
+			_, err := file.WriteString(c.Content)
+			if err != nil {
+				return NewError(http.StatusInternalServerError, err)
+			}
+		}
 	default:
-		err = errors.New("this filetype is not supported")
+		err = errors.New(fmt.Sprintf("the filetype '%s' is not supported", c.Node.Filetype))
 	}
 
 	if err != nil {

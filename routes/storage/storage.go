@@ -21,6 +21,7 @@ func LoadRoutes(router *gin.Engine) {
 		group.DELETE("", deleteNodes)
 		group.PATCH("", renameNode)
 		group.GET("/download", downloadNodes)
+		group.PUT("/upload", uploadNode)
 	}
 }
 
@@ -212,12 +213,12 @@ func renameNode(c *gin.Context) {
 			Bucket:       &bucket,
 			CompletePath: &completePath,
 		},
-		commands.UpdateBucketNodeCommand{
+		commands.UpdateBucketNodeFilenameCommand{
 			Database:    db,
 			Node:        &node,
 			NewFilename: newFilename,
 		},
-		commands.UpdateBucketNodeInFileSystemCommand{
+		commands.UpdateBucketNodeFilenameInFileSystemCommand{
 			CompletePath: &completePath,
 			NewFilename:  newFilename,
 		},
@@ -265,4 +266,72 @@ func downloadNodes(c *gin.Context) {
 
 	println(completePath)
 	c.File(completePath)
+}
+
+type UploadFileParams struct {
+	Type    string `json:"type,omitempty"`
+	Name    string `json:"name,omitempty"`
+	Content string `json:"content,omitempty"`
+}
+
+func uploadNode(c *gin.Context) {
+	db := database.GetDatabaseFromContext(c)
+	path := c.Query("path")
+
+	var params UploadFileParams
+	err := c.BindJSON(&params)
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	user, err := utils.GetUserFromContext(c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	var (
+		bucket    Bucket
+		directory Node
+	)
+
+	node := Node{
+		Filename: params.Name,
+		Filetype: params.Type,
+	}
+
+	transactionError := NewTransaction([]Command{
+		commands.GetUserBucketCommand{
+			Database:       db,
+			User:           &user,
+			ReturnedBucket: &bucket,
+		},
+		commands.GetBucketNodeCommand{
+			Database:     db,
+			Path:         path,
+			Bucket:       &bucket,
+			ReturnedNode: &directory,
+		},
+		commands.CreateBucketNodeCommand{
+			Node:     &node,
+			Bucket:   &bucket,
+			Database: db,
+		},
+		commands.CreateBucketNodeAssociationCommand{
+			FromNode: &directory,
+			ToNode:   &node,
+			Database: db,
+		},
+		commands.CreateBucketNodeInFileSystemCommand{
+			Node:    &node,
+			Path:    path,
+			Content: params.Content,
+		},
+	}).Try()
+
+	if transactionError != nil {
+		c.AbortWithError(transactionError.Code(), transactionError.Error())
+		return
+	}
 }
