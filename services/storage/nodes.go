@@ -224,6 +224,10 @@ func RenameBucketNodeInFileSystem(path string, name string) IServiceError {
 	directoryPath := filepath.Dir(path)
 	newPath := filepath.Join(directoryPath, name)
 
+	if path == newPath {
+		return nil
+	}
+
 	err := os.Rename(path, newPath)
 	if err != nil {
 		err = errors.New(fmt.Sprintf("failed to rename this file from %s to %s", path, newPath))
