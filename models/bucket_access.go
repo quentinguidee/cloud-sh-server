@@ -1,4 +1,4 @@
-package storage
+package models
 
 type BucketAccess struct {
 	Id         int
@@ -6,3 +6,12 @@ type BucketAccess struct {
 	UserId     int
 	AccessType string
 }
+
+type AccessType int
+
+const (
+	Denied = iota
+	ReadOnly
+	Write
+	Full
+)

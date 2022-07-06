@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	. "self-hosted-cloud/server/models/storage"
+	. "self-hosted-cloud/server/models"
 	. "self-hosted-cloud/server/services"
 	"strconv"
 )

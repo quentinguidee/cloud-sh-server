@@ -1,4 +1,4 @@
-package storage
+package models
 
 type Node struct {
 	Uuid     string `json:"uuid,omitempty"`

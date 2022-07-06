@@ -1,4 +1,4 @@
-package storage
+package models
 
 type Bucket struct {
 	Id           int

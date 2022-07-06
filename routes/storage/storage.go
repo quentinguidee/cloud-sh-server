@@ -3,6 +3,7 @@ package storage
 import (
 	"errors"
 	"net/http"
+	"self-hosted-cloud/server/models"
 	"self-hosted-cloud/server/services/storage"
 	"self-hosted-cloud/server/utils"
 	"strings"
@@ -28,6 +29,30 @@ func getNodes(c *gin.Context) {
 
 	tx := utils.NewTransaction(c)
 	defer tx.Rollback()
+
+	user, err := utils.GetUserFromContext(c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	directory, serviceError := storage.GetBucketNode(tx, parentUuid)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	accessType, serviceError := storage.GetBucketUserAccessType(tx, directory.BucketId, user.Id)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	if accessType < models.ReadOnly {
+		err := errors.New("cannot access this bucket: insufficient permissions")
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
 
 	nodes, serviceError := storage.GetBucketNodes(tx, parentUuid)
 	if serviceError != nil {
@@ -77,6 +102,18 @@ func createNode(c *gin.Context) {
 		return
 	}
 
+	accessType, serviceError := storage.GetBucketUserAccessType(tx, bucket.Id, user.Id)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	if accessType < models.Write {
+		err := errors.New("cannot write in this bucket: insufficient permissions")
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
+
 	node, serviceError := storage.CreateBucketNode(tx, params.Name, params.Type, bucket.Id)
 	if serviceError != nil {
 		c.AbortWithError(serviceError.Code(), serviceError.Error())
@@ -119,6 +156,18 @@ func deleteNodes(c *gin.Context) {
 	bucket, serviceError := storage.GetUserBucket(tx, user.Id)
 	if serviceError != nil {
 		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	accessType, serviceError := storage.GetBucketUserAccessType(tx, bucket.Id, user.Id)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	if accessType < models.Write {
+		err := errors.New("cannot delete elements in this bucket: insufficient permissions")
+		c.AbortWithError(http.StatusUnauthorized, err)
 		return
 	}
 
@@ -165,6 +214,18 @@ func renameNode(c *gin.Context) {
 	bucket, serviceError := storage.GetUserBucket(tx, user.Id)
 	if serviceError != nil {
 		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	accessType, serviceError := storage.GetBucketUserAccessType(tx, bucket.Id, user.Id)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	if accessType < models.Write {
+		err := errors.New("cannot rename elements in this bucket: insufficient permissions")
+		c.AbortWithError(http.StatusUnauthorized, err)
 		return
 	}
 
@@ -235,6 +296,18 @@ func downloadNodes(c *gin.Context) {
 		return
 	}
 
+	accessType, serviceError := storage.GetBucketUserAccessType(tx, bucket.Id, user.Id)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	if accessType < models.ReadOnly {
+		err := errors.New("cannot download elements from this bucket: insufficient permissions")
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
+
 	node, serviceError := storage.GetBucketNode(tx, uuid)
 	if serviceError != nil {
 		c.AbortWithError(serviceError.Code(), serviceError.Error())
@@ -280,6 +353,18 @@ func uploadNode(c *gin.Context) {
 	bucket, serviceError := storage.GetUserBucket(tx, user.Id)
 	if serviceError != nil {
 		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	accessType, serviceError := storage.GetBucketUserAccessType(tx, bucket.Id, user.Id)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	if accessType < models.Write {
+		err := errors.New("cannot upload elements in this bucket: insufficient permissions")
+		c.AbortWithError(http.StatusUnauthorized, err)
 		return
 	}
 
