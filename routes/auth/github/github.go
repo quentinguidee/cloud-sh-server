@@ -5,15 +5,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"os"
-	. "self-hosted-cloud/server/commands"
-	"self-hosted-cloud/server/commands/auth"
-	"self-hosted-cloud/server/commands/storage"
-	"self-hosted-cloud/server/database"
 	. "self-hosted-cloud/server/models"
-	"self-hosted-cloud/server/models/storage"
+	"self-hosted-cloud/server/services/auth"
+	"self-hosted-cloud/server/services/storage"
+	. "self-hosted-cloud/server/utils"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
@@ -109,73 +106,44 @@ func callback(c *gin.Context) {
 		return
 	}
 
-	db := database.GetDatabaseFromContext(c)
+	tx := NewTransaction(c)
+	defer tx.Rollback()
 
 	// Create account if it doesn't exist
-	var user User
-	commandError := auth.GetUserFromGithubCommand{
-		Database:       db,
-		GithubUsername: githubUser.Login,
-		ReturnedUser:   &user,
-	}.Run()
-
-	if commandError != nil && commandError.Error() != sql.ErrNoRows {
-		err = errors.New("failed to retrieve the user")
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-	if commandError != nil && commandError.Error() == sql.ErrNoRows {
-		user = User{
-			Username:       githubUser.Login,
-			Name:           githubUser.Name,
-			ProfilePicture: githubUser.AvatarUrl,
-		}
-
-		err := NewTransaction([]Command{
-			auth.CreateUserCommand{
-				User:     &user,
-				Database: db,
-			},
-			auth.CreateGithubUserCommand{
-				User:           &user,
-				Database:       db,
-				GithubUsername: githubUser.Login,
-			},
-		}).Try()
-
-		if err != nil {
-			c.AbortWithError(err.Code(), err.Error())
+	user, serviceError := auth.GetGithubUser(tx, githubUser.Login)
+	if serviceError != nil {
+		if serviceError.Error() != sql.ErrNoRows {
+			c.AbortWithError(serviceError.Code(), serviceError.Error())
 			return
 		}
 
-		bucket := storage.Bucket{
-			Name: fmt.Sprintf("Main bucket"),
-			Type: "user_bucket",
+		user, serviceError = auth.CreateUser(tx, githubUser.Login, githubUser.Name, githubUser.AvatarUrl)
+		if serviceError != nil {
+			c.AbortWithError(serviceError.Code(), serviceError.Error())
+			return
 		}
 
-		err = commands.CreateBucketTransaction{
-			Bucket:   &bucket,
-			Database: db,
-			UserId:   user.Id,
-		}.Try()
+		serviceError = auth.CreateGithubUser(tx, user.Id, user.Username)
+		if serviceError != nil {
+			c.AbortWithError(serviceError.Code(), serviceError.Error())
+			return
+		}
 
-		if err != nil {
-			c.AbortWithError(err.Code(), err.Error())
+		serviceError = storage.SetupDefaultBucket(tx, user.Id)
+		if serviceError != nil {
+			c.AbortWithError(serviceError.Code(), serviceError.Error())
 			return
 		}
 	}
 
 	// Open session
-	var session Session
-	commandError = auth.CreateSessionCommand{
-		Database:        db,
-		UserId:          user.Id,
-		ReturnedSession: &session,
-	}.Run()
+	session, serviceError := auth.CreateSession(tx, user.Id)
 	if err != nil {
-		c.AbortWithError(commandError.Code(), commandError.Error())
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
 		return
 	}
+
+	ExecTransaction(c, tx)
 
 	// OK
 	c.JSON(http.StatusOK, gin.H{

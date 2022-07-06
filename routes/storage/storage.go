@@ -3,10 +3,7 @@ package storage
 import (
 	"errors"
 	"net/http"
-	. "self-hosted-cloud/server/commands"
-	commands "self-hosted-cloud/server/commands/storage"
-	"self-hosted-cloud/server/database"
-	. "self-hosted-cloud/server/models/storage"
+	"self-hosted-cloud/server/services/storage"
 	"self-hosted-cloud/server/utils"
 	"strings"
 
@@ -20,45 +17,25 @@ func LoadRoutes(router *gin.Engine) {
 		group.PUT("", createNode)
 		group.DELETE("", deleteNodes)
 		group.PATCH("", renameNode)
+		group.GET("/bucket", getBucket)
 		group.GET("/download", downloadNodes)
 		group.PUT("/upload", uploadNode)
 	}
 }
 
 func getNodes(c *gin.Context) {
-	db := database.GetDatabaseFromContext(c)
+	parentUuid := c.Query("parent_uuid")
 
-	path := c.Query("path")
+	tx := utils.NewTransaction(c)
+	defer tx.Rollback()
 
-	user, err := utils.GetUserFromContext(c)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+	nodes, serviceError := storage.GetBucketNodes(tx, parentUuid)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
 		return
 	}
 
-	var (
-		bucket Bucket
-		nodes  []Node
-	)
-
-	transactionError := NewTransaction([]Command{
-		commands.GetUserBucketCommand{
-			Database:       db,
-			User:           &user,
-			ReturnedBucket: &bucket,
-		},
-		commands.GetNodesCommand{
-			Database:      db,
-			Path:          path,
-			Bucket:        &bucket,
-			ReturnedNodes: &nodes,
-		},
-	}).Try()
-
-	if transactionError != nil {
-		c.AbortWithError(transactionError.Code(), transactionError.Error())
-		return
-	}
+	utils.ExecTransaction(c, tx)
 
 	c.JSON(http.StatusOK, gin.H{
 		"nodes": nodes,
@@ -71,8 +48,6 @@ type CreateFilesParams struct {
 }
 
 func createNode(c *gin.Context) {
-	db := database.GetDatabaseFromContext(c)
-
 	var params CreateFilesParams
 	err := c.BindJSON(&params)
 	if err != nil {
@@ -86,61 +61,51 @@ func createNode(c *gin.Context) {
 		return
 	}
 
-	path := c.Query("path")
+	parentUuid := c.Query("parent_uuid")
 	user, err := utils.GetUserFromContext(c)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	var (
-		bucket    Bucket
-		directory Node
-	)
+	tx := utils.NewTransaction(c)
+	defer tx.Rollback()
 
-	node := Node{
-		Name: params.Name,
-		Type: params.Type,
-	}
-
-	transactionError := NewTransaction([]Command{
-		commands.GetUserBucketCommand{
-			Database:       db,
-			User:           &user,
-			ReturnedBucket: &bucket,
-		},
-		commands.GetBucketNodeCommand{
-			Database:     db,
-			Path:         path,
-			Bucket:       &bucket,
-			ReturnedNode: &directory,
-		},
-		commands.CreateBucketNodeCommand{
-			Node:     &node,
-			Bucket:   &bucket,
-			Database: db,
-		},
-		commands.CreateBucketNodeAssociationCommand{
-			FromNode: &directory,
-			ToNode:   &node,
-			Database: db,
-		},
-		commands.CreateBucketNodeInFileSystemCommand{
-			Node: &node,
-			Path: path,
-		},
-	}).Try()
-
-	if transactionError != nil {
-		c.AbortWithError(transactionError.Code(), transactionError.Error())
+	bucket, serviceError := storage.GetUserBucket(tx, user.Id)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
 		return
 	}
+
+	node, serviceError := storage.CreateBucketNode(tx, params.Name, params.Type, bucket.Id)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	serviceError = storage.CreateBucketNodeAssociation(tx, parentUuid, node.Uuid)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	path, serviceError := storage.GetBucketNodePath(tx, node, bucket.Id, bucket.RootNodeUuid)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	serviceError = storage.CreateBucketNodeInFileSystem(node.Type, path, "")
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	utils.ExecTransaction(c, tx)
 }
 
 func deleteNodes(c *gin.Context) {
-	db := database.GetDatabaseFromContext(c)
-
-	path := c.Query("path")
+	uuid := c.Query("node_uuid")
 
 	user, err := utils.GetUserFromContext(c)
 	if err != nil {
@@ -148,40 +113,45 @@ func deleteNodes(c *gin.Context) {
 		return
 	}
 
-	var (
-		node   Node
-		bucket Bucket
-	)
+	tx := utils.NewTransaction(c)
+	defer tx.Rollback()
 
-	transactionError := NewTransaction([]Command{
-		commands.GetUserBucketCommand{
-			Database:       db,
-			User:           &user,
-			ReturnedBucket: &bucket,
-		},
-		commands.GetBucketNodeCommand{
-			Database:     db,
-			Path:         path,
-			Bucket:       &bucket,
-			ReturnedNode: &node,
-		},
-		commands.DeleteBucketNodeRecursivelyCommand{
-			Node:     &node,
-			Path:     path,
-			Database: db,
-		},
-	}).Try()
-
-	if transactionError != nil {
-		c.AbortWithError(transactionError.Code(), transactionError.Error())
+	bucket, serviceError := storage.GetUserBucket(tx, user.Id)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
 		return
 	}
+
+	node, serviceError := storage.GetBucketNode(tx, uuid)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	path, serviceError := storage.GetBucketNodePath(tx, node, bucket.Id, bucket.RootNodeUuid)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	serviceError = storage.DeleteBucketNodeRecursively(tx, &node)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	serviceError = storage.DeleteBucketNodeInFileSystem(path)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	utils.ExecTransaction(c, tx)
 }
 
 func renameNode(c *gin.Context) {
-	db := database.GetDatabaseFromContext(c)
-	path := c.Query("path")
-	newFilename := c.Query("new_name")
+	uuid := c.Query("node_uuid")
+	newName := c.Query("new_name")
 
 	user, err := utils.GetUserFromContext(c)
 	if err != nil {
@@ -189,50 +159,66 @@ func renameNode(c *gin.Context) {
 		return
 	}
 
-	var (
-		bucket       Bucket
-		completePath string
-		node         Node
-	)
+	tx := utils.NewTransaction(c)
+	defer tx.Rollback()
 
-	transactionError := NewTransaction([]Command{
-		commands.GetUserBucketCommand{
-			Database:       db,
-			User:           &user,
-			ReturnedBucket: &bucket,
-		},
-		commands.GetBucketNodeCommand{
-			Database:     db,
-			Path:         path,
-			Bucket:       &bucket,
-			ReturnedNode: &node,
-		},
-		commands.GetBucketNodePathCommand{
-			Database:     db,
-			Path:         path,
-			Bucket:       &bucket,
-			CompletePath: &completePath,
-		},
-		commands.UpdateBucketNodeFilenameCommand{
-			Database:    db,
-			Node:        &node,
-			NewFilename: newFilename,
-		},
-		commands.UpdateBucketNodeFilenameInFileSystemCommand{
-			CompletePath: &completePath,
-			NewFilename:  newFilename,
-		},
-	}).Try()
-
-	if transactionError != nil {
-		c.AbortWithError(transactionError.Code(), transactionError.Error())
+	bucket, serviceError := storage.GetUserBucket(tx, user.Id)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
 		return
 	}
+
+	node, serviceError := storage.GetBucketNode(tx, uuid)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	path, serviceError := storage.GetBucketNodePath(tx, node, bucket.Id, bucket.RootNodeUuid)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	serviceError = storage.RenameBucketNode(tx, newName, uuid)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	serviceError = storage.RenameBucketNodeInFileSystem(path, newName)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	utils.ExecTransaction(c, tx)
+}
+
+func getBucket(c *gin.Context) {
+	user, err := utils.GetUserFromContext(c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	tx := utils.NewTransaction(c)
+	defer tx.Rollback()
+
+	bucket, serviceError := storage.GetUserBucket(tx, user.Id)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"id":        bucket.Id,
+		"root_node": bucket.RootNodeUuid,
+	})
 }
 
 func downloadNodes(c *gin.Context) {
-	db := database.GetDatabaseFromContext(c)
-	path := c.Query("path")
+	uuid := c.Query("node_uuid")
 
 	user, err := utils.GetUserFromContext(c)
 	if err != nil {
@@ -240,32 +226,30 @@ func downloadNodes(c *gin.Context) {
 		return
 	}
 
-	var (
-		bucket       Bucket
-		completePath string
-	)
+	tx := utils.NewTransaction(c)
+	defer tx.Rollback()
 
-	transactionError := NewTransaction([]Command{
-		commands.GetUserBucketCommand{
-			Database:       db,
-			User:           &user,
-			ReturnedBucket: &bucket,
-		},
-		commands.GetBucketNodePathCommand{
-			Database:     db,
-			Path:         path,
-			Bucket:       &bucket,
-			CompletePath: &completePath,
-		},
-	}).Try()
-
-	if transactionError != nil {
-		c.AbortWithError(transactionError.Code(), transactionError.Error())
+	bucket, serviceError := storage.GetUserBucket(tx, user.Id)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
 		return
 	}
 
-	println(completePath)
-	c.File(completePath)
+	node, serviceError := storage.GetBucketNode(tx, uuid)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	path, serviceError := storage.GetBucketNodePath(tx, node, bucket.Id, bucket.RootNodeUuid)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	utils.ExecTransaction(c, tx)
+
+	c.File(path)
 }
 
 type UploadFileParams struct {
@@ -275,8 +259,7 @@ type UploadFileParams struct {
 }
 
 func uploadNode(c *gin.Context) {
-	db := database.GetDatabaseFromContext(c)
-	path := c.Query("path")
+	parentUuid := c.Query("parent_uuid")
 
 	var params UploadFileParams
 	err := c.BindJSON(&params)
@@ -291,47 +274,38 @@ func uploadNode(c *gin.Context) {
 		return
 	}
 
-	var (
-		bucket    Bucket
-		directory Node
-	)
+	tx := utils.NewTransaction(c)
+	defer tx.Rollback()
 
-	node := Node{
-		Name: params.Name,
-		Type: params.Type,
-	}
-
-	transactionError := NewTransaction([]Command{
-		commands.GetUserBucketCommand{
-			Database:       db,
-			User:           &user,
-			ReturnedBucket: &bucket,
-		},
-		commands.GetBucketNodeCommand{
-			Database:     db,
-			Path:         path,
-			Bucket:       &bucket,
-			ReturnedNode: &directory,
-		},
-		commands.CreateBucketNodeCommand{
-			Node:     &node,
-			Bucket:   &bucket,
-			Database: db,
-		},
-		commands.CreateBucketNodeAssociationCommand{
-			FromNode: &directory,
-			ToNode:   &node,
-			Database: db,
-		},
-		commands.CreateBucketNodeInFileSystemCommand{
-			Node:    &node,
-			Path:    path,
-			Content: params.Content,
-		},
-	}).Try()
-
-	if transactionError != nil {
-		c.AbortWithError(transactionError.Code(), transactionError.Error())
+	bucket, serviceError := storage.GetUserBucket(tx, user.Id)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
 		return
 	}
+
+	node, serviceError := storage.CreateBucketNode(tx, params.Name, params.Type, bucket.Id)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	serviceError = storage.CreateBucketNodeAssociation(tx, parentUuid, node.Uuid)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	path, serviceError := storage.GetBucketNodePath(tx, node, bucket.Id, bucket.RootNodeUuid)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	serviceError = storage.CreateBucketNodeInFileSystem(node.Type, path, params.Content)
+	if serviceError != nil {
+		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		return
+	}
+
+	utils.ExecTransaction(c, tx)
 }

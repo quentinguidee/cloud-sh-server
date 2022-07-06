@@ -19,9 +19,11 @@ func TestGetUser(testing *testing.T) {
 	rows := sqlmock.NewRows([]string{"id", "username", "name", "profile_picture"}).
 		AddRow(2, "username", "Name", "https://google.com/")
 
+	mock.ExpectBegin()
 	mock.ExpectQuery("^SELECT (.+) FROM users WHERE username = \\?$").
 		WithArgs("username").
 		WillReturnRows(rows)
+	mock.ExpectCommit()
 
 	router := gin.New()
 	router.Use(database.Middleware(database.New(db)))
@@ -40,9 +42,11 @@ func TestGetUser(testing *testing.T) {
 func TestGetNonExistingUser(testing *testing.T) {
 	db, mock, _ := sqlmock.New()
 
+	mock.ExpectBegin()
 	mock.ExpectQuery("^SELECT (.+) FROM users WHERE username = \\?$").
 		WithArgs("username").
 		WillReturnError(sql.ErrNoRows)
+	mock.ExpectRollback()
 
 	router := gin.New()
 	router.Use(database.Middleware(database.New(db)))
