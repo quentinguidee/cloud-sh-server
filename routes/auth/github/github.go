@@ -113,25 +113,25 @@ func callback(c *gin.Context) {
 	user, serviceError := auth.GetGithubUser(tx, githubUser.Login)
 	if serviceError != nil {
 		if serviceError.Error() != sql.ErrNoRows {
-			c.AbortWithError(serviceError.Code(), serviceError.Error())
+			serviceError.Throws(c)
 			return
 		}
 
 		user, serviceError = auth.CreateUser(tx, githubUser.Login, githubUser.Name, githubUser.AvatarUrl)
 		if serviceError != nil {
-			c.AbortWithError(serviceError.Code(), serviceError.Error())
+			serviceError.Throws(c)
 			return
 		}
 
 		serviceError = auth.CreateGithubUser(tx, user.Id, user.Username)
 		if serviceError != nil {
-			c.AbortWithError(serviceError.Code(), serviceError.Error())
+			serviceError.Throws(c)
 			return
 		}
 
 		serviceError = storage.SetupDefaultBucket(tx, user.Id)
 		if serviceError != nil {
-			c.AbortWithError(serviceError.Code(), serviceError.Error())
+			serviceError.Throws(c)
 			return
 		}
 	}
@@ -139,7 +139,7 @@ func callback(c *gin.Context) {
 	// Open session
 	session, serviceError := auth.CreateSession(tx, user.Id)
 	if err != nil {
-		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		serviceError.Throws(c)
 		return
 	}
 

@@ -24,7 +24,7 @@ func getUser(c *gin.Context) {
 
 	user, err := auth.GetUser(tx, username)
 	if err != nil {
-		c.AbortWithError(err.Code(), err.Error())
+		err.Throws(c)
 		return
 	}
 

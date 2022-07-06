@@ -1,8 +1,11 @@
 package services
 
+import "github.com/gin-gonic/gin"
+
 type IServiceError interface {
 	Code() int
 	Error() error
+	Throws(c *gin.Context)
 }
 
 type ServiceError struct {
@@ -17,10 +20,14 @@ func NewServiceError(code int, error error) ServiceError {
 	}
 }
 
-func (c ServiceError) Error() error {
-	return c.error
+func (s ServiceError) Error() error {
+	return s.error
 }
 
-func (c ServiceError) Code() int {
-	return c.code
+func (s ServiceError) Code() int {
+	return s.code
+}
+
+func (s ServiceError) Throws(c *gin.Context) {
+	c.AbortWithError(s.code, s.error)
 }

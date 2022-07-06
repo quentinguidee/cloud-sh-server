@@ -34,7 +34,7 @@ func logout(c *gin.Context) {
 
 	serviceError := services.DeleteSession(tx, &session)
 	if err != nil {
-		c.AbortWithError(serviceError.Code(), serviceError.Error())
+		serviceError.Throws(c)
 		return
 	}
 
