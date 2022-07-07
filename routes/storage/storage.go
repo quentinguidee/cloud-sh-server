@@ -20,7 +20,7 @@ func LoadRoutes(router *gin.Engine) {
 		group.PATCH("", renameNode)
 		group.GET("/bucket", getBucket)
 		group.GET("/download", downloadNodes)
-		group.PUT("/upload", uploadNode)
+		group.POST("/upload", uploadNode)
 	}
 }
 
@@ -325,17 +325,9 @@ func downloadNodes(c *gin.Context) {
 	c.File(path)
 }
 
-type UploadFileParams struct {
-	Type    string `json:"type,omitempty"`
-	Name    string `json:"name,omitempty"`
-	Content string `json:"content,omitempty"`
-}
-
 func uploadNode(c *gin.Context) {
 	parentUuid := c.Query("parent_uuid")
-
-	var params UploadFileParams
-	err := c.BindJSON(&params)
+	file, err := c.FormFile("file")
 	if err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -368,7 +360,7 @@ func uploadNode(c *gin.Context) {
 		return
 	}
 
-	node, serviceError := storage.CreateBucketNode(tx, params.Name, params.Type, bucket.Id)
+	node, serviceError := storage.CreateBucketNode(tx, file.Filename, "file", bucket.Id)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
@@ -386,9 +378,9 @@ func uploadNode(c *gin.Context) {
 		return
 	}
 
-	serviceError = storage.CreateBucketNodeInFileSystem(node.Type, path, params.Content)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	err = c.SaveUploadedFile(file, path)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
