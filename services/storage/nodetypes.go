@@ -34,6 +34,8 @@ func DetectFileType(nodeName string) string {
 		return "yarn"
 	case ".md":
 		return "markdown"
+	case ".ml", ".mli":
+		return "ocaml"
 	case ".mp3", ".wav", ".flac", ".ogg":
 		return "audio"
 	case ".mp4", ".avi", ".mkv", ".mov":
