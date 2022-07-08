@@ -48,7 +48,7 @@ func DetectFileType(nodeName string) string {
 		return "python"
 	case ".rb":
 		return "ruby"
-	case ".sass", "scss":
+	case ".sass", ".scss":
 		return "sass"
 	case ".sc":
 		return "scala"
