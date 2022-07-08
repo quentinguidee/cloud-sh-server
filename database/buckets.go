@@ -27,6 +27,7 @@ func (db *Database) CreateBucketsTable() {
 		    uuid      VARCHAR(63) UNIQUE PRIMARY KEY,
 		    name      VARCHAR(255),
 		    type      VARCHAR(63),
+			size      INTEGER,
 		    bucket_id INTEGER,
 		    FOREIGN KEY(bucket_id) REFERENCES buckets(id)
 		)
