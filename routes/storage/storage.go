@@ -114,7 +114,12 @@ func createNode(c *gin.Context) {
 		return
 	}
 
-	node, serviceError := storage.CreateBucketNode(tx, params.Name, params.Type, bucket.Id)
+	nodeType := params.Type
+	if nodeType != "directory" {
+		nodeType = storage.DetectFileType(params.Name)
+	}
+
+	node, serviceError := storage.CreateBucketNode(tx, params.Name, nodeType, bucket.Id)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
@@ -360,7 +365,9 @@ func uploadNode(c *gin.Context) {
 		return
 	}
 
-	node, serviceError := storage.CreateBucketNode(tx, file.Filename, "file", bucket.Id)
+	nodeType := storage.DetectFileType(file.Filename)
+
+	node, serviceError := storage.CreateBucketNode(tx, file.Filename, nodeType, bucket.Id)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return

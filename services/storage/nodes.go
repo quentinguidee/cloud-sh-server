@@ -128,10 +128,9 @@ func CreateBucketNodeInFileSystem(kind string, path string, content string) ISer
 		return NewServiceError(http.StatusInternalServerError, err)
 	}
 
-	switch kind {
-	case "directory":
+	if kind == "directory" {
 		err = os.Mkdir(path, os.ModePerm)
-	case "file":
+	} else {
 		var file *os.File
 		file, err = os.Create(path)
 		defer func(file *os.File) {
@@ -143,8 +142,6 @@ func CreateBucketNodeInFileSystem(kind string, path string, content string) ISer
 				return NewServiceError(http.StatusInternalServerError, err)
 			}
 		}
-	default:
-		err = errors.New(fmt.Sprintf("the filetype '%s' is not supported", kind))
 	}
 
 	if err != nil {
