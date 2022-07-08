@@ -5,6 +5,11 @@
 
 ---
 
+**DISCLAIMER**: cloud.sh is under development. We do not recommend you to use it in a production environment for now.
+The storage could be corrupted when upgrading from one version to another and the security is not guaranteed.
+
+---
+
 **cloud.sh** is a lightweight self-hosted cloud for your home lab.
 
 ## Related projects
