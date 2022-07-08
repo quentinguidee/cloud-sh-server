@@ -14,7 +14,7 @@ The storage could be corrupted when upgrading from one version to another and th
 
 ## Related projects
 
-- [Web Client](https://github.com/quentinguidee/sh-cloud-client)
+- [Web Client](https://github.com/quentinguidee/cloud-sh-client)
 
 ## License
 
