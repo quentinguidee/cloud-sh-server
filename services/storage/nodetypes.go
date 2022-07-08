@@ -18,7 +18,7 @@ func DetectFileType(nodeName string) string {
 		return "cpp"
 	case ".css":
 		return "css"
-	case ".git", ".gitignore", ".gitattributes", ".gitmodules", ".gitkeep":
+	case ".gitignore", ".gitkeep":
 		return "git"
 	case ".go":
 		return "go"
