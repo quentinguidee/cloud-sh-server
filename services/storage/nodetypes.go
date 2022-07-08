@@ -58,6 +58,5 @@ func DetectFileType(nodeName string) string {
 		return "react"
 	default:
 		return "file"
-
 	}
 }
