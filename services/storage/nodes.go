@@ -14,10 +14,10 @@ import (
 )
 
 func GetBucketNode(tx *sql.Tx, uuid string) (Node, IServiceError) {
-	request := "SELECT uuid, name, type, size, bucket_id FROM buckets_nodes WHERE uuid = ?"
+	request := "SELECT uuid, name, type, mime, size, bucket_id FROM buckets_nodes WHERE uuid = ?"
 
 	var node Node
-	err := tx.QueryRow(request, uuid).Scan(&node.Uuid, &node.Name, &node.Type, &node.Size, &node.BucketId)
+	err := tx.QueryRow(request, uuid).Scan(&node.Uuid, &node.Name, &node.Type, &node.Mime, &node.Size, &node.BucketId)
 	if err != nil {
 		return Node{}, NewServiceError(http.StatusInternalServerError, err)
 	}
@@ -26,7 +26,7 @@ func GetBucketNode(tx *sql.Tx, uuid string) (Node, IServiceError) {
 
 func GetBucketNodes(tx *sql.Tx, parentUuid string) ([]Node, IServiceError) {
 	request := `
-		SELECT uuid, name, type, size, bucket_id
+		SELECT uuid, name, type, mime, size, bucket_id
 		FROM buckets_nodes nodes, buckets_nodes_associations associations
 		WHERE associations.from_node = ?
 		  AND associations.to_node = nodes.uuid
@@ -40,7 +40,7 @@ func GetBucketNodes(tx *sql.Tx, parentUuid string) ([]Node, IServiceError) {
 	var nodes []Node
 	for rows.Next() {
 		var node Node
-		err := rows.Scan(&node.Uuid, &node.Name, &node.Type, &node.Size, &node.BucketId)
+		err := rows.Scan(&node.Uuid, &node.Name, &node.Type, &node.Mime, &node.Size, &node.BucketId)
 		if err != nil {
 			err := errors.New("failed to decode nodes")
 			return nil, NewServiceError(http.StatusInternalServerError, err)
@@ -53,14 +53,14 @@ func GetBucketNodes(tx *sql.Tx, parentUuid string) ([]Node, IServiceError) {
 
 func GetBucketNodeParent(tx *sql.Tx, nodeUuid string) (Node, IServiceError) {
 	request := `
-		SELECT nodes.uuid, name, type, size, bucket_id
+		SELECT nodes.uuid, name, type, mime, size, bucket_id
 		FROM buckets_nodes nodes, buckets_nodes_associations associations
 		WHERE associations.from_node = nodes.uuid
 		  AND associations.to_node = ?
 	`
 
 	var parent Node
-	err := tx.QueryRow(request, nodeUuid).Scan(&parent.Uuid, &parent.Name, &parent.Type, &parent.Size, &parent.BucketId)
+	err := tx.QueryRow(request, nodeUuid).Scan(&parent.Uuid, &parent.Name, &parent.Type, &parent.Mime, &parent.Size, &parent.BucketId)
 	if err != nil {
 		return Node{}, NewServiceError(http.StatusInternalServerError, err)
 	}
@@ -95,24 +95,26 @@ func GetBucketNodePath(tx *sql.Tx, node Node, bucketId int, bucketRootNodeUuid s
 	return "", NewServiceError(http.StatusInternalServerError, errors.New("unreachable code reached"))
 }
 
-func CreateBucketNode(tx *sql.Tx, name string, kind string, size int64, bucketId int) (Node, IServiceError) {
+func CreateBucketNode(tx *sql.Tx, name string, kind string, mime string, size int64, bucketId int) (Node, IServiceError) {
 	node := Node{
 		Uuid:     uuid.NewString(),
 		Name:     name,
 		Type:     kind,
+		Mime:     mime,
 		Size:     size,
 		BucketId: bucketId,
 	}
 
 	request := `
-		INSERT INTO buckets_nodes(uuid, name, type, size, bucket_id)
-		VALUES (?, ?, ?, ?, ?)
+		INSERT INTO buckets_nodes(uuid, name, type, mime, size, bucket_id)
+		VALUES (?, ?, ?, ?, ?, ?)
 	`
 
 	_, err := tx.Exec(request,
 		node.Uuid,
 		node.Name,
 		node.Type,
+		node.Mime,
 		node.Size,
 		node.BucketId)
 

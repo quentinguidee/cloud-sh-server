@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"mime/multipart"
 	"path"
 )
 
@@ -19,4 +20,8 @@ func DetectFileType(nodeName string) string {
 	default:
 		return "file"
 	}
+}
+
+func DetectFileMime(file *multipart.FileHeader) string {
+	return file.Header.Get("Content-Type")
 }
