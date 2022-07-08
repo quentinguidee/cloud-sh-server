@@ -246,7 +246,7 @@ func renameNode(c *gin.Context) {
 		return
 	}
 
-	serviceError = storage.RenameBucketNode(tx, newName, uuid)
+	serviceError = storage.UpdateBucketNode(tx, newName, node.Type, uuid)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return

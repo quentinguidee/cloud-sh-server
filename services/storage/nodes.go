@@ -200,10 +200,15 @@ func DeleteBucketNodeInFileSystem(path string) IServiceError {
 	return nil
 }
 
-func RenameBucketNode(tx *sql.Tx, name string, uuid string) IServiceError {
-	request := "UPDATE buckets_nodes SET name = ? WHERE uuid = ?"
+func UpdateBucketNode(tx *sql.Tx, name string, previousType string, uuid string) IServiceError {
+	request := "UPDATE buckets_nodes SET name = ?, type = ? WHERE uuid = ?"
 
-	res, err := tx.Exec(request, name, uuid)
+	nodeType := previousType
+	if previousType != "directory" {
+		nodeType = DetectFileType(name)
+	}
+
+	res, err := tx.Exec(request, name, nodeType, uuid)
 	if err != nil {
 		err = errors.New("failed to update the node")
 		return NewServiceError(http.StatusInternalServerError, err)
