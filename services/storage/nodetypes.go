@@ -37,12 +37,32 @@ func DetectFileType(nodeName string) string {
 		return "markdown"
 	case ".ml", ".mli":
 		return "ocaml"
-	case ".mp3", ".wav", ".flac", ".ogg":
-		return "audio"
-	case ".mp4", ".avi", ".mkv", ".mov":
-		return "video"
-	case ".png", "jpg", "jpeg", "bmp", "raw":
-		return "image"
+	case ".mp3":
+		return "mp3"
+	case ".wav":
+		return "wav"
+	case ".flac":
+		return "flac"
+	case ".ogg":
+		return "ogg"
+	case ".mp4":
+		return "mp4"
+	case ".avi":
+		return "avi"
+	case ".mkv":
+		return "mkv"
+	case ".mov":
+		return "mov"
+	case ".png":
+		return "png"
+	case ".jpg":
+		return "jpg"
+	case ".jpeg":
+		return "jpeg"
+	case ".bmp":
+		return "bmp"
+	case ".raw":
+		return "raw"
 	case ".php":
 		return "php"
 	case ".py":
