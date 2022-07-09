@@ -49,7 +49,7 @@ func main() {
 	user.LoadRoutes(router)
 	storage.LoadRoutes(router)
 
-	err = router.Run("localhost:" + os.Getenv("SERVER_PORT"))
+	err = router.Run(os.Getenv("SERVER_URI"))
 	if err != nil {
 		return
 	}
