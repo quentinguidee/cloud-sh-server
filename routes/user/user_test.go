@@ -25,8 +25,10 @@ func TestGetUser(testing *testing.T) {
 		WillReturnRows(rows)
 	mock.ExpectCommit()
 
+	d := database.New(db)
+
 	router := gin.New()
-	router.Use(database.Middleware(database.New(db)))
+	router.Use(database.Middleware(&d))
 
 	LoadRoutes(router)
 
@@ -48,8 +50,10 @@ func TestGetNonExistingUser(testing *testing.T) {
 		WillReturnError(sql.ErrNoRows)
 	mock.ExpectRollback()
 
+	d := database.New(db)
+
 	router := gin.New()
-	router.Use(database.Middleware(database.New(db)))
+	router.Use(database.Middleware(&d))
 	router.Use(utils.ErrorMiddleware())
 
 	LoadRoutes(router)
