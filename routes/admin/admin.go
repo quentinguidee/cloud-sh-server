@@ -13,9 +13,35 @@ import (
 func LoadRoutes(router *gin.Engine) {
 	group := router.Group("/admin")
 	{
+		group.GET("/demo", getDemoMode)
 		group.POST("/demo", enableDemoMode)
 		group.POST("/reset", hardReset)
 	}
+}
+
+func getDemoMode(c *gin.Context) {
+	appIsInDemoMode, err := admin.AppIsInDemoMode()
+	if err != nil {
+		err.Throws(c)
+		return
+	}
+
+	if !appIsInDemoMode {
+		c.JSON(http.StatusOK, gin.H{
+			"demo_mode": DemoMode{Enabled: false},
+		})
+		return
+	}
+
+	demoMode, err := admin.GetDemoMode()
+	if err != nil {
+		err.Throws(c)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"demo_mode": demoMode,
+	})
 }
 
 func enableDemoMode(c *gin.Context) {
