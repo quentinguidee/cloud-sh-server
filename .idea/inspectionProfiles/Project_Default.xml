@@ -14,7 +14,7 @@
         <method importPath="strings" receiver="*Builder" name="WriteRune" />
         <method importPath="math/rand" receiver="*Rand" name="Read" />
         <method importPath="github.com/gin-gonic/gin" receiver="*Context" name="AbortWithError" />
-        <method importPath="database/sql" receiver="*Tx" name="Rollback" />
+        <method importPath="github.com/jmoiron/sqlx" receiver="*Tx" name="Rollback" />
       </methods>
     </inspection_tool>
   </profile>
