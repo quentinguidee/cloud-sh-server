@@ -4,12 +4,12 @@ import (
 	"log"
 	"os"
 	"self-hosted-cloud/server/database"
+	"self-hosted-cloud/server/middlewares"
 	"self-hosted-cloud/server/routes/admin"
 	"self-hosted-cloud/server/routes/auth"
 	"self-hosted-cloud/server/routes/storage"
 	"self-hosted-cloud/server/routes/user"
 	adminservice "self-hosted-cloud/server/services/admin"
-	"self-hosted-cloud/server/utils"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -48,8 +48,8 @@ func main() {
 		AllowedHeaders: []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
 		MaxAge:         int(12 * time.Hour),
 	}))
-	router.Use(database.Middleware(&db))
-	router.Use(utils.ErrorMiddleware())
+	router.Use(middlewares.DatabaseMiddleware(&db))
+	router.Use(middlewares.ErrorMiddleware())
 
 	auth.LoadRoutes(router)
 	user.LoadRoutes(router)

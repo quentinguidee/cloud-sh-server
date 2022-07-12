@@ -51,10 +51,3 @@ func (db *Database) HardReset(path string) {
 }
 
 const KeyDatabase = "KEY_DATABASE"
-
-func Middleware(database *Database) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Set(KeyDatabase, database)
-		c.Next()
-	}
-}

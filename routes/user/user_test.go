@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"self-hosted-cloud/server/database"
-	"self-hosted-cloud/server/utils"
+	"self-hosted-cloud/server/middlewares"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -30,7 +30,7 @@ func TestGetUser(testing *testing.T) {
 	d := database.New(dbx)
 
 	router := gin.New()
-	router.Use(database.Middleware(&d))
+	router.Use(middlewares.DatabaseMiddleware(&d))
 
 	LoadRoutes(router)
 
@@ -56,8 +56,8 @@ func TestGetNonExistingUser(testing *testing.T) {
 	d := database.New(dbx)
 
 	router := gin.New()
-	router.Use(database.Middleware(&d))
-	router.Use(utils.ErrorMiddleware())
+	router.Use(middlewares.DatabaseMiddleware(&d))
+	router.Use(middlewares.ErrorMiddleware())
 
 	LoadRoutes(router)
 
