@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"self-hosted-cloud/server/database"
 	. "self-hosted-cloud/server/models"
 	"self-hosted-cloud/server/services/auth"
 
@@ -14,7 +15,7 @@ func GetTokenFromContext(c *gin.Context) string {
 func GetUserFromContext(c *gin.Context) (User, error) {
 	token := GetTokenFromContext(c)
 
-	tx := NewTransaction(c)
+	tx := database.NewTransaction(c)
 	defer tx.Rollback()
 
 	user, err := auth.GetUserFromToken(tx, token)
@@ -22,7 +23,7 @@ func GetUserFromContext(c *gin.Context) (User, error) {
 		return User{}, err.Error()
 	}
 
-	ExecTransaction(c, tx)
+	database.ExecTransaction(c, tx)
 
 	return user, nil
 }

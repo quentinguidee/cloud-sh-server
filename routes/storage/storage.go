@@ -3,6 +3,7 @@ package storage
 import (
 	"errors"
 	"net/http"
+	"self-hosted-cloud/server/database"
 	"self-hosted-cloud/server/models"
 	"self-hosted-cloud/server/services/storage"
 	"self-hosted-cloud/server/utils"
@@ -27,7 +28,7 @@ func LoadRoutes(router *gin.Engine) {
 func getNodes(c *gin.Context) {
 	parentUuid := c.Query("parent_uuid")
 
-	tx := utils.NewTransaction(c)
+	tx := database.NewTransaction(c)
 	defer tx.Rollback()
 
 	user, err := utils.GetUserFromContext(c)
@@ -60,7 +61,7 @@ func getNodes(c *gin.Context) {
 		return
 	}
 
-	utils.ExecTransaction(c, tx)
+	database.ExecTransaction(c, tx)
 
 	c.JSON(http.StatusOK, gin.H{
 		"nodes": nodes,
@@ -93,7 +94,7 @@ func createNode(c *gin.Context) {
 		return
 	}
 
-	tx := utils.NewTransaction(c)
+	tx := database.NewTransaction(c)
 	defer tx.Rollback()
 
 	bucket, serviceError := storage.GetUserBucket(tx, user.Id)
@@ -143,7 +144,7 @@ func createNode(c *gin.Context) {
 		return
 	}
 
-	utils.ExecTransaction(c, tx)
+	database.ExecTransaction(c, tx)
 }
 
 func deleteNodes(c *gin.Context) {
@@ -155,7 +156,7 @@ func deleteNodes(c *gin.Context) {
 		return
 	}
 
-	tx := utils.NewTransaction(c)
+	tx := database.NewTransaction(c)
 	defer tx.Rollback()
 
 	bucket, serviceError := storage.GetUserBucket(tx, user.Id)
@@ -200,7 +201,7 @@ func deleteNodes(c *gin.Context) {
 		return
 	}
 
-	utils.ExecTransaction(c, tx)
+	database.ExecTransaction(c, tx)
 }
 
 func renameNode(c *gin.Context) {
@@ -213,7 +214,7 @@ func renameNode(c *gin.Context) {
 		return
 	}
 
-	tx := utils.NewTransaction(c)
+	tx := database.NewTransaction(c)
 	defer tx.Rollback()
 
 	bucket, serviceError := storage.GetUserBucket(tx, user.Id)
@@ -258,7 +259,7 @@ func renameNode(c *gin.Context) {
 		return
 	}
 
-	utils.ExecTransaction(c, tx)
+	database.ExecTransaction(c, tx)
 }
 
 func getBucket(c *gin.Context) {
@@ -268,7 +269,7 @@ func getBucket(c *gin.Context) {
 		return
 	}
 
-	tx := utils.NewTransaction(c)
+	tx := database.NewTransaction(c)
 	defer tx.Rollback()
 
 	bucket, serviceError := storage.GetUserBucket(tx, user.Id)
@@ -292,7 +293,7 @@ func downloadNodes(c *gin.Context) {
 		return
 	}
 
-	tx := utils.NewTransaction(c)
+	tx := database.NewTransaction(c)
 	defer tx.Rollback()
 
 	bucket, serviceError := storage.GetUserBucket(tx, user.Id)
@@ -325,7 +326,7 @@ func downloadNodes(c *gin.Context) {
 		return
 	}
 
-	utils.ExecTransaction(c, tx)
+	database.ExecTransaction(c, tx)
 
 	c.File(path)
 }
@@ -344,7 +345,7 @@ func uploadNode(c *gin.Context) {
 		return
 	}
 
-	tx := utils.NewTransaction(c)
+	tx := database.NewTransaction(c)
 	defer tx.Rollback()
 
 	bucket, serviceError := storage.GetUserBucket(tx, user.Id)
@@ -392,5 +393,5 @@ func uploadNode(c *gin.Context) {
 		return
 	}
 
-	utils.ExecTransaction(c, tx)
+	database.ExecTransaction(c, tx)
 }

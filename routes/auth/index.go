@@ -3,10 +3,10 @@ package auth
 import (
 	"errors"
 	"net/http"
+	. "self-hosted-cloud/server/database"
 	. "self-hosted-cloud/server/models"
 	"self-hosted-cloud/server/routes/auth/github"
 	services "self-hosted-cloud/server/services/auth"
-	. "self-hosted-cloud/server/utils"
 
 	"github.com/gin-gonic/gin"
 )

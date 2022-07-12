@@ -7,10 +7,10 @@ import (
 	"errors"
 	"net/http"
 	"os"
+	. "self-hosted-cloud/server/database"
 	. "self-hosted-cloud/server/models"
 	"self-hosted-cloud/server/services/auth"
 	"self-hosted-cloud/server/services/storage"
-	. "self-hosted-cloud/server/utils"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"

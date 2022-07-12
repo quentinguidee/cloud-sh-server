@@ -1,15 +1,14 @@
-package utils
+package database
 
 import (
 	"net/http"
-	"self-hosted-cloud/server/database"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
 )
 
 func NewTransaction(c *gin.Context) *sqlx.Tx {
-	db := database.GetDatabaseFromContext(c)
+	db := GetDatabaseFromContext(c)
 	tx, err := db.Instance.BeginTxx(c, nil)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)

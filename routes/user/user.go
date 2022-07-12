@@ -2,8 +2,8 @@ package user
 
 import (
 	"net/http"
+	"self-hosted-cloud/server/database"
 	"self-hosted-cloud/server/services/auth"
-	"self-hosted-cloud/server/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,7 +19,7 @@ func LoadRoutes(router *gin.Engine) {
 func getUser(c *gin.Context) {
 	username := c.Param("username")
 
-	tx := utils.NewTransaction(c)
+	tx := database.NewTransaction(c)
 	defer tx.Rollback()
 
 	user, err := auth.GetUser(tx, username)
@@ -28,7 +28,7 @@ func getUser(c *gin.Context) {
 		return
 	}
 
-	utils.ExecTransaction(c, tx)
+	database.ExecTransaction(c, tx)
 
 	c.JSON(http.StatusOK, user)
 }
