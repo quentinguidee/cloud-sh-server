@@ -37,14 +37,14 @@ func CreateBucketAccess(tx *sqlx.Tx, bucketId int, userId int) (BucketAccess, IS
 }
 
 func GetBucketUserAccess(tx *sqlx.Tx, bucketId int, userId int) (BucketAccess, IServiceError) {
+	request := "SELECT * FROM buckets_access WHERE bucket_id = ? AND user_id = ?"
+
 	access := BucketAccess{
 		BucketId: bucketId,
 		UserId:   userId,
 	}
 
-	request := "SELECT id, access_type FROM buckets_access WHERE bucket_id = ? AND user_id = ?"
-
-	err := tx.QueryRow(request, access.BucketId, access.UserId).Scan(&access.Id, &access.AccessType)
+	err := tx.Get(&access, request, access.BucketId, access.UserId)
 	if err != nil {
 		return BucketAccess{}, NewServiceError(http.StatusInternalServerError, err)
 	}

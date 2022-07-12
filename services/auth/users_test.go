@@ -44,10 +44,10 @@ func TestGetUser(t *testing.T) {
 
 	user, _ := GetUser(tx, "username")
 
-	assert.Equal(t, user, models.User{
+	assert.Equal(t, models.User{
 		Id:             2,
 		Username:       "username",
 		Name:           "Name",
 		ProfilePicture: "https://google.com/",
-	})
+	}, user)
 }

@@ -79,7 +79,7 @@ func UpdateBucketRootNode(tx *sqlx.Tx, bucketId int, rootNodeUuid string) IServi
 
 func GetUserBucket(tx *sqlx.Tx, userId int) (Bucket, IServiceError) {
 	request := `
-		SELECT buckets.id, buckets.name, buckets.root_node, buckets.type
+		SELECT buckets.*
 		FROM buckets, buckets_access access
 		WHERE buckets.id = access.bucket_id
 		  AND buckets.type = 'user_bucket'
@@ -87,12 +87,7 @@ func GetUserBucket(tx *sqlx.Tx, userId int) (Bucket, IServiceError) {
 	`
 
 	var bucket Bucket
-	err := tx.QueryRow(request, userId).Scan(
-		&bucket.Id,
-		&bucket.Name,
-		&bucket.RootNodeUuid,
-		&bucket.Type)
-
+	err := tx.Get(&bucket, request, userId)
 	if err != nil {
 		err = errors.New("error while getting user bucket")
 		return Bucket{}, NewServiceError(http.StatusNotFound, err)

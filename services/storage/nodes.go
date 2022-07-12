@@ -14,10 +14,10 @@ import (
 )
 
 func GetBucketNode(tx *sqlx.Tx, uuid string) (Node, IServiceError) {
-	request := "SELECT uuid, name, type, mime, size, bucket_id FROM buckets_nodes WHERE uuid = ?"
+	request := "SELECT * FROM buckets_nodes WHERE uuid = ?"
 
 	var node Node
-	err := tx.QueryRow(request, uuid).Scan(&node.Uuid, &node.Name, &node.Type, &node.Mime, &node.Size, &node.BucketId)
+	err := tx.Get(&node, request, uuid)
 	if err != nil {
 		return Node{}, NewServiceError(http.StatusInternalServerError, err)
 	}
@@ -26,45 +26,33 @@ func GetBucketNode(tx *sqlx.Tx, uuid string) (Node, IServiceError) {
 
 func GetBucketNodes(tx *sqlx.Tx, parentUuid string) ([]Node, IServiceError) {
 	request := `
-		SELECT uuid, name, type, mime, size, bucket_id
+		SELECT nodes.*
 		FROM buckets_nodes nodes, buckets_nodes_associations associations
 		WHERE associations.from_node = ?
 		  AND associations.to_node = nodes.uuid
 	`
 
-	rows, err := tx.Query(request, parentUuid)
+	var nodes []Node
+	err := tx.Select(&nodes, request, parentUuid)
 	if err != nil {
 		return nil, NewServiceError(http.StatusInternalServerError, err)
 	}
-
-	var nodes []Node
-	for rows.Next() {
-		var node Node
-		err := rows.Scan(&node.Uuid, &node.Name, &node.Type, &node.Mime, &node.Size, &node.BucketId)
-		if err != nil {
-			err := errors.New("failed to decode nodes")
-			return nil, NewServiceError(http.StatusInternalServerError, err)
-		}
-		nodes = append(nodes, node)
-	}
-
 	return nodes, nil
 }
 
 func GetBucketNodeParent(tx *sqlx.Tx, nodeUuid string) (Node, IServiceError) {
 	request := `
-		SELECT nodes.uuid, name, type, mime, size, bucket_id
+		SELECT nodes.*
 		FROM buckets_nodes nodes, buckets_nodes_associations associations
 		WHERE associations.from_node = nodes.uuid
 		  AND associations.to_node = ?
 	`
 
 	var parent Node
-	err := tx.QueryRow(request, nodeUuid).Scan(&parent.Uuid, &parent.Name, &parent.Type, &parent.Mime, &parent.Size, &parent.BucketId)
+	err := tx.Get(&parent, request, nodeUuid)
 	if err != nil {
 		return Node{}, NewServiceError(http.StatusInternalServerError, err)
 	}
-
 	return parent, nil
 }
 

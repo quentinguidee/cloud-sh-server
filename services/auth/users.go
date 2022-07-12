@@ -27,15 +27,10 @@ func CreateUser(tx *sqlx.Tx, username string, name string, profilePicture string
 }
 
 func GetUser(tx *sqlx.Tx, username string) (User, IServiceError) {
-	request := "SELECT id, username, name, profile_picture FROM users WHERE username = ?"
+	request := "SELECT * FROM users WHERE username = ?"
 
 	var user User
-	err := tx.QueryRow(request, username).Scan(
-		&user.Id,
-		&user.Username,
-		&user.Name,
-		&user.ProfilePicture)
-
+	err := tx.Get(&user, request, username)
 	if err == sql.ErrNoRows {
 		err = errors.New("the user 'username' doesn't exists")
 		return User{}, NewServiceError(http.StatusNotFound, err)
@@ -48,19 +43,14 @@ func GetUser(tx *sqlx.Tx, username string) (User, IServiceError) {
 
 func GetUserFromToken(tx *sqlx.Tx, token string) (User, IServiceError) {
 	request := `
-		SELECT users.id, username, name, profile_picture
+		SELECT users.*
 		FROM users, sessions
 		WHERE sessions.user_id = users.id
 		  AND sessions.token = ?
 	`
 
 	var user User
-	err := tx.QueryRow(request, token).Scan(
-		&user.Id,
-		&user.Username,
-		&user.Name,
-		&user.ProfilePicture)
-
+	err := tx.Get(&user, request, token)
 	if err == sql.ErrNoRows {
 		err := errors.New("the user is not connected")
 		return User{}, NewServiceError(http.StatusNotFound, err)

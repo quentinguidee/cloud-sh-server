@@ -131,7 +131,7 @@ func createNode(c *gin.Context) {
 		return
 	}
 
-	path, serviceError := storage.GetBucketNodePath(tx, node, bucket.Id, bucket.RootNodeUuid)
+	path, serviceError := storage.GetBucketNodePath(tx, node, bucket.Id, bucket.RootNode)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
@@ -182,7 +182,7 @@ func deleteNodes(c *gin.Context) {
 		return
 	}
 
-	path, serviceError := storage.GetBucketNodePath(tx, node, bucket.Id, bucket.RootNodeUuid)
+	path, serviceError := storage.GetBucketNodePath(tx, node, bucket.Id, bucket.RootNode)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
@@ -240,7 +240,7 @@ func renameNode(c *gin.Context) {
 		return
 	}
 
-	path, serviceError := storage.GetBucketNodePath(tx, node, bucket.Id, bucket.RootNodeUuid)
+	path, serviceError := storage.GetBucketNodePath(tx, node, bucket.Id, bucket.RootNode)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
@@ -279,7 +279,7 @@ func getBucket(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"id":        bucket.Id,
-		"root_node": bucket.RootNodeUuid,
+		"root_node": bucket.RootNode,
 	})
 }
 
@@ -319,7 +319,7 @@ func downloadNodes(c *gin.Context) {
 		return
 	}
 
-	path, serviceError := storage.GetBucketNodePath(tx, node, bucket.Id, bucket.RootNodeUuid)
+	path, serviceError := storage.GetBucketNodePath(tx, node, bucket.Id, bucket.RootNode)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
@@ -380,7 +380,7 @@ func uploadNode(c *gin.Context) {
 		return
 	}
 
-	path, serviceError := storage.GetBucketNodePath(tx, node, bucket.Id, bucket.RootNodeUuid)
+	path, serviceError := storage.GetBucketNodePath(tx, node, bucket.Id, bucket.RootNode)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return

@@ -21,19 +21,14 @@ func CreateGithubUser(tx *sqlx.Tx, userId int, username string) IServiceError {
 
 func GetGithubUser(tx *sqlx.Tx, username string) (User, IServiceError) {
 	request := `
-		SELECT users.id, users.username, users.name, users.profile_picture
+		SELECT users.*
 		FROM users, auth_github
 		WHERE users.id = auth_github.user_id
 		  AND auth_github.username = ?;
 	`
 
 	var user User
-	err := tx.QueryRow(request, username).Scan(
-		&user.Id,
-		&user.Username,
-		&user.Name,
-		&user.ProfilePicture)
-
+	err := tx.Get(&user, request, username)
 	if err == sql.ErrNoRows {
 		return User{}, NewServiceError(http.StatusNotFound, err)
 	}
