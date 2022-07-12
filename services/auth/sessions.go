@@ -2,15 +2,16 @@ package auth
 
 import (
 	"crypto/rand"
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
 	. "self-hosted-cloud/server/models"
 	. "self-hosted-cloud/server/services"
+
+	"github.com/jmoiron/sqlx"
 )
 
-func CreateSession(tx *sql.Tx, userId int) (Session, IServiceError) {
+func CreateSession(tx *sqlx.Tx, userId int) (Session, IServiceError) {
 	token := make([]byte, 32)
 	_, err := rand.Read(token)
 	if err != nil {
@@ -32,7 +33,7 @@ func CreateSession(tx *sql.Tx, userId int) (Session, IServiceError) {
 	return session, nil
 }
 
-func DeleteSession(tx *sql.Tx, session *Session) IServiceError {
+func DeleteSession(tx *sqlx.Tx, session *Session) IServiceError {
 	request := "DELETE FROM sessions WHERE token = ? AND user_id = ?"
 
 	res, err := tx.Exec(request, session.Token, session.UserId)

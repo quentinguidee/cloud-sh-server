@@ -1,25 +1,25 @@
 package database
 
 import (
-	"database/sql"
 	"errors"
 	"os"
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 type Database struct {
-	Instance *sql.DB
+	Instance *sqlx.DB
 }
 
-func New(instance *sql.DB) Database {
+func New(instance *sqlx.DB) Database {
 	return Database{Instance: instance}
 }
 
-func OpenConnection(path string) (*sql.DB, error) {
-	return sql.Open("sqlite3", filepath.Join(os.Getenv("DATA_PATH"), path))
+func OpenConnection(path string) (*sqlx.DB, error) {
+	return sqlx.Open("sqlite3", filepath.Join(os.Getenv("DATA_PATH"), path))
 }
 
 func GetDatabase(path string) (Database, error) {

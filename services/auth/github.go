@@ -5,9 +5,11 @@ import (
 	"net/http"
 	. "self-hosted-cloud/server/models"
 	. "self-hosted-cloud/server/services"
+
+	"github.com/jmoiron/sqlx"
 )
 
-func CreateGithubUser(tx *sql.Tx, userId int, username string) IServiceError {
+func CreateGithubUser(tx *sqlx.Tx, userId int, username string) IServiceError {
 	request := "INSERT INTO auth_github(username, user_id) VALUES (?, ?)"
 
 	_, err := tx.Exec(request, username, userId)
@@ -17,7 +19,7 @@ func CreateGithubUser(tx *sql.Tx, userId int, username string) IServiceError {
 	return nil
 }
 
-func GetGithubUser(tx *sql.Tx, username string) (User, IServiceError) {
+func GetGithubUser(tx *sqlx.Tx, username string) (User, IServiceError) {
 	request := `
 		SELECT users.id, users.username, users.name, users.profile_picture
 		FROM users, auth_github

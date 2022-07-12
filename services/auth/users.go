@@ -6,9 +6,11 @@ import (
 	"net/http"
 	. "self-hosted-cloud/server/models"
 	. "self-hosted-cloud/server/services"
+
+	"github.com/jmoiron/sqlx"
 )
 
-func CreateUser(tx *sql.Tx, username string, name string, profilePicture string) (User, IServiceError) {
+func CreateUser(tx *sqlx.Tx, username string, name string, profilePicture string) (User, IServiceError) {
 	request := "INSERT INTO users(username, name, profile_picture) VALUES (?, ?, ?) RETURNING id"
 
 	user := User{
@@ -24,7 +26,7 @@ func CreateUser(tx *sql.Tx, username string, name string, profilePicture string)
 	return user, nil
 }
 
-func GetUser(tx *sql.Tx, username string) (User, IServiceError) {
+func GetUser(tx *sqlx.Tx, username string) (User, IServiceError) {
 	request := "SELECT id, username, name, profile_picture FROM users WHERE username = ?"
 
 	var user User
@@ -44,7 +46,7 @@ func GetUser(tx *sql.Tx, username string) (User, IServiceError) {
 	return user, nil
 }
 
-func GetUserFromToken(tx *sql.Tx, token string) (User, IServiceError) {
+func GetUserFromToken(tx *sqlx.Tx, token string) (User, IServiceError) {
 	request := `
 		SELECT users.id, username, name, profile_picture
 		FROM users, sessions

@@ -1,15 +1,16 @@
 package storage
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
 	. "self-hosted-cloud/server/models"
 	. "self-hosted-cloud/server/services"
+
+	"github.com/jmoiron/sqlx"
 )
 
-func CreateBucketAccess(tx *sql.Tx, bucketId int, userId int) (BucketAccess, IServiceError) {
+func CreateBucketAccess(tx *sqlx.Tx, bucketId int, userId int) (BucketAccess, IServiceError) {
 	access := BucketAccess{
 		BucketId:   bucketId,
 		UserId:     userId,
@@ -35,7 +36,7 @@ func CreateBucketAccess(tx *sql.Tx, bucketId int, userId int) (BucketAccess, ISe
 	return access, nil
 }
 
-func GetBucketUserAccess(tx *sql.Tx, bucketId int, userId int) (BucketAccess, IServiceError) {
+func GetBucketUserAccess(tx *sqlx.Tx, bucketId int, userId int) (BucketAccess, IServiceError) {
 	access := BucketAccess{
 		BucketId: bucketId,
 		UserId:   userId,
@@ -50,7 +51,7 @@ func GetBucketUserAccess(tx *sql.Tx, bucketId int, userId int) (BucketAccess, IS
 	return access, nil
 }
 
-func GetBucketUserAccessType(tx *sql.Tx, bucketId int, userId int) (AccessType, IServiceError) {
+func GetBucketUserAccessType(tx *sqlx.Tx, bucketId int, userId int) (AccessType, IServiceError) {
 	access, serviceError := GetBucketUserAccess(tx, bucketId, userId)
 	if serviceError != nil {
 		return Denied, serviceError

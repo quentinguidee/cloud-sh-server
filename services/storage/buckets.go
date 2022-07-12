@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"database/sql"
 	"errors"
 	"net/http"
 	"os"
@@ -9,9 +8,11 @@ import (
 	. "self-hosted-cloud/server/models"
 	. "self-hosted-cloud/server/services"
 	"strconv"
+
+	"github.com/jmoiron/sqlx"
 )
 
-func SetupDefaultBucket(tx *sql.Tx, userId int) IServiceError {
+func SetupDefaultBucket(tx *sqlx.Tx, userId int) IServiceError {
 	bucket, err := CreateBucket(tx, "Main bucket", "user_bucket")
 	if err != nil {
 		return err
@@ -40,7 +41,7 @@ func SetupDefaultBucket(tx *sql.Tx, userId int) IServiceError {
 	return nil
 }
 
-func CreateBucket(tx *sql.Tx, name string, kind string) (Bucket, IServiceError) {
+func CreateBucket(tx *sqlx.Tx, name string, kind string) (Bucket, IServiceError) {
 	request := "INSERT INTO buckets(name, type) VALUES (?, ?) RETURNING id"
 
 	bucket := Bucket{
@@ -65,7 +66,7 @@ func CreateBucketInFileSystem(bucketId int) IServiceError {
 	return nil
 }
 
-func UpdateBucketRootNode(tx *sql.Tx, bucketId int, rootNodeUuid string) IServiceError {
+func UpdateBucketRootNode(tx *sqlx.Tx, bucketId int, rootNodeUuid string) IServiceError {
 	request := "UPDATE buckets SET root_node = ? WHERE id = ?"
 
 	_, err := tx.Exec(request, rootNodeUuid, bucketId)
@@ -76,7 +77,7 @@ func UpdateBucketRootNode(tx *sql.Tx, bucketId int, rootNodeUuid string) IServic
 	return nil
 }
 
-func GetUserBucket(tx *sql.Tx, userId int) (Bucket, IServiceError) {
+func GetUserBucket(tx *sqlx.Tx, userId int) (Bucket, IServiceError) {
 	request := `
 		SELECT buckets.id, buckets.name, buckets.root_node, buckets.type
 		FROM buckets, buckets_access access

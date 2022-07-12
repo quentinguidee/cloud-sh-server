@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -11,9 +10,10 @@ import (
 	. "self-hosted-cloud/server/services"
 
 	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
 )
 
-func GetBucketNode(tx *sql.Tx, uuid string) (Node, IServiceError) {
+func GetBucketNode(tx *sqlx.Tx, uuid string) (Node, IServiceError) {
 	request := "SELECT uuid, name, type, mime, size, bucket_id FROM buckets_nodes WHERE uuid = ?"
 
 	var node Node
@@ -24,7 +24,7 @@ func GetBucketNode(tx *sql.Tx, uuid string) (Node, IServiceError) {
 	return node, nil
 }
 
-func GetBucketNodes(tx *sql.Tx, parentUuid string) ([]Node, IServiceError) {
+func GetBucketNodes(tx *sqlx.Tx, parentUuid string) ([]Node, IServiceError) {
 	request := `
 		SELECT uuid, name, type, mime, size, bucket_id
 		FROM buckets_nodes nodes, buckets_nodes_associations associations
@@ -51,7 +51,7 @@ func GetBucketNodes(tx *sql.Tx, parentUuid string) ([]Node, IServiceError) {
 	return nodes, nil
 }
 
-func GetBucketNodeParent(tx *sql.Tx, nodeUuid string) (Node, IServiceError) {
+func GetBucketNodeParent(tx *sqlx.Tx, nodeUuid string) (Node, IServiceError) {
 	request := `
 		SELECT nodes.uuid, name, type, mime, size, bucket_id
 		FROM buckets_nodes nodes, buckets_nodes_associations associations
@@ -68,7 +68,7 @@ func GetBucketNodeParent(tx *sql.Tx, nodeUuid string) (Node, IServiceError) {
 	return parent, nil
 }
 
-func GetBucketNodePath(tx *sql.Tx, node Node, bucketId int, bucketRootNodeUuid string) (string, IServiceError) {
+func GetBucketNodePath(tx *sqlx.Tx, node Node, bucketId int, bucketRootNodeUuid string) (string, IServiceError) {
 	var (
 		i      = 50
 		parent = node
@@ -95,7 +95,7 @@ func GetBucketNodePath(tx *sql.Tx, node Node, bucketId int, bucketRootNodeUuid s
 	return "", NewServiceError(http.StatusInternalServerError, errors.New("unreachable code reached"))
 }
 
-func CreateBucketNode(tx *sql.Tx, name string, kind string, mime string, size int64, bucketId int) (Node, IServiceError) {
+func CreateBucketNode(tx *sqlx.Tx, name string, kind string, mime string, size int64, bucketId int) (Node, IServiceError) {
 	node := Node{
 		Uuid:     uuid.NewString(),
 		Name:     name,
@@ -154,7 +154,7 @@ func CreateBucketNodeInFileSystem(kind string, path string, content string) ISer
 	return nil
 }
 
-func DeleteBucketNode(tx *sql.Tx, uuid string) IServiceError {
+func DeleteBucketNode(tx *sqlx.Tx, uuid string) IServiceError {
 	request := "DELETE FROM buckets_nodes WHERE uuid = ?"
 
 	_, err := tx.Exec(request, uuid)
@@ -174,7 +174,7 @@ func DeleteBucketNode(tx *sql.Tx, uuid string) IServiceError {
 	return nil
 }
 
-func DeleteBucketNodeRecursively(tx *sql.Tx, node *Node) IServiceError {
+func DeleteBucketNodeRecursively(tx *sqlx.Tx, node *Node) IServiceError {
 	if node.Type == "directory" {
 		children, err := GetBucketNodes(tx, node.Uuid)
 		if err != nil {
@@ -204,7 +204,7 @@ func DeleteBucketNodeInFileSystem(path string) IServiceError {
 	return nil
 }
 
-func UpdateBucketNode(tx *sql.Tx, name string, previousType string, uuid string) IServiceError {
+func UpdateBucketNode(tx *sqlx.Tx, name string, previousType string, uuid string) IServiceError {
 	request := "UPDATE buckets_nodes SET name = ?, type = ? WHERE uuid = ?"
 
 	nodeType := previousType

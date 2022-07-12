@@ -1,13 +1,14 @@
 package storage
 
 import (
-	"database/sql"
 	"errors"
 	"net/http"
 	. "self-hosted-cloud/server/services"
+
+	"github.com/jmoiron/sqlx"
 )
 
-func CreateBucketNodeAssociation(tx *sql.Tx, fromNodeUuid string, toNodeUuid string) IServiceError {
+func CreateBucketNodeAssociation(tx *sqlx.Tx, fromNodeUuid string, toNodeUuid string) IServiceError {
 	request := `
 		INSERT INTO buckets_nodes_associations(from_node, to_node)
 		VALUES (?, ?)
