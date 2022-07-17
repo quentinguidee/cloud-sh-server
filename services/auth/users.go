@@ -11,7 +11,7 @@ import (
 )
 
 func CreateUser(tx *sqlx.Tx, username string, name string, profilePicture string) (User, IServiceError) {
-	request := "INSERT INTO users(username, name, profile_picture) VALUES (?, ?, ?) RETURNING id"
+	request := "INSERT INTO users(username, name, profile_picture) VALUES ($1, $2, $3) RETURNING id"
 
 	user := User{
 		Username:       username,
@@ -27,7 +27,7 @@ func CreateUser(tx *sqlx.Tx, username string, name string, profilePicture string
 }
 
 func GetUser(tx *sqlx.Tx, username string) (User, IServiceError) {
-	request := "SELECT * FROM users WHERE username = ?"
+	request := "SELECT * FROM users WHERE username = $1"
 
 	var user User
 	err := tx.Get(&user, request, username)
@@ -46,7 +46,7 @@ func GetUserFromToken(tx *sqlx.Tx, token string) (User, IServiceError) {
 		SELECT users.*
 		FROM users, sessions
 		WHERE sessions.user_id = users.id
-		  AND sessions.token = ?
+		  AND sessions.token = $1
 	`
 
 	var user User

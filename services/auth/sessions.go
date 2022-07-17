@@ -23,7 +23,7 @@ func CreateSession(tx *sqlx.Tx, userId int) (Session, IServiceError) {
 		Token:  fmt.Sprintf("%X", token),
 	}
 
-	request := "INSERT INTO sessions(user_id, token) VALUES (?, ?) RETURNING id"
+	request := "INSERT INTO sessions(user_id, token) VALUES ($1, $2) RETURNING id"
 
 	err = tx.QueryRow(request, session.UserId, session.Token).Scan(&session.Id)
 	if err != nil {
@@ -34,7 +34,7 @@ func CreateSession(tx *sqlx.Tx, userId int) (Session, IServiceError) {
 }
 
 func DeleteSession(tx *sqlx.Tx, session *Session) IServiceError {
-	request := "DELETE FROM sessions WHERE token = ? AND user_id = ?"
+	request := "DELETE FROM sessions WHERE token = $1 AND user_id = $2"
 
 	res, err := tx.Exec(request, session.Token, session.UserId)
 	if err != nil {

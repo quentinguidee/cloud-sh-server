@@ -28,7 +28,7 @@ func main() {
 		return
 	}
 
-	db, err := database.GetDatabase("database.sqlite")
+	db, err := database.GetDatabase()
 	if err != nil {
 		log.Fatal(err.Error())
 		return

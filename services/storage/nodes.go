@@ -14,7 +14,7 @@ import (
 )
 
 func GetBucketNode(tx *sqlx.Tx, uuid string) (Node, IServiceError) {
-	request := "SELECT * FROM buckets_nodes WHERE uuid = ?"
+	request := "SELECT * FROM buckets_nodes WHERE uuid = $1"
 
 	var node Node
 	err := tx.Get(&node, request, uuid)
@@ -28,7 +28,7 @@ func GetBucketNodes(tx *sqlx.Tx, parentUuid string) ([]Node, IServiceError) {
 	request := `
 		SELECT nodes.*
 		FROM buckets_nodes nodes, buckets_nodes_associations associations
-		WHERE associations.from_node = ?
+		WHERE associations.from_node = $1
 		  AND associations.to_node = nodes.uuid
 	`
 
@@ -45,7 +45,7 @@ func GetBucketNodeParent(tx *sqlx.Tx, nodeUuid string) (Node, IServiceError) {
 		SELECT nodes.*
 		FROM buckets_nodes nodes, buckets_nodes_associations associations
 		WHERE associations.from_node = nodes.uuid
-		  AND associations.to_node = ?
+		  AND associations.to_node = $1
 	`
 
 	var parent Node
@@ -95,7 +95,7 @@ func CreateBucketNode(tx *sqlx.Tx, name string, kind string, mime string, size i
 
 	request := `
 		INSERT INTO buckets_nodes(uuid, name, type, mime, size, bucket_id)
-		VALUES (?, ?, ?, ?, ?, ?)
+		VALUES ($1, $2, $3, $4, $5, $6)
 	`
 
 	_, err := tx.Exec(request,
@@ -143,7 +143,7 @@ func CreateBucketNodeInFileSystem(kind string, path string, content string) ISer
 }
 
 func DeleteBucketNode(tx *sqlx.Tx, uuid string) IServiceError {
-	request := "DELETE FROM buckets_nodes WHERE uuid = ?"
+	request := "DELETE FROM buckets_nodes WHERE uuid = $1"
 
 	_, err := tx.Exec(request, uuid)
 	if err != nil {
@@ -151,7 +151,7 @@ func DeleteBucketNode(tx *sqlx.Tx, uuid string) IServiceError {
 		return NewServiceError(http.StatusInternalServerError, err)
 	}
 
-	request = "DELETE FROM buckets_nodes_associations WHERE to_node = ?"
+	request = "DELETE FROM buckets_nodes_associations WHERE to_node = $1"
 
 	_, err = tx.Exec(request, uuid)
 	if err != nil {
@@ -193,7 +193,7 @@ func DeleteBucketNodeInFileSystem(path string) IServiceError {
 }
 
 func UpdateBucketNode(tx *sqlx.Tx, name string, previousType string, uuid string) IServiceError {
-	request := "UPDATE buckets_nodes SET name = ?, type = ? WHERE uuid = ?"
+	request := "UPDATE buckets_nodes SET name = $1, type = $2 WHERE uuid = $3"
 
 	nodeType := previousType
 	if previousType != "directory" {

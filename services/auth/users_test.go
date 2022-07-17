@@ -35,7 +35,7 @@ func TestGetUser(t *testing.T) {
 		AddRow(2, "username", "Name", "https://google.com/")
 
 	mock.ExpectBegin()
-	mock.ExpectQuery("^SELECT (.+) FROM users WHERE username = \\?$").
+	mock.ExpectQuery("^SELECT (.+) FROM users WHERE username = \\$1$").
 		WithArgs("username").
 		WillReturnRows(rows)
 	mock.ExpectCommit()

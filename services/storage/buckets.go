@@ -42,7 +42,7 @@ func SetupDefaultBucket(tx *sqlx.Tx, userId int) IServiceError {
 }
 
 func CreateBucket(tx *sqlx.Tx, name string, kind string) (Bucket, IServiceError) {
-	request := "INSERT INTO buckets(name, type) VALUES (?, ?) RETURNING id"
+	request := "INSERT INTO buckets(name, type) VALUES ($1, $2) RETURNING id"
 
 	bucket := Bucket{
 		Name: name,
@@ -67,7 +67,7 @@ func CreateBucketInFileSystem(bucketId int) IServiceError {
 }
 
 func UpdateBucketRootNode(tx *sqlx.Tx, bucketId int, rootNodeUuid string) IServiceError {
-	request := "UPDATE buckets SET root_node = ? WHERE id = ?"
+	request := "UPDATE buckets SET root_node = $1 WHERE id = $2"
 
 	_, err := tx.Exec(request, rootNodeUuid, bucketId)
 	if err != nil {
@@ -83,7 +83,7 @@ func GetUserBucket(tx *sqlx.Tx, userId int) (Bucket, IServiceError) {
 		FROM buckets, buckets_access access
 		WHERE buckets.id = access.bucket_id
 		  AND buckets.type = 'user_bucket'
-		  AND access.user_id = ?
+		  AND access.user_id = $1
 	`
 
 	var bucket Bucket

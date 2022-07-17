@@ -1,0 +1,11 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_DB=cloudsh
+      - POSTGRES_USER=cloudsh
+      - POSTGRES_PASSWORD=cloudsh

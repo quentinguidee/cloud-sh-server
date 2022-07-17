@@ -13,7 +13,7 @@ func ResetServer(db *Database) IServiceError {
 	log.Println("SERVER RESET…")
 	paths := []string{
 		"buckets",
-		"database.sqlite",
+		"demo.json",
 	}
 
 	for _, path := range paths {
@@ -23,7 +23,10 @@ func ResetServer(db *Database) IServiceError {
 		}
 	}
 
-	db.HardReset("database.sqlite")
+	err := db.HardReset()
+	if err != nil {
+		return NewServiceError(http.StatusInternalServerError, err)
+	}
 
 	log.Println("SERVER RESET: DONE")
 	return nil

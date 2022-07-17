@@ -22,7 +22,7 @@ func TestGetUser(testing *testing.T) {
 		AddRow(2, "username", "Name", "https://google.com/")
 
 	mock.ExpectBegin()
-	mock.ExpectQuery("^SELECT (.+) FROM users WHERE username = \\?$").
+	mock.ExpectQuery("^SELECT (.+) FROM users WHERE username = \\$1$").
 		WithArgs("username").
 		WillReturnRows(rows)
 	mock.ExpectCommit()
@@ -48,7 +48,7 @@ func TestGetNonExistingUser(testing *testing.T) {
 	dbx := sqlx.NewDb(db, "sqlmock")
 
 	mock.ExpectBegin()
-	mock.ExpectQuery("^SELECT (.+) FROM users WHERE username = \\?$").
+	mock.ExpectQuery("^SELECT (.+) FROM users WHERE username = \\$1$").
 		WithArgs("username").
 		WillReturnError(sql.ErrNoRows)
 	mock.ExpectRollback()

@@ -1,14 +1,21 @@
 package database
 
 import (
+	_ "embed"
 	"errors"
+	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/lib/pq"
 )
+
+//go:embed create_db.sql
+var createDatabaseRequest string
+
+//go:embed reset_db.sql
+var resetDatabaseRequest string
 
 type Database struct {
 	Instance *sqlx.DB
@@ -18,17 +25,29 @@ func New(instance *sqlx.DB) Database {
 	return Database{Instance: instance}
 }
 
-func OpenConnection(path string) (*sqlx.DB, error) {
-	return sqlx.Open("sqlite3", filepath.Join(os.Getenv("DATA_PATH"), path))
+func OpenConnection() (*sqlx.DB, error) {
+	source := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		os.Getenv("DATABASE_HOST"),
+		os.Getenv("DATABASE_PORT"),
+		os.Getenv("DATABASE_USER"),
+		os.Getenv("DATABASE_PASS"),
+		os.Getenv("DATABASE_NAME"),
+		os.Getenv("DATABASE_SSL"))
+
+	return sqlx.Open("postgres", source)
 }
 
-func GetDatabase(path string) (Database, error) {
-	instance, err := OpenConnection(path)
+func GetDatabase() (Database, error) {
+	instance, err := OpenConnection()
 	if err != nil {
 		return Database{}, errors.New("couldn't open connection to the database")
 	}
 	db := Database{Instance: instance}
-	db.Initialize()
+
+	err = db.Initialize()
+	if err != nil {
+		return Database{}, err
+	}
 	return db, nil
 }
 
@@ -36,18 +55,17 @@ func GetDatabaseFromContext(c *gin.Context) *Database {
 	return c.MustGet(KeyDatabase).(*Database)
 }
 
-func (db *Database) Initialize() {
-	db.CreateUsersTable()
-	db.CreateSessionsTable()
-	db.CreateGithubAuthTable()
-
-	db.CreateBucketsTable()
+func (db *Database) Initialize() error {
+	_, err := db.Instance.Exec(createDatabaseRequest)
+	return err
 }
 
-func (db *Database) HardReset(path string) {
-	instance, _ := OpenConnection(path)
-	db.Instance = instance
-	db.Initialize()
+func (db *Database) HardReset() error {
+	_, err := db.Instance.Exec(resetDatabaseRequest)
+	if err != nil {
+		return err
+	}
+	return db.Initialize()
 }
 
 const KeyDatabase = "KEY_DATABASE"

@@ -19,7 +19,7 @@ func CreateBucketAccess(tx *sqlx.Tx, bucketId int, userId int) (BucketAccess, IS
 
 	request := `
 		INSERT INTO buckets_access(bucket_id, user_id, access_type)
-		VALUES (?, ?, ?)
+		VALUES ($1, $2, $3)
 		RETURNING id
 	`
 
@@ -37,7 +37,7 @@ func CreateBucketAccess(tx *sqlx.Tx, bucketId int, userId int) (BucketAccess, IS
 }
 
 func GetBucketUserAccess(tx *sqlx.Tx, bucketId int, userId int) (BucketAccess, IServiceError) {
-	request := "SELECT * FROM buckets_access WHERE bucket_id = ? AND user_id = ?"
+	request := "SELECT * FROM buckets_access WHERE bucket_id = $1 AND user_id = $2"
 
 	access := BucketAccess{
 		BucketId: bucketId,

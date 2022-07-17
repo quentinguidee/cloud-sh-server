@@ -10,7 +10,7 @@ import (
 )
 
 func CreateGithubUser(tx *sqlx.Tx, userId int, username string) IServiceError {
-	request := "INSERT INTO auth_github(username, user_id) VALUES (?, ?)"
+	request := "INSERT INTO auth_github(username, user_id) VALUES ($1, $2)"
 
 	_, err := tx.Exec(request, username, userId)
 	if err != nil {
@@ -24,7 +24,7 @@ func GetGithubUser(tx *sqlx.Tx, username string) (User, IServiceError) {
 		SELECT users.*
 		FROM users, auth_github
 		WHERE users.id = auth_github.user_id
-		  AND auth_github.username = ?;
+		  AND auth_github.username = $1;
 	`
 
 	var user User
