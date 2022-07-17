@@ -49,11 +49,11 @@ func getDemoMode(c *gin.Context) {
 func enableDemoMode(c *gin.Context) {
 	db := database.GetDatabaseFromContext(c)
 
+	admin.ResetServer(db)
 	admin.SetupDemoMode(DemoMode{
 		Enabled:       true,
 		ResetInterval: "0 0 0 * * *",
 	})
-	admin.ResetServer(db)
 	admin.StartDemoMode(db)
 }
 
