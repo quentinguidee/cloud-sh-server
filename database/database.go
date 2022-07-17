@@ -44,11 +44,15 @@ func GetDatabase() (Database, error) {
 	}
 	db := Database{Instance: instance}
 
-	err = db.Initialize()
+	var serverId int
+	err = db.Instance.QueryRowx("SELECT id FROM servers WHERE id = 1").Scan(&serverId)
 	if err != nil {
-		return Database{}, err
+		// The servers table doesn't exist, so, the database is not initialized.
+		err = db.Initialize()
+		return db, err
 	}
-	return db, nil
+	err = db.Update()
+	return db, err
 }
 
 func GetDatabaseFromContext(c *gin.Context) *Database {

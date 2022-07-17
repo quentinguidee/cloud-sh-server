@@ -1,6 +1,22 @@
+-- region: SERVER
+
+CREATE TABLE servers
+(
+    id               INTEGER GENERATED ALWAYS AS IDENTITY UNIQUE,
+    version_major    INTEGER,
+    version_minor    INTEGER,
+    version_patch    INTEGER,
+    database_version INTEGER
+);
+
+INSERT INTO servers(version_major, version_minor, version_patch, database_version)
+VALUES (0, 0, 0, 1);
+
+-- endregion
+
 -- region: AUTH
 
-CREATE TABLE IF NOT EXISTS users
+CREATE TABLE users
 (
     id              INTEGER GENERATED ALWAYS AS IDENTITY UNIQUE,
     username        VARCHAR(255) UNIQUE,
@@ -9,14 +25,14 @@ CREATE TABLE IF NOT EXISTS users
     role            VARCHAR(63)
 );
 
-CREATE TABLE IF NOT EXISTS sessions
+CREATE TABLE sessions
 (
     id      INTEGER GENERATED ALWAYS AS IDENTITY UNIQUE,
     user_id INTEGER,
     token   VARCHAR(255) UNIQUE
 );
 
-CREATE TABLE IF NOT EXISTS auth_github
+CREATE TABLE auth_github
 (
     username VARCHAR(255) UNIQUE PRIMARY KEY,
     user_id  INTEGER
@@ -26,7 +42,7 @@ CREATE TABLE IF NOT EXISTS auth_github
 
 -- region: STORAGE
 
-CREATE TABLE IF NOT EXISTS buckets
+CREATE TABLE buckets
 (
     id        INTEGER GENERATED ALWAYS AS IDENTITY UNIQUE,
     name      VARCHAR(255),
@@ -34,7 +50,7 @@ CREATE TABLE IF NOT EXISTS buckets
     type      VARCHAR(63)
 );
 
-CREATE TABLE IF NOT EXISTS buckets_access
+CREATE TABLE buckets_access
 (
     id          INTEGER GENERATED ALWAYS AS IDENTITY UNIQUE,
     bucket_id   INTEGER,
@@ -42,7 +58,7 @@ CREATE TABLE IF NOT EXISTS buckets_access
     access_type VARCHAR(63)
 );
 
-CREATE TABLE IF NOT EXISTS buckets_nodes
+CREATE TABLE buckets_nodes
 (
     uuid      VARCHAR(63) UNIQUE PRIMARY KEY,
     name      VARCHAR(255),
@@ -52,7 +68,7 @@ CREATE TABLE IF NOT EXISTS buckets_nodes
     bucket_id INTEGER
 );
 
-CREATE TABLE IF NOT EXISTS buckets_nodes_associations
+CREATE TABLE buckets_nodes_associations
 (
     id        INTEGER GENERATED ALWAYS AS IDENTITY UNIQUE,
     from_node VARCHAR(63),
