@@ -61,6 +61,16 @@ func GetDatabaseFromContext(c *gin.Context) *Database {
 
 func (db *Database) Initialize() error {
 	_, err := db.Instance.Exec(createDatabaseRequest)
+	if err != nil {
+		return err
+	}
+
+	request := `
+		INSERT INTO servers(version_major, version_minor, version_patch, database_version)
+		VALUES (0, 0, 0, $1)
+	`
+
+	_, err = db.Instance.Exec(request, DatabaseVersion)
 	return err
 }
 

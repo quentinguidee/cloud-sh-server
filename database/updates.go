@@ -13,8 +13,8 @@ func (db *Database) Update() error {
 	//	request += "...;"
 	//}
 
-	request += "UPDATE servers SET database_version = 1 WHERE id = 1;"
+	request += "UPDATE servers SET database_version = $1 WHERE id = 1;"
 
-	_, err = db.Instance.Exec(request)
+	_, err = db.Instance.Exec(request, DatabaseVersion)
 	return err
 }

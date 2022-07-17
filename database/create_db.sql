@@ -9,9 +9,6 @@ CREATE TABLE servers
     database_version INTEGER
 );
 
-INSERT INTO servers(version_major, version_minor, version_patch, database_version)
-VALUES (0, 0, 0, 1);
-
 -- endregion
 
 -- region: AUTH
