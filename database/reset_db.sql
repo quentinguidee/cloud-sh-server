@@ -1,3 +1,7 @@
+-- region: SERVER
+DROP TABLE IF EXISTS servers CASCADE;
+-- endregion
+
 -- region: AUTH
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS sessions CASCADE;
