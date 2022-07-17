@@ -143,19 +143,19 @@ func CreateBucketNodeInFileSystem(kind string, path string, content string) ISer
 }
 
 func DeleteBucketNode(tx *sqlx.Tx, uuid string) IServiceError {
-	request := "DELETE FROM buckets_nodes WHERE uuid = $1"
+	request := "DELETE FROM buckets_nodes_associations WHERE to_node = $1"
 
 	_, err := tx.Exec(request, uuid)
 	if err != nil {
-		err = errors.New("error while deleting node")
+		err = errors.New(fmt.Sprintf("error while deleting node association: %s", err.Error()))
 		return NewServiceError(http.StatusInternalServerError, err)
 	}
 
-	request = "DELETE FROM buckets_nodes_associations WHERE to_node = $1"
+	request = "DELETE FROM buckets_nodes WHERE uuid = $1"
 
 	_, err = tx.Exec(request, uuid)
 	if err != nil {
-		err = errors.New("error while deleting node association")
+		err = errors.New(fmt.Sprintf("error while deleting node: %s", err.Error()))
 		return NewServiceError(http.StatusInternalServerError, err)
 	}
 
