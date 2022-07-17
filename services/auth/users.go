@@ -10,16 +10,23 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func CreateUser(tx *sqlx.Tx, username string, name string, profilePicture string) (User, IServiceError) {
-	request := "INSERT INTO users(username, name, profile_picture) VALUES ($1, $2, $3) RETURNING id"
+func CreateUser(tx *sqlx.Tx, username string, name string, profilePicture string, role string) (User, IServiceError) {
+	request := "INSERT INTO users(username, name, profile_picture, role) VALUES ($1, $2, $3, $4) RETURNING id"
 
 	user := User{
 		Username:       username,
 		Name:           name,
 		ProfilePicture: profilePicture,
+		Role:           role,
 	}
 
-	err := tx.QueryRow(request, username, name, profilePicture).Scan(&user.Id)
+	err := tx.QueryRow(request,
+		username,
+		name,
+		profilePicture,
+		role,
+	).Scan(&user.Id)
+
 	if err != nil {
 		return User{}, NewServiceError(http.StatusInternalServerError, err)
 	}
@@ -59,4 +66,18 @@ func GetUserFromToken(tx *sqlx.Tx, token string) (User, IServiceError) {
 		return User{}, NewServiceError(http.StatusInternalServerError, err)
 	}
 	return user, nil
+}
+
+func GetUsersByRole(tx *sqlx.Tx, role string) ([]User, IServiceError) {
+	request := "SELECT * FROM users WHERE role = $1"
+
+	var users []User
+	err := tx.Select(&users, request, role)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, NewServiceError(http.StatusInternalServerError, err)
+	}
+	return users, nil
 }

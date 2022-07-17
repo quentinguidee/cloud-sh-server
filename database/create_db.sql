@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS users
     id              INTEGER GENERATED ALWAYS AS IDENTITY UNIQUE,
     username        VARCHAR(255) UNIQUE,
     name            VARCHAR(255),
-    profile_picture VARCHAR(255)
+    profile_picture VARCHAR(255),
+    role            VARCHAR(63)
 );
 
 CREATE TABLE IF NOT EXISTS sessions

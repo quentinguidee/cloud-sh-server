@@ -5,6 +5,7 @@ type User struct {
 	Username       string `json:"username,omitempty" db:"username"`
 	Name           string `json:"name,omitempty" db:"name"`
 	ProfilePicture string `json:"profile_picture,omitempty" db:"profile_picture"`
+	Role           string `json:"role" db:"role"`
 }
 
 type GithubUser struct {

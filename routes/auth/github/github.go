@@ -117,7 +117,20 @@ func callback(c *gin.Context) {
 			return
 		}
 
-		user, serviceError = auth.CreateUser(tx, githubUser.Login, githubUser.Name, githubUser.AvatarUrl)
+		admins, serviceError := auth.GetUsersByRole(tx, "admin")
+		if serviceError != nil {
+			serviceError.Throws(c)
+			return
+		}
+
+		var role string
+		if len(admins) > 0 {
+			role = "user"
+		} else {
+			role = "admin"
+		}
+
+		user, serviceError = auth.CreateUser(tx, githubUser.Login, githubUser.Name, githubUser.AvatarUrl, role)
 		if serviceError != nil {
 			serviceError.Throws(c)
 			return

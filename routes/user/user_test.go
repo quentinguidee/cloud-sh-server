@@ -18,8 +18,8 @@ func TestGetUser(testing *testing.T) {
 	db, mock, _ := sqlmock.New()
 	dbx := sqlx.NewDb(db, "sqlmock")
 
-	rows := sqlmock.NewRows([]string{"id", "username", "name", "profile_picture"}).
-		AddRow(2, "username", "Name", "https://google.com/")
+	rows := sqlmock.NewRows([]string{"id", "username", "name", "profile_picture", "role"}).
+		AddRow(2, "username", "Name", "https://google.com/", "user")
 
 	mock.ExpectBegin()
 	mock.ExpectQuery("^SELECT (.+) FROM users WHERE username = \\$1$").
@@ -40,7 +40,7 @@ func TestGetUser(testing *testing.T) {
 	router.ServeHTTP(recorder, req)
 
 	assert.Equal(testing, http.StatusOK, recorder.Code)
-	assert.Equal(testing, `{"id":2,"username":"username","name":"Name","profile_picture":"https://google.com/"}`, recorder.Body.String())
+	assert.Equal(testing, `{"id":2,"username":"username","name":"Name","profile_picture":"https://google.com/","role":"user"}`, recorder.Body.String())
 }
 
 func TestGetNonExistingUser(testing *testing.T) {

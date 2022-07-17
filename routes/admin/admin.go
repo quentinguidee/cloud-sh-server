@@ -3,6 +3,7 @@ package admin
 import (
 	"net/http"
 	"self-hosted-cloud/server/database"
+	"self-hosted-cloud/server/middlewares"
 	. "self-hosted-cloud/server/models"
 	"self-hosted-cloud/server/services/admin"
 	"self-hosted-cloud/server/utils"
@@ -13,6 +14,7 @@ import (
 func LoadRoutes(router *gin.Engine) {
 	group := router.Group("/admin")
 	{
+		group.Use(middlewares.AdminMiddleware())
 		group.GET("/demo", getDemoMode)
 		group.POST("/demo", enableDemoMode)
 		group.POST("/reset", hardReset)
