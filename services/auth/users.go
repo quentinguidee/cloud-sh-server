@@ -5,26 +5,34 @@ import (
 	"errors"
 	"net/http"
 	. "self-hosted-cloud/server/models"
+	"self-hosted-cloud/server/models/types"
 	. "self-hosted-cloud/server/services"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 )
 
 func CreateUser(tx *sqlx.Tx, username string, name string, profilePicture string, role string) (User, IServiceError) {
-	request := "INSERT INTO users(username, name, profile_picture, role) VALUES ($1, $2, $3, $4) RETURNING id"
+	request := `
+		INSERT INTO users(username, name, profile_picture, role, creation_date)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id
+	`
 
 	user := User{
 		Username:       username,
 		Name:           name,
 		ProfilePicture: profilePicture,
 		Role:           role,
+		CreationDate:   types.NewNullableTime(time.Now()),
 	}
 
 	err := tx.QueryRow(request,
-		username,
-		name,
-		profilePicture,
-		role,
+		user.Username,
+		user.Name,
+		user.ProfilePicture,
+		user.Role,
+		user.CreationDate,
 	).Scan(&user.Id)
 
 	if err != nil {

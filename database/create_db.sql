@@ -19,7 +19,8 @@ CREATE TABLE users
     username        VARCHAR(255) UNIQUE,
     name            VARCHAR(255),
     profile_picture VARCHAR(255),
-    role            VARCHAR(63)
+    role            VARCHAR(63),
+    creation_date   TIMESTAMP
 );
 
 CREATE TABLE sessions

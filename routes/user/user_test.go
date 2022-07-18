@@ -2,11 +2,13 @@ package user
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"self-hosted-cloud/server/database"
 	"self-hosted-cloud/server/middlewares"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/gin-gonic/gin"
@@ -18,8 +20,11 @@ func TestGetUser(testing *testing.T) {
 	db, mock, _ := sqlmock.New()
 	dbx := sqlx.NewDb(db, "sqlmock")
 
-	rows := sqlmock.NewRows([]string{"id", "username", "name", "profile_picture", "role"}).
-		AddRow(2, "username", "Name", "https://google.com/", "user")
+	creationDate := time.Now()
+	creationDateString, _ := creationDate.MarshalJSON()
+
+	rows := sqlmock.NewRows([]string{"id", "username", "name", "profile_picture", "role", "creation_date"}).
+		AddRow(2, "username", "Name", "https://google.com/", "user", creationDate)
 
 	mock.ExpectBegin()
 	mock.ExpectQuery("^SELECT (.+) FROM users WHERE username = \\$1$").
@@ -40,7 +45,7 @@ func TestGetUser(testing *testing.T) {
 	router.ServeHTTP(recorder, req)
 
 	assert.Equal(testing, http.StatusOK, recorder.Code)
-	assert.Equal(testing, `{"id":2,"username":"username","name":"Name","profile_picture":"https://google.com/","role":"user"}`, recorder.Body.String())
+	assert.Equal(testing, fmt.Sprintf(`{"id":2,"username":"username","name":"Name","profile_picture":"https://google.com/","role":"user","creation_date":%s}`, creationDateString), recorder.Body.String())
 }
 
 func TestGetNonExistingUser(testing *testing.T) {
