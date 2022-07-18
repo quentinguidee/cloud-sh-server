@@ -1,3 +1,3 @@
 package database
 
-const DatabaseVersion = 2
+const DatabaseVersion = 1

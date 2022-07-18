@@ -4,6 +4,7 @@ import (
 	"context"
 	"self-hosted-cloud/server/database"
 	"self-hosted-cloud/server/models"
+	"self-hosted-cloud/server/models/types"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -48,6 +49,6 @@ func TestGetUser(t *testing.T) {
 		Id:             2,
 		Username:       "username",
 		Name:           "Name",
-		ProfilePicture: "https://google.com/",
+		ProfilePicture: types.NewNullableString("https://google.com/"),
 	}, user)
 }

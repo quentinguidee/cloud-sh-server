@@ -22,8 +22,8 @@ func CreateUser(tx *sqlx.Tx, username string, name string, profilePicture string
 	user := User{
 		Username:       username,
 		Name:           name,
-		ProfilePicture: profilePicture,
-		Role:           role,
+		ProfilePicture: types.NewNullableString(profilePicture),
+		Role:           types.NewNullableString(role),
 		CreationDate:   types.NewNullableTime(time.Now()),
 	}
 

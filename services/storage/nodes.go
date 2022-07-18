@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	. "self-hosted-cloud/server/models"
+	. "self-hosted-cloud/server/models/types"
 	. "self-hosted-cloud/server/services"
 
 	"github.com/google/uuid"
@@ -83,19 +84,18 @@ func GetBucketNodePath(tx *sqlx.Tx, node Node, bucketId int, bucketRootNodeUuid 
 	return "", NewServiceError(http.StatusInternalServerError, errors.New("unreachable code reached"))
 }
 
-func CreateBucketNode(tx *sqlx.Tx, name string, kind string, mime string, size int64, bucketId int) (Node, IServiceError) {
+func CreateBucketNode(tx *sqlx.Tx, name string, kind string, mime string, size int64) (Node, IServiceError) {
 	node := Node{
-		Uuid:     uuid.NewString(),
-		Name:     name,
-		Type:     kind,
-		Mime:     mime,
-		Size:     size,
-		BucketId: bucketId,
+		Uuid: uuid.NewString(),
+		Name: name,
+		Type: kind,
+		Mime: NewNullableString(mime),
+		Size: NewNullableInt64(size),
 	}
 
 	request := `
-		INSERT INTO buckets_nodes(uuid, name, type, mime, size, bucket_id)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO buckets_nodes(uuid, name, type, mime, size)
+		VALUES ($1, $2, $3, $4, $5)
 	`
 
 	_, err := tx.Exec(request,
@@ -103,8 +103,7 @@ func CreateBucketNode(tx *sqlx.Tx, name string, kind string, mime string, size i
 		node.Name,
 		node.Type,
 		node.Mime,
-		node.Size,
-		node.BucketId)
+		node.Size)
 
 	if err != nil {
 		err := errors.New("error while creating node")
@@ -148,6 +147,14 @@ func DeleteBucketNode(tx *sqlx.Tx, uuid string) IServiceError {
 	_, err := tx.Exec(request, uuid)
 	if err != nil {
 		err = errors.New(fmt.Sprintf("error while deleting node association: %s", err.Error()))
+		return NewServiceError(http.StatusInternalServerError, err)
+	}
+
+	request = "DELETE FROM buckets_to_node WHERE node_id = $1"
+
+	_, err = tx.Exec(request, uuid)
+	if err != nil {
+		err = errors.New(fmt.Sprintf("error while deleting buckets_to_node association: %s", err))
 		return NewServiceError(http.StatusInternalServerError, err)
 	}
 

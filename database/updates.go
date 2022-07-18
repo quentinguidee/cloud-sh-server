@@ -75,9 +75,9 @@ func (db *Database) Update() error {
 		return err
 	}
 
-	db.updateForVersion(2).
-		with("ALTER TABLE users ADD COLUMN creation_date TIMESTAMP").
-		execute(&currentVersion)
+	// db.updateForVersion(2).
+	// 	with("ALTER TABLE users ADD COLUMN creation_date TIMESTAMP").
+	// 	execute(&currentVersion)
 
 	return nil
 }

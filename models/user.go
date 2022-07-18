@@ -5,12 +5,12 @@ import (
 )
 
 type User struct {
-	Id             int          `json:"id,omitempty" db:"id"`
-	Username       string       `json:"username,omitempty" db:"username"`
-	Name           string       `json:"name,omitempty" db:"name"`
-	ProfilePicture string       `json:"profile_picture,omitempty" db:"profile_picture"`
-	Role           string       `json:"role,omitempty" db:"role"`
-	CreationDate   NullableTime `json:"creation_date,omitempty" db:"creation_date"`
+	Id             int            `json:"id,omitempty" db:"id"`
+	Username       string         `json:"username,omitempty" db:"username"`
+	Name           string         `json:"name,omitempty" db:"name"`
+	ProfilePicture NullableString `json:"profile_picture,omitempty" db:"profile_picture"`
+	Role           NullableString `json:"role,omitempty" db:"role"`
+	CreationDate   NullableTime   `json:"creation_date,omitempty" db:"creation_date"`
 }
 
 type GithubUser struct {
