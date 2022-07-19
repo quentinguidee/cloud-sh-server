@@ -110,6 +110,7 @@ components:
     AuthorizationHeader:
       in: header
       name: Authorization
+      required: true
       description: The session token
       example: "AD0EZ92B6ECD1EF95C46C813C3757D58D364D6BB2DF3BD50760CEF620C85EAD9"
 
@@ -293,6 +294,7 @@ paths:
         - $ref: "#/components/parameters/AuthorizationHeader"
         - in: header
           name: Body
+          required: true
           schema:
             type: object
             required: [name, type]
