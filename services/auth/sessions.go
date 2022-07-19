@@ -29,7 +29,6 @@ func CreateSession(tx *sqlx.Tx, userId int) (Session, IServiceError) {
 	if err != nil {
 		return Session{}, NewServiceError(http.StatusInternalServerError, err)
 	}
-
 	return session, nil
 }
 
@@ -42,10 +41,12 @@ func DeleteSession(tx *sqlx.Tx, session *Session) IServiceError {
 	}
 
 	count, err := res.RowsAffected()
-	if count == 0 && err != nil {
+	if err != nil {
+		return NewServiceError(http.StatusInternalServerError, err)
+	}
+	if count == 0 {
 		err := errors.New("the session doesn't exists")
 		return NewServiceError(http.StatusNotFound, err)
 	}
-
 	return nil
 }
