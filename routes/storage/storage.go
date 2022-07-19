@@ -290,10 +290,7 @@ func getBucket(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"id":        bucket.Id,
-		"root_node": bucket.RootNode,
-	})
+	c.JSON(http.StatusOK, bucket)
 }
 
 func downloadNodes(c *gin.Context) {

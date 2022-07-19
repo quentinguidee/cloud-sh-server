@@ -39,8 +39,4 @@ func logout(c *gin.Context) {
 	}
 
 	ExecTransaction(c, tx)
-
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Disconnected successfully.",
-	})
 }

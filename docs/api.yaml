@@ -1,0 +1,550 @@
+openapi: 3.0.3
+
+info:
+  title: cloud.sh API specs
+  description: cloud.sh API specs
+  version: 0.0.0
+
+components:
+  schemas:
+
+    Bucket:
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Bucket name"
+        root_node:
+          type: string
+          example: "edd91c7b-efa4-4473-aba4-d205cf6007b7"
+        type:
+          type: string
+          enum:
+            - "user_bucket"
+          example: "user_bucket"
+
+    DemoMode:
+      properties:
+        enabled:
+          type: boolean
+          example: true
+        reset_interval:
+          type: string
+          example: "0 0 0 * * *"
+
+    Error:
+      properties:
+        message:
+          type: string
+          example: "error message"
+
+    Node:
+      properties:
+        uuid:
+          type: string
+          example: "edd91c7b-efa4-4473-aba4-d205cf6007b7"
+        name:
+          type: string
+          example: "Node name"
+        type:
+          type: string
+          example: "json"
+        mime:
+          type: string
+          nullable: true
+          example: "application/json"
+        size:
+          type: integer
+          nullable: true
+          example: 1806
+
+    Nodes:
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Node"
+
+    Session:
+      properties:
+        id:
+          type: integer
+          example: 1
+        user_id:
+          type: string
+          example: "jean.dupont"
+        token:
+          type: string
+          example: "AD0EZ92B6ECD1EF95C46C813C3757D58D364D6BB2DF3BD50760CEF620C85EAD9"
+
+    User:
+      properties:
+        id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: jean.dupont
+        name:
+          type: string
+          example: Jean Dupont
+        profile_picture:
+          type: string
+          nullable: true
+          example: "https://..."
+        role:
+          type: string
+          enum:
+            - "user"
+            - "admin"
+          nullable: true
+          example: "user"
+        creation_date:
+          type: string
+          nullable: true
+
+  parameters:
+
+    AuthorizationHeader:
+      in: header
+      name: Authorization
+      description: The session token
+      example: "AD0EZ92B6ECD1EF95C46C813C3757D58D364D6BB2DF3BD50760CEF620C85EAD9"
+
+paths:
+
+  /admin/demo:
+    get:
+      summary: Get the state of the demo mode
+      tags:
+        - "Admin"
+      parameters:
+        - $ref: "#/components/parameters/AuthorizationHeader"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoMode"
+        500:
+          description: Failed to retrieve the demo mode state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    post:
+      summary: Enable demo mode
+      tags:
+        - "Admin"
+      parameters:
+        - $ref: "#/components/parameters/AuthorizationHeader"
+      responses:
+        200:
+          description: OK
+
+  /admin/reset:
+    post:
+      summary: Reset the server
+      tags:
+        - "Admin"
+      parameters:
+        - $ref: "#/components/parameters/AuthorizationHeader"
+      responses:
+        200:
+          description: OK
+        500:
+          description: Failed to reset the server
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /auth/github/callback:
+    post:
+      summary: Callback to login with GitHub
+      tags:
+        - "Auth"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  description: The code given by GitHub
+                  example: "832kx16pa033j90fq6an5c4ds23oa"
+                state:
+                  description: The app state
+                  example: "CLOUD_SH"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: "#/components/schemas/User"
+                  session:
+                    $ref: "#/components/schemas/Session"
+        400:
+          description: Failed to parse body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+
+
+  /auth/github/login:
+    get:
+      summary: Get the login with github link
+      tags:
+        - "Auth"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    example: "https://github.com/..."
+
+  /auth/logout:
+    post:
+      summary: Logout
+      tags:
+        - "Auth"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: integer
+                  example: "AD0EZ92B6ECD1EF95C46C813C3757D58D364D6BB2DF3BD50760CEF620C85EAD9"
+                user_id:
+                  type: string
+                  example: "jean.dupont"
+      responses:
+        200:
+          description: OK
+        400:
+          description: Bad request, cannot decode the session object
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: Failed to logout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /storage:
+    get:
+      summary: Get nodes contained in a directory
+      tags:
+        - "Storage"
+      parameters:
+        - $ref: "#/components/parameters/AuthorizationHeader"
+        - in: query
+          name: parent_uuid
+          schema:
+            type: string
+          required: true
+          example: "edd91c7b-efa4-4473-aba4-d205cf6007b7"
+          description: The directory node UUID
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Nodes"
+        401:
+          description: Unauthorized access to this bucket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: Failed to retrieve nodes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    put:
+      summary: Create a node in a directory
+      tags:
+        - "Storage"
+      parameters:
+        - $ref: "#/components/parameters/AuthorizationHeader"
+        - in: header
+          name: Body
+          schema:
+            type: object
+            required: [name, type]
+            properties:
+              name:
+                type: string
+                description: The node name
+                example: "Node name"
+              type:
+                type: string
+                description: The node type
+                example: "json"
+        - in: query
+          name: parent_uuid
+          schema:
+            type: string
+          required: true
+          example: "edd91c7b-efa4-4473-aba4-d205cf6007b7"
+          description: The directory node UUID
+      responses:
+        200:
+          description: OK
+        400:
+          description: Failed to parse request parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        401:
+          description: Unauthorized access to this bucket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: Failed to create nodes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    delete:
+      summary: Delete a node
+      tags:
+        - "Storage"
+      parameters:
+        - $ref: "#/components/parameters/AuthorizationHeader"
+        - in: query
+          name: node_uuid
+          schema:
+            type: string
+          required: true
+          example: "edd91c7b-efa4-4473-aba4-d205cf6007b7"
+          description: The node UUID to delete. It can be a folder.
+      responses:
+        200:
+          description: OK
+        401:
+          description: Unauthorized access to this bucket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: Failed to delete this node
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    patch:
+      summary: Rename node
+      tags:
+        - "Storage"
+      parameters:
+        - $ref: "#/components/parameters/AuthorizationHeader"
+        - in: query
+          name: node_uuid
+          description: The UUID of the node to rename
+          schema:
+            type: string
+          required: true
+          example: "edd91c7b-efa4-4473-aba4-d205cf6007b7"
+        - in: query
+          name: new_name
+          description: The new node name
+          schema:
+            type: string
+          required: true
+          example: "New node name"
+      responses:
+        200:
+          description: OK
+        401:
+          description: Unauthorized access to this bucket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: Failed to rename this node
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /storage/bucket:
+    get:
+      summary: Get the user bucket
+      tags:
+        - "Storage"
+      parameters:
+        - $ref: "#/components/parameters/AuthorizationHeader"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bucket"
+        500:
+          description: Failed to retrieve the user bucket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /storage/download:
+    get:
+      summary: Download a node
+      tags:
+        - "Storage"
+      parameters:
+        - $ref: "#/components/parameters/AuthorizationHeader"
+        - in: query
+          name: node_uuid
+          description: The UUID of the node to download
+          schema:
+            type: string
+          required: true
+          example: "edd91c7b-efa4-4473-aba4-d205cf6007b7"
+      responses:
+        200:
+          description: OK. This will serve the file.
+        401:
+          description: Unauthorized access to this node
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: Failed to download this node
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /storage/upload:
+    post:
+      summary: Upload a node
+      tags:
+        - "Storage"
+      parameters:
+        - $ref: "#/components/parameters/AuthorizationHeader"
+        - in: query
+          name: parent_uuid
+          description: The parent directory
+          schema:
+            type: string
+          required: true
+          example: "edd91c7b-efa4-4473-aba4-d205cf6007b7"
+      requestBody:
+        content:
+          multipart/form:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        200:
+          description: OK
+        401:
+          description: Unauthorized access to this bucket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: Failed to retrieve the user bucket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /user:
+    get:
+      summary: Gets the logged in user
+      tags:
+        - "Users"
+      parameters:
+        - $ref: "#/components/parameters/AuthorizationHeader"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        404:
+          description: The user was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: Failed to retrieve the user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /user/{username}:
+    get:
+      summary: Gets an user by its username
+      tags:
+        - "Users"
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+            example: jean.dupont
+          description: The user's username
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        404:
+          description: The user was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: Failed to retrieve the user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
