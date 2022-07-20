@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"self-hosted-cloud/server/database"
 	"self-hosted-cloud/server/models"
+	"self-hosted-cloud/server/models/types"
 	"self-hosted-cloud/server/services/storage"
 	"self-hosted-cloud/server/utils"
 	"strings"
@@ -168,19 +169,20 @@ func createNode(c *gin.Context) {
 		nodeType = storage.DetectFileType(params.Name)
 	}
 
-	node, serviceError := storage.CreateBucketNode(tx, user.Id, params.Name, nodeType, "", 0)
+	node, serviceError := storage.CreateBucketNode(tx,
+		user.Id,
+		types.NewNullableString(parentUuid),
+		params.Name,
+		nodeType,
+		types.NewNullString(),
+		types.NewNullableInt64(0),
+	)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
 	}
 
 	serviceError = storage.CreateBucketToNodeAssociation(tx, bucket.Id, node.Uuid)
-	if serviceError != nil {
-		serviceError.Throws(c)
-		return
-	}
-
-	serviceError = storage.CreateBucketNodeAssociation(tx, parentUuid, node.Uuid)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
@@ -414,19 +416,20 @@ func uploadNode(c *gin.Context) {
 	nodeType := storage.DetectFileType(file.Filename)
 	mime := storage.DetectFileMime(file)
 
-	node, serviceError := storage.CreateBucketNode(tx, user.Id, file.Filename, nodeType, mime, file.Size)
+	node, serviceError := storage.CreateBucketNode(tx,
+		user.Id,
+		types.NewNullableString(parentUuid),
+		file.Filename,
+		nodeType,
+		types.NewNullableString(mime),
+		types.NewNullableInt64(file.Size),
+	)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
 	}
 
 	serviceError = storage.CreateBucketToNodeAssociation(tx, bucket.Id, node.Uuid)
-	if serviceError != nil {
-		serviceError.Throws(c)
-		return
-	}
-
-	serviceError = storage.CreateBucketNodeAssociation(tx, parentUuid, node.Uuid)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return

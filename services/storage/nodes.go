@@ -28,10 +28,10 @@ func GetBucketNode(tx *sqlx.Tx, uuid string) (Node, IServiceError) {
 
 func GetBucketNodes(tx *sqlx.Tx, parentUuid string) ([]Node, IServiceError) {
 	request := `
-		SELECT nodes.*
-		FROM nodes, nodes_to_nodes associations
-		WHERE associations.from_node = $1
-		  AND associations.to_node = nodes.uuid
+		SELECT children.*
+		FROM nodes parent, nodes children
+		WHERE parent.uuid = children.parent_uuid
+		  AND parent.uuid = $1
 	`
 
 	var nodes []Node
@@ -62,10 +62,10 @@ func GetRecentFiles(tx *sqlx.Tx, userId int) ([]Node, IServiceError) {
 
 func GetBucketNodeParent(tx *sqlx.Tx, nodeUuid string) (Node, IServiceError) {
 	request := `
-		SELECT nodes.*
-		FROM nodes, nodes_to_nodes associations
-		WHERE associations.from_node = nodes.uuid
-		  AND associations.to_node = $1
+		SELECT parent.*
+		FROM nodes parent, nodes child
+		WHERE child.parent_uuid = parent.uuid
+		  AND child.uuid = $1
 	`
 
 	var parent Node
@@ -101,22 +101,28 @@ func GetBucketNodePath(tx *sqlx.Tx, node Node, bucketId int, bucketRootNodeUuid 
 	}
 }
 
-func CreateBucketNode(tx *sqlx.Tx, userId int, name string, kind string, mime string, size int64) (Node, IServiceError) {
+func CreateBucketRootNode(tx *sqlx.Tx, userId int) (Node, IServiceError) {
+	return CreateBucketNode(tx, userId, NewNullString(), "root", "directory", NewNullString(), NewNullInt64())
+}
+
+func CreateBucketNode(tx *sqlx.Tx, userId int, parentUuid NullableString, name string, kind string, mime NullableString, size NullableInt64) (Node, IServiceError) {
 	node := Node{
-		Uuid: uuid.NewString(),
-		Name: name,
-		Type: kind,
-		Mime: NewNullableString(mime),
-		Size: NewNullableInt64(size),
+		Uuid:       uuid.NewString(),
+		ParentUuid: parentUuid,
+		Name:       name,
+		Type:       kind,
+		Mime:       mime,
+		Size:       size,
 	}
 
 	request := `
-		INSERT INTO nodes(uuid, name, type, mime, size)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO nodes(uuid, parent_uuid, name, type, mime, size)
+		VALUES ($1, $2, $3, $4, $5, $6)
 	`
 
 	_, err := tx.Exec(request,
 		node.Uuid,
+		node.ParentUuid,
 		node.Name,
 		node.Type,
 		node.Mime,
@@ -175,17 +181,9 @@ func CreateBucketNodeInFileSystem(kind string, path string, content string) ISer
 }
 
 func DeleteBucketNode(tx *sqlx.Tx, uuid string) IServiceError {
-	request := "DELETE FROM nodes_to_nodes WHERE to_node = $1"
+	request := "DELETE FROM buckets_to_nodes WHERE node_uuid = $1"
 
 	_, err := tx.Exec(request, uuid)
-	if err != nil {
-		err = fmt.Errorf("error while deleting node association: %s", err.Error())
-		return NewServiceError(http.StatusInternalServerError, err)
-	}
-
-	request = "DELETE FROM buckets_to_nodes WHERE node_uuid = $1"
-
-	_, err = tx.Exec(request, uuid)
 	if err != nil {
 		err = fmt.Errorf("error while deleting buckets_to_node association: %s", err)
 		return NewServiceError(http.StatusInternalServerError, err)

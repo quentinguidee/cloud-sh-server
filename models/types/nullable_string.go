@@ -9,6 +9,13 @@ type NullableString struct {
 	sql.NullString
 }
 
+func NewNullString() NullableString {
+	return NullableString{sql.NullString{
+		String: "",
+		Valid:  false,
+	}}
+}
+
 func NewNullableString(string string) NullableString {
 	return NullableString{sql.NullString{
 		String: string,

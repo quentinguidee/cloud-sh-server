@@ -9,6 +9,13 @@ type NullableInt64 struct {
 	sql.NullInt64
 }
 
+func NewNullInt64() NullableInt64 {
+	return NullableInt64{sql.NullInt64{
+		Int64: 0,
+		Valid: false,
+	}}
+}
+
 func NewNullableInt64(value int64) NullableInt64 {
 	return NullableInt64{sql.NullInt64{
 		Int64: value,

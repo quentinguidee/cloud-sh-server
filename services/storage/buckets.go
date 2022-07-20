@@ -14,7 +14,7 @@ import (
 )
 
 func SetupDefaultBucket(tx *sqlx.Tx, userId int) IServiceError {
-	root, err := CreateBucketNode(tx, userId, "root", "directory", "", 0)
+	root, err := CreateBucketRootNode(tx, userId)
 	if err != nil {
 		return err
 	}
@@ -26,7 +26,7 @@ func SetupDefaultBucket(tx *sqlx.Tx, userId int) IServiceError {
 
 	err = CreateBucketToNodeAssociation(tx, bucket.Id, root.Uuid)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	_, err = CreateBucketAccess(tx, bucket.Id, userId)

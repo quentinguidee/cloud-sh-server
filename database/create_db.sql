@@ -58,11 +58,12 @@ CREATE TABLE buckets_to_users
 
 CREATE TABLE nodes
 (
-    uuid VARCHAR(63) UNIQUE PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    type VARCHAR(63)  NOT NULL,
-    mime VARCHAR(63),
-    size INTEGER
+    uuid        VARCHAR(63) UNIQUE PRIMARY KEY,
+    parent_uuid VARCHAR(63),
+    name        VARCHAR(255) NOT NULL,
+    type        VARCHAR(63)  NOT NULL,
+    mime        VARCHAR(63),
+    size        INTEGER
 );
 
 CREATE TABLE nodes_to_users
@@ -81,13 +82,6 @@ CREATE TABLE buckets_to_nodes
     node_uuid VARCHAR(63) NOT NULL
 );
 
-CREATE TABLE nodes_to_nodes
-(
-    id        INTEGER GENERATED ALWAYS AS IDENTITY UNIQUE,
-    from_node VARCHAR(63) NOT NULL,
-    to_node   VARCHAR(63) NOT NULL
-);
-
 -- endregion
 
 -- region: Foreign keys
@@ -98,6 +92,8 @@ ALTER TABLE auth_github
     ADD FOREIGN KEY (user_id) REFERENCES users (id);
 ALTER TABLE buckets
     ADD FOREIGN KEY (root_node) REFERENCES nodes (uuid);
+ALTER TABLE nodes
+    ADD FOREIGN KEY (parent_uuid) REFERENCES nodes (uuid);
 ALTER TABLE buckets_to_users
     ADD FOREIGN KEY (bucket_id) REFERENCES buckets (id);
 ALTER TABLE buckets_to_users
@@ -106,10 +102,6 @@ ALTER TABLE buckets_to_nodes
     ADD FOREIGN KEY (bucket_id) REFERENCES buckets (id);
 ALTER TABLE buckets_to_nodes
     ADD FOREIGN KEY (node_uuid) REFERENCES nodes (uuid);
-ALTER TABLE nodes_to_nodes
-    ADD FOREIGN KEY (from_node) REFERENCES nodes (uuid);
-ALTER TABLE nodes_to_nodes
-    ADD FOREIGN KEY (to_node) REFERENCES nodes (uuid);
 ALTER TABLE nodes_to_users
     ADD FOREIGN KEY (user_id) REFERENCES users (id);
 ALTER TABLE nodes_to_users
