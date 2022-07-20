@@ -350,8 +350,7 @@ func getBucket(c *gin.Context) {
 	database.ExecTransaction(c, tx)
 
 	c.JSON(http.StatusOK, gin.H{
-		"name":      bucket.Name,
-		"type":      bucket.Type,
+		"bucket":    bucket,
 		"root_node": rootNode,
 	})
 }
