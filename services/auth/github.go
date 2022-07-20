@@ -24,7 +24,7 @@ func GetGithubUser(tx *sqlx.Tx, username string) (User, IServiceError) {
 		SELECT users.*
 		FROM users, auth_github
 		WHERE users.id = auth_github.user_id
-		  AND auth_github.username = $1;
+		  AND auth_github.username = $1
 	`
 
 	var user User
