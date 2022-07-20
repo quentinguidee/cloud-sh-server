@@ -16,6 +16,7 @@ func LoadRoutes(router *gin.Engine) {
 	group := router.Group("/storage")
 	{
 		group.GET("", getNodes)
+		group.GET("/recent", getRecentFiles)
 		group.PUT("", createNode)
 		group.DELETE("", deleteNodes)
 		group.PATCH("", renameNode)
@@ -62,6 +63,47 @@ func getNodes(c *gin.Context) {
 	}
 
 	nodes, serviceError := storage.GetBucketNodes(tx, parentUuid)
+	if serviceError != nil {
+		serviceError.Throws(c)
+		return
+	}
+
+	database.ExecTransaction(c, tx)
+
+	c.JSON(http.StatusOK, gin.H{
+		"nodes": nodes,
+	})
+}
+
+func getRecentFiles(c *gin.Context) {
+	tx := database.NewTransaction(c)
+	defer tx.Rollback()
+
+	user, err := utils.GetUserFromContext(c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	bucket, serviceError := storage.GetUserBucket(tx, user.Id)
+	if serviceError != nil {
+		serviceError.Throws(c)
+		return
+	}
+
+	accessType, serviceError := storage.GetBucketUserAccessType(tx, bucket.Id, user.Id)
+	if serviceError != nil {
+		serviceError.Throws(c)
+		return
+	}
+
+	if accessType < models.ReadOnly {
+		err := errors.New("cannot access this bucket: insufficient permissions")
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
+
+	nodes, serviceError := storage.GetRecentFiles(tx, user.Id)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return

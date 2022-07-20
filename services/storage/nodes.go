@@ -42,6 +42,24 @@ func GetBucketNodes(tx *sqlx.Tx, parentUuid string) ([]Node, IServiceError) {
 	return nodes, nil
 }
 
+func GetRecentFiles(tx *sqlx.Tx, userId int) ([]Node, IServiceError) {
+	request := `
+		SELECT nodes.*
+		FROM nodes, nodes_to_users
+		WHERE nodes_to_users.node_uuid = nodes.uuid
+		  AND nodes_to_users.user_id = $1
+		  AND nodes.type <> 'directory'
+		ORDER BY nodes_to_users.last_view_timestamp DESC
+	`
+
+	var nodes []Node
+	err := tx.Select(&nodes, request, userId)
+	if err != nil {
+		return nil, NewServiceError(http.StatusInternalServerError, err)
+	}
+	return nodes, nil
+}
+
 func GetBucketNodeParent(tx *sqlx.Tx, nodeUuid string) (Node, IServiceError) {
 	request := `
 		SELECT nodes.*
