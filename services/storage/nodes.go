@@ -65,7 +65,7 @@ func GetBucketNodePath(tx *sqlx.Tx, node Node, bucketId int, bucketRootNodeUuid 
 		err    IServiceError
 	)
 
-	for true {
+	for {
 		parent, err = GetBucketNodeParent(tx, parent.Uuid)
 		if parent.Uuid == bucketRootNodeUuid {
 			return filepath.Join(GetBucketPath(bucketId), path), nil
@@ -80,8 +80,6 @@ func GetBucketNodePath(tx *sqlx.Tx, node Node, bucketId int, bucketRootNodeUuid 
 		path = filepath.Join(parent.Name, path)
 		i--
 	}
-
-	return "", NewServiceError(http.StatusInternalServerError, errors.New("unreachable code reached"))
 }
 
 func CreateBucketNode(tx *sqlx.Tx, name string, kind string, mime string, size int64) (Node, IServiceError) {
