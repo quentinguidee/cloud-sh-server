@@ -16,7 +16,7 @@ import (
 )
 
 func GetBucketNode(tx *sqlx.Tx, uuid string) (Node, IServiceError) {
-	request := "SELECT * FROM buckets_nodes WHERE uuid = $1"
+	request := "SELECT * FROM nodes WHERE uuid = $1"
 
 	var node Node
 	err := tx.Get(&node, request, uuid)
@@ -29,7 +29,7 @@ func GetBucketNode(tx *sqlx.Tx, uuid string) (Node, IServiceError) {
 func GetBucketNodes(tx *sqlx.Tx, parentUuid string) ([]Node, IServiceError) {
 	request := `
 		SELECT nodes.*
-		FROM buckets_nodes nodes, buckets_nodes_associations associations
+		FROM nodes, nodes_to_nodes associations
 		WHERE associations.from_node = $1
 		  AND associations.to_node = nodes.uuid
 	`
@@ -45,7 +45,7 @@ func GetBucketNodes(tx *sqlx.Tx, parentUuid string) ([]Node, IServiceError) {
 func GetBucketNodeParent(tx *sqlx.Tx, nodeUuid string) (Node, IServiceError) {
 	request := `
 		SELECT nodes.*
-		FROM buckets_nodes nodes, buckets_nodes_associations associations
+		FROM nodes, nodes_to_nodes associations
 		WHERE associations.from_node = nodes.uuid
 		  AND associations.to_node = $1
 	`
@@ -93,7 +93,7 @@ func CreateBucketNode(tx *sqlx.Tx, userId int, name string, kind string, mime st
 	}
 
 	request := `
-		INSERT INTO buckets_nodes(uuid, name, type, mime, size)
+		INSERT INTO nodes(uuid, name, type, mime, size)
 		VALUES ($1, $2, $3, $4, $5)
 	`
 
@@ -110,7 +110,7 @@ func CreateBucketNode(tx *sqlx.Tx, userId int, name string, kind string, mime st
 	}
 
 	request = `
-		INSERT INTO buckets_nodes_user_specific_data(user_id, node_uuid, last_view_timestamp, last_edition_timestamp)
+		INSERT INTO nodes_to_users(user_id, node_uuid, last_view_timestamp, last_edition_timestamp)
 		VALUES ($1, $2, $3, $4)
 	`
 
@@ -157,7 +157,7 @@ func CreateBucketNodeInFileSystem(kind string, path string, content string) ISer
 }
 
 func DeleteBucketNode(tx *sqlx.Tx, uuid string) IServiceError {
-	request := "DELETE FROM buckets_nodes_associations WHERE to_node = $1"
+	request := "DELETE FROM nodes_to_nodes WHERE to_node = $1"
 
 	_, err := tx.Exec(request, uuid)
 	if err != nil {
@@ -165,7 +165,7 @@ func DeleteBucketNode(tx *sqlx.Tx, uuid string) IServiceError {
 		return NewServiceError(http.StatusInternalServerError, err)
 	}
 
-	request = "DELETE FROM buckets_to_node WHERE node_id = $1"
+	request = "DELETE FROM buckets_to_nodes WHERE node_uuid = $1"
 
 	_, err = tx.Exec(request, uuid)
 	if err != nil {
@@ -173,19 +173,19 @@ func DeleteBucketNode(tx *sqlx.Tx, uuid string) IServiceError {
 		return NewServiceError(http.StatusInternalServerError, err)
 	}
 
-	request = "DELETE FROM buckets_nodes WHERE uuid = $1"
-
-	_, err = tx.Exec(request, uuid)
-	if err != nil {
-		err = fmt.Errorf("error while deleting node: %s", err.Error())
-		return NewServiceError(http.StatusInternalServerError, err)
-	}
-
-	request = "DELETE FROM buckets_nodes_user_specific_data WHERE node_uuid = $1"
+	request = "DELETE FROM nodes_to_users WHERE node_uuid = $1"
 
 	_, err = tx.Exec(request, uuid)
 	if err != nil {
 		err = fmt.Errorf("error while deleting node user specific data: %s", err)
+		return NewServiceError(http.StatusInternalServerError, err)
+	}
+
+	request = "DELETE FROM nodes WHERE uuid = $1"
+
+	_, err = tx.Exec(request, uuid)
+	if err != nil {
+		err = fmt.Errorf("error while deleting node: %s", err.Error())
 		return NewServiceError(http.StatusInternalServerError, err)
 	}
 
@@ -223,7 +223,7 @@ func DeleteBucketNodeInFileSystem(path string) IServiceError {
 }
 
 func UpdateBucketNode(tx *sqlx.Tx, name string, previousType string, uuid string, userId int) IServiceError {
-	request := "UPDATE buckets_nodes SET name = $1, type = $2 WHERE uuid = $3"
+	request := "UPDATE nodes SET name = $1, type = $2 WHERE uuid = $3"
 
 	nodeType := previousType
 	if previousType != "directory" {
@@ -279,7 +279,7 @@ func GetDownloadPath(tx *sqlx.Tx, userId int, uuid string, bucketId int, bucketR
 
 func UpdateLastViewTimestamp(tx *sqlx.Tx, userId int, uuid string) IServiceError {
 	request := `
-		UPDATE buckets_nodes_user_specific_data
+		UPDATE nodes_to_users
 		SET last_view_timestamp = $1
 		WHERE node_uuid = $2
 		  AND user_id = $3
@@ -302,7 +302,7 @@ func UpdateLastViewTimestamp(tx *sqlx.Tx, userId int, uuid string) IServiceError
 
 func UpdateLastEditionTimestamp(tx *sqlx.Tx, userId int, uuid string) IServiceError {
 	request := `
-		UPDATE buckets_nodes_user_specific_data
+		UPDATE nodes_to_users
 		SET last_edition_timestamp = $1
 		WHERE node_uuid = $2
 		  AND user_id = $3

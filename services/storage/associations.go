@@ -10,7 +10,7 @@ import (
 
 func CreateBucketNodeAssociation(tx *sqlx.Tx, fromNodeUuid string, toNodeUuid string) IServiceError {
 	request := `
-		INSERT INTO buckets_nodes_associations(from_node, to_node)
+		INSERT INTO nodes_to_nodes(from_node, to_node)
 		VALUES ($1, $2)
 	`
 

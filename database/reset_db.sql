@@ -10,9 +10,9 @@ DROP TABLE IF EXISTS auth_github CASCADE;
 
 -- region: STORAGE
 DROP TABLE IF EXISTS buckets CASCADE;
-DROP TABLE IF EXISTS buckets_nodes CASCADE;
-DROP TABLE IF EXISTS buckets_to_node CASCADE;
-DROP TABLE IF EXISTS buckets_access CASCADE;
-DROP TABLE IF EXISTS buckets_nodes_associations CASCADE;
-DROP TABLE IF EXISTS buckets_nodes_user_specific_data CASCADE;
+DROP TABLE IF EXISTS nodes CASCADE;
+DROP TABLE IF EXISTS buckets_to_nodes CASCADE;
+DROP TABLE IF EXISTS buckets_to_users CASCADE;
+DROP TABLE IF EXISTS nodes_to_nodes CASCADE;
+DROP TABLE IF EXISTS nodes_to_users CASCADE;
 -- endregion

@@ -11,7 +11,7 @@ import (
 
 func CreateBucketToNodeAssociation(tx *sqlx.Tx, bucketId int, nodeUuid string) IServiceError {
 	request := `
-		INSERT INTO buckets_to_node(bucket_id, node_id)
+		INSERT INTO buckets_to_nodes(bucket_id, node_uuid)
 		VALUES ($1, $2)
 	`
 
@@ -26,8 +26,8 @@ func CreateBucketToNodeAssociation(tx *sqlx.Tx, bucketId int, nodeUuid string) I
 func GetBucketFromNode(tx *sqlx.Tx, nodeUuid string) (Bucket, IServiceError) {
 	request := `
 		SELECT buckets.*
-		FROM buckets_to_node, buckets
-		WHERE node_id = $1
+		FROM buckets_to_nodes, buckets
+		WHERE node_uuid = $1
 		  AND bucket_id = buckets.id
 	`
 

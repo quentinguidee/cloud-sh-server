@@ -48,7 +48,7 @@ CREATE TABLE buckets
     type      VARCHAR(63)  NOT NULL
 );
 
-CREATE TABLE buckets_access
+CREATE TABLE buckets_to_users
 (
     id          INTEGER GENERATED ALWAYS AS IDENTITY UNIQUE,
     bucket_id   INTEGER     NOT NULL,
@@ -56,7 +56,7 @@ CREATE TABLE buckets_access
     access_type VARCHAR(63) NOT NULL
 );
 
-CREATE TABLE buckets_nodes
+CREATE TABLE nodes
 (
     uuid VARCHAR(63) UNIQUE PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -65,7 +65,7 @@ CREATE TABLE buckets_nodes
     size INTEGER
 );
 
-CREATE TABLE buckets_nodes_user_specific_data
+CREATE TABLE nodes_to_users
 (
     id                     INTEGER GENERATED ALWAYS AS IDENTITY UNIQUE,
     user_id                INTEGER     NOT NULL,
@@ -74,14 +74,14 @@ CREATE TABLE buckets_nodes_user_specific_data
     last_edition_timestamp TIMESTAMP
 );
 
-CREATE TABLE buckets_to_node
+CREATE TABLE buckets_to_nodes
 (
     id        INTEGER GENERATED ALWAYS AS IDENTITY UNIQUE,
     bucket_id INTEGER     NOT NULL,
-    node_id   VARCHAR(63) NOT NULL
+    node_uuid VARCHAR(63) NOT NULL
 );
 
-CREATE TABLE buckets_nodes_associations
+CREATE TABLE nodes_to_nodes
 (
     id        INTEGER GENERATED ALWAYS AS IDENTITY UNIQUE,
     from_node VARCHAR(63) NOT NULL,
@@ -97,22 +97,22 @@ ALTER TABLE sessions
 ALTER TABLE auth_github
     ADD FOREIGN KEY (user_id) REFERENCES users (id);
 ALTER TABLE buckets
-    ADD FOREIGN KEY (root_node) REFERENCES buckets_nodes (uuid);
-ALTER TABLE buckets_access
+    ADD FOREIGN KEY (root_node) REFERENCES nodes (uuid);
+ALTER TABLE buckets_to_users
     ADD FOREIGN KEY (bucket_id) REFERENCES buckets (id);
-ALTER TABLE buckets_access
+ALTER TABLE buckets_to_users
     ADD FOREIGN KEY (user_id) REFERENCES users (id);
-ALTER TABLE buckets_to_node
+ALTER TABLE buckets_to_nodes
     ADD FOREIGN KEY (bucket_id) REFERENCES buckets (id);
-ALTER TABLE buckets_to_node
-    ADD FOREIGN KEY (node_id) REFERENCES buckets_nodes (uuid);
-ALTER TABLE buckets_nodes_associations
-    ADD FOREIGN KEY (from_node) REFERENCES buckets_nodes (uuid);
-ALTER TABLE buckets_nodes_associations
-    ADD FOREIGN KEY (to_node) REFERENCES buckets_nodes (uuid);
-ALTER TABLE buckets_nodes_user_specific_data
+ALTER TABLE buckets_to_nodes
+    ADD FOREIGN KEY (node_uuid) REFERENCES nodes (uuid);
+ALTER TABLE nodes_to_nodes
+    ADD FOREIGN KEY (from_node) REFERENCES nodes (uuid);
+ALTER TABLE nodes_to_nodes
+    ADD FOREIGN KEY (to_node) REFERENCES nodes (uuid);
+ALTER TABLE nodes_to_users
     ADD FOREIGN KEY (user_id) REFERENCES users (id);
-ALTER TABLE buckets_nodes_user_specific_data
-    ADD FOREIGN KEY (node_uuid) REFERENCES buckets_nodes (uuid);
+ALTER TABLE nodes_to_users
+    ADD FOREIGN KEY (node_uuid) REFERENCES nodes (uuid);
 
 -- endregion

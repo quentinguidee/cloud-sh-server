@@ -76,7 +76,7 @@ func CreateBucketInFileSystem(bucketId int) IServiceError {
 func GetUserBucket(tx *sqlx.Tx, userId int) (Bucket, IServiceError) {
 	request := `
 		SELECT buckets.*
-		FROM buckets, buckets_access access
+		FROM buckets, buckets_to_users access
 		WHERE buckets.id = access.bucket_id
 		  AND buckets.type = 'user_bucket'
 		  AND access.user_id = $1
