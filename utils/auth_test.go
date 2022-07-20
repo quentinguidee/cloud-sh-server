@@ -28,54 +28,50 @@ func TestGetTokenFromContext(t *testing.T) {
 }
 
 func TestGetUserFromContext(t *testing.T) {
-	db, mock := tests.NewDB()
-
-	usersRows := sqlmock.NewRows([]string{"username", "name"}).
-		AddRow("jean.dupont", "Jean Dupont")
-
-	mock.ExpectBegin()
-	mock.ExpectQuery("^SELECT (.+) FROM users, sessions WHERE sessions.user_id = users.id AND sessions.token = \\$1$").
-		WithArgs(token).
-		WillReturnRows(usersRows)
-	mock.ExpectCommit()
-
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = &http.Request{
 		Header: make(http.Header),
 	}
 	c.Request.Header.Set("Authorization", token)
-	c.Set(database.KeyDatabase, &db)
 
-	user, err := GetUserFromContext(c)
-	if err != nil {
-		log.Fatalln(err.Error())
-	}
-	assert.Equal(t, models.User{
-		Username: "jean.dupont",
-		Name:     "Jean Dupont",
-	}, user)
-}
+	t.Run("get user from context", func(t *testing.T) {
+		user := models.User{
+			Username: "jean.dupont",
+			Name:     "Jean Dupont",
+		}
+		db, mock := tests.NewDB()
+		c.Set(database.KeyDatabase, &db)
 
-func TestGetUserFromContextNotFound(t *testing.T) {
-	db, mock := tests.NewDB()
+		usersRows := sqlmock.NewRows([]string{"username", "name"}).
+			AddRow(user.Username, user.Name)
 
-	usersRows := sqlmock.NewRows([]string{"username", "name"})
+		mock.ExpectBegin()
+		mock.ExpectQuery("^SELECT (.+) FROM users, sessions WHERE sessions.user_id = users.id AND sessions.token = \\$1$").
+			WithArgs(token).
+			WillReturnRows(usersRows)
+		mock.ExpectCommit()
 
-	mock.ExpectBegin()
-	mock.ExpectQuery("^SELECT (.+) FROM users, sessions WHERE sessions.user_id = users.id AND sessions.token = \\$1$").
-		WithArgs(token).
-		WillReturnRows(usersRows)
-	mock.ExpectCommit()
+		userFromContext, err := GetUserFromContext(c)
+		if err != nil {
+			log.Fatalln(err.Error())
+		}
+		assert.Equal(t, user, userFromContext)
+	})
 
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Request = &http.Request{
-		Header: make(http.Header),
-	}
-	c.Request.Header.Set("Authorization", token)
-	c.Set(database.KeyDatabase, &db)
+	t.Run("get user from context not found", func(t *testing.T) {
+		db, mock := tests.NewDB()
+		c.Set(database.KeyDatabase, &db)
 
-	_, err := GetUserFromContext(c)
-	assert.Error(t, err)
+		usersRows := sqlmock.NewRows([]string{"username", "name"})
+
+		mock.ExpectBegin()
+		mock.ExpectQuery("^SELECT (.+) FROM users, sessions WHERE sessions.user_id = users.id AND sessions.token = \\$1$").
+			WithArgs(token).
+			WillReturnRows(usersRows)
+		mock.ExpectCommit()
+
+		_, err := GetUserFromContext(c)
+		assert.Error(t, err)
+	})
 }

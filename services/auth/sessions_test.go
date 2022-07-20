@@ -31,38 +31,38 @@ func TestCreateSession(t *testing.T) {
 }
 
 func TestDeleteSession(t *testing.T) {
-	db, mock := tests.NewDB()
-
-	mock.ExpectBegin()
-	mock.ExpectExec("^DELETE FROM sessions WHERE token = \\$1 AND user_id = \\$2$").
-		WithArgs("ABCDEF", 1).
-		WillReturnResult(sqlmock.NewResult(1, 1))
-	mock.ExpectCommit()
-
-	tx := tests.NewTX(&db)
-	err := DeleteSession(tx, &models.Session{
+	session := models.Session{
 		UserId: 1,
 		Token:  "ABCDEF",
-	})
-	if err != nil {
-		assert.NoError(t, err.Error())
 	}
-}
 
-func TestDeleteSessionNotFound(t *testing.T) {
-	db, mock := tests.NewDB()
+	t.Run("delete session", func(t *testing.T) {
+		db, mock := tests.NewDB()
+		mock.ExpectBegin()
+		mock.ExpectExec("^DELETE FROM sessions WHERE token = \\$1 AND user_id = \\$2$").
+			WithArgs("ABCDEF", 1).
+			WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectCommit()
 
-	mock.ExpectBegin()
-	mock.ExpectExec("^DELETE FROM sessions WHERE token = \\$1 AND user_id = \\$2$").
-		WithArgs("ABCDEF", 1).
-		WillReturnResult(sqlmock.NewResult(0, 0))
-	mock.ExpectCommit()
-
-	tx := tests.NewTX(&db)
-	err := DeleteSession(tx, &models.Session{
-		UserId: 1,
-		Token:  "ABCDEF",
+		tx := tests.NewTX(&db)
+		err := DeleteSession(tx, &session)
+		if err != nil {
+			assert.NoError(t, err.Error())
+		}
 	})
-	assert.Equal(t, err.Error().Error(), "the session doesn't exists")
-	assert.Equal(t, err.Code(), http.StatusNotFound)
+
+	t.Run("delete session not found", func(t *testing.T) {
+		db, mock := tests.NewDB()
+
+		mock.ExpectBegin()
+		mock.ExpectExec("^DELETE FROM sessions WHERE token = \\$1 AND user_id = \\$2$").
+			WithArgs("ABCDEF", 1).
+			WillReturnResult(sqlmock.NewResult(0, 0))
+		mock.ExpectCommit()
+
+		tx := tests.NewTX(&db)
+		err := DeleteSession(tx, &session)
+		assert.Equal(t, err.Error().Error(), "the session doesn't exists")
+		assert.Equal(t, err.Code(), http.StatusNotFound)
+	})
 }
