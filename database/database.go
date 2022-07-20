@@ -70,7 +70,7 @@ func (db *Database) Initialize() error {
 		VALUES (0, 0, 0, $1)
 	`
 
-	_, err = db.Instance.Exec(request, DatabaseVersion)
+	_, err = db.Instance.Exec(request, Version)
 	return err
 }
 
