@@ -101,14 +101,15 @@ func GetBucketNodePath(tx *sqlx.Tx, node Node, bucketId int, bucketRootNodeUuid 
 	}
 }
 
-func CreateBucketRootNode(tx *sqlx.Tx, userId int) (Node, IServiceError) {
-	return CreateBucketNode(tx, userId, NewNullString(), "root", "directory", NewNullString(), NewNullInt64())
+func CreateBucketRootNode(tx *sqlx.Tx, userId int, bucketId int) (Node, IServiceError) {
+	return CreateBucketNode(tx, userId, NewNullString(), bucketId, "root", "directory", NewNullString(), NewNullInt64())
 }
 
-func CreateBucketNode(tx *sqlx.Tx, userId int, parentUuid NullableString, name string, kind string, mime NullableString, size NullableInt64) (Node, IServiceError) {
+func CreateBucketNode(tx *sqlx.Tx, userId int, parentUuid NullableString, bucketId int, name string, kind string, mime NullableString, size NullableInt64) (Node, IServiceError) {
 	node := Node{
 		Uuid:       uuid.NewString(),
 		ParentUuid: parentUuid,
+		BucketId:   bucketId,
 		Name:       name,
 		Type:       kind,
 		Mime:       mime,
@@ -116,20 +117,21 @@ func CreateBucketNode(tx *sqlx.Tx, userId int, parentUuid NullableString, name s
 	}
 
 	request := `
-		INSERT INTO nodes(uuid, parent_uuid, name, type, mime, size)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO nodes(uuid, parent_uuid, bucket_id, name, type, mime, size)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`
 
 	_, err := tx.Exec(request,
 		node.Uuid,
 		node.ParentUuid,
+		node.BucketId,
 		node.Name,
 		node.Type,
 		node.Mime,
 		node.Size)
 
 	if err != nil {
-		err := errors.New("error while creating node")
+		err := fmt.Errorf("error while creating node: %s", err)
 		return Node{}, NewServiceError(http.StatusInternalServerError, err)
 	}
 
@@ -181,17 +183,9 @@ func CreateBucketNodeInFileSystem(kind string, path string, content string) ISer
 }
 
 func DeleteBucketNode(tx *sqlx.Tx, uuid string) IServiceError {
-	request := "DELETE FROM buckets_to_nodes WHERE node_uuid = $1"
+	request := "DELETE FROM nodes_to_users WHERE node_uuid = $1"
 
 	_, err := tx.Exec(request, uuid)
-	if err != nil {
-		err = fmt.Errorf("error while deleting buckets_to_node association: %s", err)
-		return NewServiceError(http.StatusInternalServerError, err)
-	}
-
-	request = "DELETE FROM nodes_to_users WHERE node_uuid = $1"
-
-	_, err = tx.Exec(request, uuid)
 	if err != nil {
 		err = fmt.Errorf("error while deleting node user specific data: %s", err)
 		return NewServiceError(http.StatusInternalServerError, err)
@@ -278,13 +272,18 @@ func RenameBucketNodeInFileSystem(path string, name string) IServiceError {
 	return nil
 }
 
-func GetDownloadPath(tx *sqlx.Tx, userId int, uuid string, bucketId int, bucketRootNode string) (string, IServiceError) {
+func GetDownloadPath(tx *sqlx.Tx, userId int, uuid string, bucketId int) (string, IServiceError) {
+	rootNode, serviceError := GetBucketRootNode(tx, bucketId)
+	if serviceError != nil {
+		return "", serviceError
+	}
+
 	node, serviceError := GetBucketNode(tx, uuid)
 	if serviceError != nil {
 		return "", serviceError
 	}
 
-	path, serviceError := GetBucketNodePath(tx, node, bucketId, bucketRootNode)
+	path, serviceError := GetBucketNodePath(tx, node, bucketId, rootNode.Uuid)
 	if serviceError != nil {
 		return "", serviceError
 	}

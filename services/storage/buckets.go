@@ -14,17 +14,12 @@ import (
 )
 
 func SetupDefaultBucket(tx *sqlx.Tx, userId int) IServiceError {
-	root, err := CreateBucketRootNode(tx, userId)
+	bucket, err := CreateBucket(tx, "Main bucket", "user_bucket")
 	if err != nil {
 		return err
 	}
 
-	bucket, err := CreateBucket(tx, "Main bucket", root.Uuid, "user_bucket")
-	if err != nil {
-		return err
-	}
-
-	err = CreateBucketToNodeAssociation(tx, bucket.Id, root.Uuid)
+	_, err = CreateBucketRootNode(tx, userId, bucket.Id)
 	if err != nil {
 		return err
 	}
@@ -42,18 +37,16 @@ func SetupDefaultBucket(tx *sqlx.Tx, userId int) IServiceError {
 	return nil
 }
 
-func CreateBucket(tx *sqlx.Tx, name string, rootNode string, kind string) (Bucket, IServiceError) {
-	request := "INSERT INTO buckets(name, root_node, type) VALUES ($1, $2, $3) RETURNING id"
+func CreateBucket(tx *sqlx.Tx, name string, kind string) (Bucket, IServiceError) {
+	request := "INSERT INTO buckets(name, type) VALUES ($1, $2) RETURNING id"
 
 	bucket := Bucket{
-		Name:     name,
-		RootNode: rootNode,
-		Type:     kind,
+		Name: name,
+		Type: kind,
 	}
 
 	err := tx.QueryRow(request,
 		name,
-		rootNode,
 		kind,
 	).Scan(&bucket.Id)
 
@@ -89,6 +82,18 @@ func GetUserBucket(tx *sqlx.Tx, userId int) (Bucket, IServiceError) {
 		return Bucket{}, NewServiceError(http.StatusNotFound, err)
 	}
 	return bucket, nil
+}
+
+func GetBucketRootNode(tx *sqlx.Tx, bucketId int) (Node, IServiceError) {
+	request := "SELECT nodes.* FROM nodes WHERE nodes.bucket_id = $1 AND nodes.parent_uuid IS NULL"
+
+	var node Node
+	err := tx.Get(&node, request, bucketId)
+	if err != nil {
+		err = fmt.Errorf("failed to get bucket root node: %s", err)
+		return Node{}, NewServiceError(http.StatusInternalServerError, err)
+	}
+	return node, nil
 }
 
 func GetBucketPath(bucketId int) string {

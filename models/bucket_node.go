@@ -5,6 +5,7 @@ import . "self-hosted-cloud/server/models/types"
 type Node struct {
 	Uuid       string         `json:"uuid,omitempty" db:"uuid"`
 	ParentUuid NullableString `json:"parent_uuid" db:"parent_uuid"`
+	BucketId   int            `json:"bucket_id" db:"bucket_id"`
 	Name       string         `json:"name,omitempty" db:"name"`
 	Type       string         `json:"type,omitempty" db:"type"`
 	Mime       NullableString `json:"mime,omitempty" db:"mime"`
