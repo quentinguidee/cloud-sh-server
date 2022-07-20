@@ -126,7 +126,7 @@ func createNode(c *gin.Context) {
 		nodeType = storage.DetectFileType(params.Name)
 	}
 
-	node, serviceError := storage.CreateBucketNode(tx, params.Name, nodeType, "", 0)
+	node, serviceError := storage.CreateBucketNode(tx, user.Id, params.Name, nodeType, "", 0)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
@@ -259,7 +259,7 @@ func renameNode(c *gin.Context) {
 		return
 	}
 
-	serviceError = storage.UpdateBucketNode(tx, newName, node.Type, uuid)
+	serviceError = storage.UpdateBucketNode(tx, newName, node.Type, uuid, user.Id)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
@@ -323,13 +323,7 @@ func downloadNodes(c *gin.Context) {
 		return
 	}
 
-	node, serviceError := storage.GetBucketNode(tx, uuid)
-	if serviceError != nil {
-		serviceError.Throws(c)
-		return
-	}
-
-	path, serviceError := storage.GetBucketNodePath(tx, node, bucket.Id, bucket.RootNode)
+	path, serviceError := storage.GetDownloadPath(tx, user.Id, uuid, bucket.Id, bucket.RootNode)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
@@ -378,7 +372,7 @@ func uploadNode(c *gin.Context) {
 	nodeType := storage.DetectFileType(file.Filename)
 	mime := storage.DetectFileMime(file)
 
-	node, serviceError := storage.CreateBucketNode(tx, file.Filename, nodeType, mime, file.Size)
+	node, serviceError := storage.CreateBucketNode(tx, user.Id, file.Filename, nodeType, mime, file.Size)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return

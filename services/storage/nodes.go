@@ -9,6 +9,7 @@ import (
 	. "self-hosted-cloud/server/models"
 	. "self-hosted-cloud/server/models/types"
 	. "self-hosted-cloud/server/services"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -82,7 +83,7 @@ func GetBucketNodePath(tx *sqlx.Tx, node Node, bucketId int, bucketRootNodeUuid 
 	}
 }
 
-func CreateBucketNode(tx *sqlx.Tx, name string, kind string, mime string, size int64) (Node, IServiceError) {
+func CreateBucketNode(tx *sqlx.Tx, userId int, name string, kind string, mime string, size int64) (Node, IServiceError) {
 	node := Node{
 		Uuid: uuid.NewString(),
 		Name: name,
@@ -106,6 +107,22 @@ func CreateBucketNode(tx *sqlx.Tx, name string, kind string, mime string, size i
 	if err != nil {
 		err := errors.New("error while creating node")
 		return Node{}, NewServiceError(http.StatusInternalServerError, err)
+	}
+
+	request = `
+		INSERT INTO buckets_nodes_user_specific_data(user_id, node_uuid, last_view_timestamp, last_edition_timestamp)
+		VALUES ($1, $2, $3, $4)
+	`
+
+	_, err = tx.Exec(request,
+		userId,
+		node.Uuid,
+		time.Now(),
+		time.Now())
+
+	if err != nil {
+		err := fmt.Errorf("error while creating node user specific data: %s", err)
+		return node, NewServiceError(http.StatusInternalServerError, err)
 	}
 	return node, nil
 }
@@ -164,6 +181,14 @@ func DeleteBucketNode(tx *sqlx.Tx, uuid string) IServiceError {
 		return NewServiceError(http.StatusInternalServerError, err)
 	}
 
+	request = "DELETE FROM buckets_nodes_user_specific_data WHERE node_uuid = $1"
+
+	_, err = tx.Exec(request, uuid)
+	if err != nil {
+		err = fmt.Errorf("error while deleting node user specific data: %s", err)
+		return NewServiceError(http.StatusInternalServerError, err)
+	}
+
 	return nil
 }
 
@@ -197,7 +222,7 @@ func DeleteBucketNodeInFileSystem(path string) IServiceError {
 	return nil
 }
 
-func UpdateBucketNode(tx *sqlx.Tx, name string, previousType string, uuid string) IServiceError {
+func UpdateBucketNode(tx *sqlx.Tx, name string, previousType string, uuid string, userId int) IServiceError {
 	request := "UPDATE buckets_nodes SET name = $1, type = $2 WHERE uuid = $3"
 
 	nodeType := previousType
@@ -216,7 +241,9 @@ func UpdateBucketNode(tx *sqlx.Tx, name string, previousType string, uuid string
 		err = errors.New("couldn't find the node")
 		return NewServiceError(http.StatusNotFound, err)
 	}
-	return nil
+
+	serviceError := UpdateLastEditionTimestamp(tx, userId, uuid)
+	return serviceError
 }
 
 func RenameBucketNodeInFileSystem(path string, name string) IServiceError {
@@ -232,5 +259,66 @@ func RenameBucketNodeInFileSystem(path string, name string) IServiceError {
 		err = fmt.Errorf("failed to rename this file from %s to %s", path, newPath)
 		return NewServiceError(http.StatusInternalServerError, err)
 	}
+	return nil
+}
+
+func GetDownloadPath(tx *sqlx.Tx, userId int, uuid string, bucketId int, bucketRootNode string) (string, IServiceError) {
+	node, serviceError := GetBucketNode(tx, uuid)
+	if serviceError != nil {
+		return "", serviceError
+	}
+
+	path, serviceError := GetBucketNodePath(tx, node, bucketId, bucketRootNode)
+	if serviceError != nil {
+		return "", serviceError
+	}
+
+	serviceError = UpdateLastViewTimestamp(tx, userId, uuid)
+	return path, serviceError
+}
+
+func UpdateLastViewTimestamp(tx *sqlx.Tx, userId int, uuid string) IServiceError {
+	request := `
+		UPDATE buckets_nodes_user_specific_data
+		SET last_view_timestamp = $1
+		WHERE node_uuid = $2
+		  AND user_id = $3
+	`
+
+	res, err := tx.Exec(request, time.Now(), uuid, userId)
+	if err != nil {
+		err = fmt.Errorf("failed to update node user specific data: %s", err)
+		return NewServiceError(http.StatusInternalServerError, err)
+	}
+
+	count, err := res.RowsAffected()
+	if err != nil && count == 0 {
+		err = errors.New("couldn't find the node user specific data")
+		return NewServiceError(http.StatusNotFound, err)
+	}
+
+	return nil
+}
+
+func UpdateLastEditionTimestamp(tx *sqlx.Tx, userId int, uuid string) IServiceError {
+	request := `
+		UPDATE buckets_nodes_user_specific_data
+		SET last_edition_timestamp = $1
+		WHERE node_uuid = $2
+		  AND user_id = $3
+	`
+
+	res, err := tx.Exec(request, time.Now(), uuid, userId)
+	if err != nil {
+		err = fmt.Errorf("failed to update node user specific data: %s", err)
+		return NewServiceError(http.StatusInternalServerError, err)
+	}
+
+	count, err := res.RowsAffected()
+	if err != nil && count == 0 {
+		err = errors.New("couldn't find the node user specific data")
+		return NewServiceError(http.StatusNotFound, err)
+	}
+
 	return nil
 }

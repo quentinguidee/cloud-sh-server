@@ -65,6 +65,15 @@ CREATE TABLE buckets_nodes
     size INTEGER
 );
 
+CREATE TABLE buckets_nodes_user_specific_data
+(
+    id                     INTEGER GENERATED ALWAYS AS IDENTITY UNIQUE,
+    user_id                INTEGER     NOT NULL,
+    node_uuid              VARCHAR(63) NOT NULL,
+    last_view_timestamp    TIMESTAMP,
+    last_edition_timestamp TIMESTAMP
+);
+
 CREATE TABLE buckets_to_node
 (
     id        INTEGER GENERATED ALWAYS AS IDENTITY UNIQUE,
@@ -101,5 +110,9 @@ ALTER TABLE buckets_nodes_associations
     ADD FOREIGN KEY (from_node) REFERENCES buckets_nodes (uuid);
 ALTER TABLE buckets_nodes_associations
     ADD FOREIGN KEY (to_node) REFERENCES buckets_nodes (uuid);
+ALTER TABLE buckets_nodes_user_specific_data
+    ADD FOREIGN KEY (user_id) REFERENCES users (id);
+ALTER TABLE buckets_nodes_user_specific_data
+    ADD FOREIGN KEY (node_uuid) REFERENCES buckets_nodes (uuid);
 
 -- endregion
