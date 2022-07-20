@@ -61,7 +61,7 @@ func GetBucketUserAccessType(tx *sqlx.Tx, bucketId int, userId int) (AccessType,
 	case "admin":
 		return Full, nil
 	default:
-		err := errors.New(fmt.Sprintf("the access_type '%s' is not supported", access.AccessType))
+		err := fmt.Errorf("the access_type '%s' is not supported", access.AccessType)
 		return Denied, NewServiceError(http.StatusInternalServerError, err)
 	}
 }

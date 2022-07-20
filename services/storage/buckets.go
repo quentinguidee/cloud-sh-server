@@ -58,7 +58,7 @@ func CreateBucket(tx *sqlx.Tx, name string, rootNode string, kind string) (Bucke
 	).Scan(&bucket.Id)
 
 	if err != nil {
-		err := errors.New(fmt.Sprintf("error while creating bucket: %s", err.Error()))
+		err := fmt.Errorf("error while creating bucket: %s", err.Error())
 		return Bucket{}, NewServiceError(http.StatusInternalServerError, err)
 	}
 	return bucket, nil

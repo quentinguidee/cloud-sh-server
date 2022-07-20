@@ -146,7 +146,7 @@ func DeleteBucketNode(tx *sqlx.Tx, uuid string) IServiceError {
 
 	_, err := tx.Exec(request, uuid)
 	if err != nil {
-		err = errors.New(fmt.Sprintf("error while deleting node association: %s", err.Error()))
+		err = fmt.Errorf("error while deleting node association: %s", err.Error())
 		return NewServiceError(http.StatusInternalServerError, err)
 	}
 
@@ -154,7 +154,7 @@ func DeleteBucketNode(tx *sqlx.Tx, uuid string) IServiceError {
 
 	_, err = tx.Exec(request, uuid)
 	if err != nil {
-		err = errors.New(fmt.Sprintf("error while deleting buckets_to_node association: %s", err))
+		err = fmt.Errorf("error while deleting buckets_to_node association: %s", err)
 		return NewServiceError(http.StatusInternalServerError, err)
 	}
 
@@ -162,7 +162,7 @@ func DeleteBucketNode(tx *sqlx.Tx, uuid string) IServiceError {
 
 	_, err = tx.Exec(request, uuid)
 	if err != nil {
-		err = errors.New(fmt.Sprintf("error while deleting node: %s", err.Error()))
+		err = fmt.Errorf("error while deleting node: %s", err.Error())
 		return NewServiceError(http.StatusInternalServerError, err)
 	}
 
@@ -231,7 +231,7 @@ func RenameBucketNodeInFileSystem(path string, name string) IServiceError {
 
 	err := os.Rename(path, newPath)
 	if err != nil {
-		err = errors.New(fmt.Sprintf("failed to rename this file from %s to %s", path, newPath))
+		err = fmt.Errorf("failed to rename this file from %s to %s", path, newPath)
 		return NewServiceError(http.StatusInternalServerError, err)
 	}
 	return nil
