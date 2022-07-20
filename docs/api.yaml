@@ -414,7 +414,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Bucket"
+                type: object
+                properties:
+                  bucket:
+                    $ref: "#/components/schemas/Bucket"
+                  root_node:
+                    $ref: "#/components/schemas/Node"
         500:
           description: Failed to retrieve the user bucket
           content:
@@ -486,6 +491,33 @@ paths:
                 $ref: "#/components/schemas/Error"
         500:
           description: Failed to retrieve the user bucket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /storage/recent:
+    get:
+      summary: Get the user's recently accessed nodes
+      tags:
+        - "Storage"
+      parameters:
+        - $ref: "#/components/parameters/AuthorizationHeader"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Nodes"
+        401:
+          description: Unauthorized access to this bucket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: Failed to retrieve the user
           content:
             application/json:
               schema:
