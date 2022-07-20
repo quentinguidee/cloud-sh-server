@@ -5,72 +5,67 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"self-hosted-cloud/server/database"
 	"self-hosted-cloud/server/middlewares"
+	"self-hosted-cloud/server/utils/tests"
 	"testing"
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/gin-gonic/gin"
-	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetUser(testing *testing.T) {
-	db, mock, _ := sqlmock.New()
-	dbx := sqlx.NewDb(db, "sqlmock")
+func TestGetUser(t *testing.T) {
+	t.Run("get user", func(t *testing.T) {
+		db, mock := tests.NewDB()
 
-	creationDate := time.Now()
-	creationDateString, _ := creationDate.MarshalJSON()
+		creationDate := time.Now()
+		creationDateString, _ := creationDate.MarshalJSON()
 
-	rows := sqlmock.NewRows([]string{"id", "username", "name", "profile_picture", "role", "creation_date"}).
-		AddRow(2, "username", "Name", "https://google.com/", "user", creationDate)
+		rows := sqlmock.NewRows([]string{"id", "username", "name", "profile_picture", "role", "creation_date"}).
+			AddRow(2, "username", "Name", "https://google.com/", "user", creationDate)
 
-	mock.ExpectBegin()
-	mock.ExpectQuery("^SELECT (.+) FROM users WHERE username = \\$1$").
-		WithArgs("username").
-		WillReturnRows(rows)
-	mock.ExpectCommit()
+		mock.ExpectBegin()
+		mock.ExpectQuery("^SELECT (.+) FROM users WHERE username = \\$1$").
+			WithArgs("username").
+			WillReturnRows(rows)
+		mock.ExpectCommit()
 
-	d := database.New(dbx)
+		router := gin.New()
+		router.Use(middlewares.DatabaseMiddleware(&db))
 
-	router := gin.New()
-	router.Use(middlewares.DatabaseMiddleware(&d))
+		LoadRoutes(router)
 
-	LoadRoutes(router)
+		recorder := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/user/username", nil)
 
-	recorder := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/user/username", nil)
+		router.ServeHTTP(recorder, req)
 
-	router.ServeHTTP(recorder, req)
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Equal(t, fmt.Sprintf(`{"id":2,"username":"username","name":"Name","profile_picture":"https://google.com/","role":"user","creation_date":%s}`, creationDateString), recorder.Body.String())
+	})
 
-	assert.Equal(testing, http.StatusOK, recorder.Code)
-	assert.Equal(testing, fmt.Sprintf(`{"id":2,"username":"username","name":"Name","profile_picture":"https://google.com/","role":"user","creation_date":%s}`, creationDateString), recorder.Body.String())
-}
+	t.Run("get user not found", func(t *testing.T) {
+		db, mock := tests.NewDB()
 
-func TestGetNonExistingUser(testing *testing.T) {
-	db, mock, _ := sqlmock.New()
-	dbx := sqlx.NewDb(db, "sqlmock")
+		mock.ExpectBegin()
+		mock.ExpectQuery("^SELECT (.+) FROM users WHERE username = \\$1$").
+			WithArgs("username").
+			WillReturnError(sql.ErrNoRows)
+		mock.ExpectRollback()
 
-	mock.ExpectBegin()
-	mock.ExpectQuery("^SELECT (.+) FROM users WHERE username = \\$1$").
-		WithArgs("username").
-		WillReturnError(sql.ErrNoRows)
-	mock.ExpectRollback()
+		router := gin.New()
+		router.Use(middlewares.DatabaseMiddleware(&db))
+		router.Use(middlewares.ErrorMiddleware())
 
-	d := database.New(dbx)
+		LoadRoutes(router)
 
-	router := gin.New()
-	router.Use(middlewares.DatabaseMiddleware(&d))
-	router.Use(middlewares.ErrorMiddleware())
+		recorder := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/user/username", nil)
 
-	LoadRoutes(router)
+		router.ServeHTTP(recorder, req)
 
-	recorder := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/user/username", nil)
-
-	router.ServeHTTP(recorder, req)
-
-	assert.Equal(testing, http.StatusNotFound, recorder.Code)
-	assert.Equal(testing, `{"message":"the user 'username' doesn't exists"}`, recorder.Body.String())
+		assert.Equal(t, http.StatusNotFound, recorder.Code)
+		assert.Equal(t, `{"message":"the user 'username' doesn't exists"}`, recorder.Body.String())
+	})
 }
