@@ -347,11 +347,18 @@ func getBucket(c *gin.Context) {
 		return
 	}
 
+	size, serviceError := storage.GetBucketSize(tx, bucket.Id)
+	if serviceError != nil {
+		serviceError.Throws(c)
+		return
+	}
+
 	database.ExecTransaction(c, tx)
 
 	c.JSON(http.StatusOK, gin.H{
 		"bucket":    bucket,
 		"root_node": rootNode,
+		"size":      size,
 	})
 }
 

@@ -98,3 +98,21 @@ func GetBucketRootNode(tx *sqlx.Tx, bucketId int) (Node, IServiceError) {
 func GetBucketPath(bucketId int) string {
 	return filepath.Join(os.Getenv("DATA_PATH"), "buckets", strconv.Itoa(bucketId))
 }
+
+func GetBucketSize(tx *sqlx.Tx, bucketId int) (int64, IServiceError) {
+	query := `
+		SELECT sum(nodes.size)
+		FROM nodes
+		WHERE bucket_id = $1
+	`
+
+	var size int64
+
+	err := database.
+		NewRequest(tx, query).
+		QueryRow(bucketId).
+		Scan(&size).
+		OnError("failed to calculate the bucket size")
+
+	return size, err
+}

@@ -420,6 +420,10 @@ paths:
                     $ref: "#/components/schemas/Bucket"
                   root_node:
                     $ref: "#/components/schemas/Node"
+                  size:
+                    type: integer
+                    description: In bytes
+                    example: 3000
         500:
           description: Failed to retrieve the user bucket
           content:
