@@ -102,7 +102,7 @@ func GetBucketPath(bucketId int) string {
 
 func GetBucketSize(tx *sqlx.Tx, bucketId int) (int64, IServiceError) {
 	query := `
-		SELECT sum(nodes.size)
+		SELECT coalesce(sum(nodes.size), 0)
 		FROM nodes
 		WHERE bucket_id = $1
 	`
