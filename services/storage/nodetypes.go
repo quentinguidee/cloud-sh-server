@@ -11,14 +11,20 @@ func DetectFileType(nodeName string) string {
 	extension := path.Ext(nodeName)
 
 	switch extension {
+	case ".avi":
+		return "avi"
 	case ".babelrc":
 		return "babel"
+	case ".bmp":
+		return "bmp"
 	case ".c":
 		return "c"
 	case ".cpp", ".cxx":
 		return "cpp"
 	case ".css":
 		return "css"
+	case ".flac":
+		return "flac"
 	case ".gitignore", ".gitkeep":
 		return "git"
 	case ".go":
@@ -27,46 +33,38 @@ func DetectFileType(nodeName string) string {
 		return "html"
 	case ".js":
 		return "javascript"
+	case ".jpeg":
+		return "jpeg"
+	case ".jpg":
+		return "jpg"
 	case ".json":
 		return "json"
 	case ".kt":
 		return "kotlin"
-	case ".lock":
-		return "yarn"
 	case ".md":
 		return "markdown"
-	case ".ml", ".mli":
-		return "ocaml"
-	case ".mp3":
-		return "mp3"
-	case ".wav":
-		return "wav"
-	case ".flac":
-		return "flac"
-	case ".ogg":
-		return "ogg"
-	case ".mp4":
-		return "mp4"
-	case ".avi":
-		return "avi"
 	case ".mkv":
 		return "mkv"
 	case ".mov":
 		return "mov"
+	case ".mp3":
+		return "mp3"
+	case ".mp4":
+		return "mp4"
+	case ".ml", ".mli":
+		return "ocaml"
+	case ".ogg":
+		return "ogg"
 	case ".png":
 		return "png"
-	case ".jpg":
-		return "jpg"
-	case ".jpeg":
-		return "jpeg"
-	case ".bmp":
-		return "bmp"
-	case ".raw":
-		return "raw"
 	case ".php":
 		return "php"
 	case ".py":
 		return "python"
+	case ".raw":
+		return "raw"
+	case ".tsx":
+		return "react"
 	case ".rb":
 		return "ruby"
 	case ".sass", ".scss":
@@ -77,8 +75,10 @@ func DetectFileType(nodeName string) string {
 		return "shell"
 	case ".ts":
 		return "typescript"
-	case ".tsx":
-		return "react"
+	case ".wav":
+		return "wav"
+	case ".lock":
+		return "yarn"
 	default:
 		return "file"
 	}
