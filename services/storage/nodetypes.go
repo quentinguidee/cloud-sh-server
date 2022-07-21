@@ -23,6 +23,8 @@ func DetectFileType(nodeName string) string {
 		return "cpp"
 	case ".css":
 		return "css"
+	case ".word", ".odt", ".doc", ".docx":
+		return "document"
 	case ".flac":
 		return "flac"
 	case ".gitignore", ".gitkeep":
@@ -55,10 +57,12 @@ func DetectFileType(nodeName string) string {
 		return "ocaml"
 	case ".ogg":
 		return "ogg"
-	case ".png":
-		return "png"
 	case ".php":
 		return "php"
+	case ".png":
+		return "png"
+	case ".ppt", ".pptx", ".odp":
+		return "presentation"
 	case ".py":
 		return "python"
 	case ".raw":
@@ -73,6 +77,8 @@ func DetectFileType(nodeName string) string {
 		return "scala"
 	case ".sh":
 		return "shell"
+	case ".xls", ".xlsx", ".ods":
+		return "spreadsheet"
 	case ".ts":
 		return "typescript"
 	case ".wav":
