@@ -42,9 +42,10 @@ CREATE TABLE auth_github
 
 CREATE TABLE buckets
 (
-    id        INTEGER GENERATED ALWAYS AS IDENTITY UNIQUE,
-    name      VARCHAR(255) NOT NULL,
-    type      VARCHAR(63)  NOT NULL
+    id       INTEGER GENERATED ALWAYS AS IDENTITY UNIQUE,
+    name     VARCHAR(255) NOT NULL,
+    type     VARCHAR(63)  NOT NULL,
+    max_size INTEGER
 );
 
 CREATE TABLE buckets_to_users
@@ -59,7 +60,7 @@ CREATE TABLE nodes
 (
     uuid        VARCHAR(63) UNIQUE PRIMARY KEY,
     parent_uuid VARCHAR(63),
-    bucket_id   INTEGER NOT NULL,
+    bucket_id   INTEGER      NOT NULL,
     name        VARCHAR(255) NOT NULL,
     type        VARCHAR(63)  NOT NULL,
     mime        VARCHAR(255),

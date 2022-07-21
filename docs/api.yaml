@@ -24,6 +24,10 @@ components:
           enum:
             - "user_bucket"
           example: "user_bucket"
+        max_size:
+          type: integer
+          description: In bytes. Undefined if infinite.
+          example: 9800
 
     DemoMode:
       properties:
