@@ -62,7 +62,7 @@ CREATE TABLE nodes
     bucket_id   INTEGER NOT NULL,
     name        VARCHAR(255) NOT NULL,
     type        VARCHAR(63)  NOT NULL,
-    mime        VARCHAR(63),
+    mime        VARCHAR(255),
     size        INTEGER
 );
 
