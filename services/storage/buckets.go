@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"self-hosted-cloud/server/database"
 	. "self-hosted-cloud/server/models"
+	"self-hosted-cloud/server/models/types"
 	. "self-hosted-cloud/server/services"
 	"strconv"
 
@@ -115,4 +116,43 @@ func GetBucketSize(tx *sqlx.Tx, bucketId int) (int64, IServiceError) {
 		OnError("failed to calculate the bucket size")
 
 	return size, err
+}
+
+func GetBucket(tx *sqlx.Tx, bucketId int) (Bucket, IServiceError) {
+	query := `
+		SELECT *
+		FROM buckets
+		WHERE id = $1
+	`
+
+	var bucket Bucket
+
+	err := database.
+		NewRequest(tx, query).
+		Get(&bucket, bucketId).
+		OnError("failed to retrieve the bucket")
+
+	return bucket, err
+}
+
+func BucketCanAcceptNodeOfSize(tx *sqlx.Tx, bucketId int, size int64) (bool, IServiceError) {
+	if size == 0 {
+		return true, nil
+	}
+
+	bucket, err := GetBucket(tx, bucketId)
+	if err != nil {
+		return false, err
+	}
+
+	if bucket.MaxSize == types.NewNullInt64() {
+		return true, nil
+	}
+
+	currentSize, err := GetBucketSize(tx, bucketId)
+	if err != nil {
+		return false, err
+	}
+
+	return (currentSize + size) <= bucket.MaxSize.Int64, err
 }

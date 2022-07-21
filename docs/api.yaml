@@ -333,6 +333,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        403:
+          description: The bucket is full
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         500:
           description: Failed to create nodes
           content:
@@ -493,6 +499,12 @@ paths:
           description: OK
         401:
           description: Unauthorized access to this bucket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        403:
+          description: The bucket is full
           content:
             application/json:
               schema:

@@ -115,6 +115,17 @@ func CreateBucketRootNode(tx *sqlx.Tx, userId int, bucketId int) (Node, IService
 }
 
 func CreateBucketNode(tx *sqlx.Tx, userId int, parentUuid NullableString, bucketId int, name string, kind string, mime NullableString, size NullableInt64) (Node, IServiceError) {
+	if size.Valid == true {
+		accepted, err := BucketCanAcceptNodeOfSize(tx, bucketId, size.Int64)
+		if err != nil {
+			return Node{}, err
+		}
+		if !accepted {
+			err := errors.New("the storage is full")
+			return Node{}, NewServiceError(http.StatusForbidden, err)
+		}
+	}
+
 	node := Node{
 		Uuid:       uuid.NewString(),
 		ParentUuid: parentUuid,
