@@ -65,12 +65,12 @@ func (db *Database) Initialize() error {
 		return err
 	}
 
-	request := `
+	query := `
 		INSERT INTO servers(version_major, version_minor, version_patch, database_version)
 		VALUES (0, 0, 0, $1)
 	`
 
-	_, err = db.Instance.Exec(request, Version)
+	_, err = db.Instance.Exec(query, Version)
 	return err
 }
 

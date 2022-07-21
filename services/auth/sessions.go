@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"self-hosted-cloud/server/database"
 	. "self-hosted-cloud/server/models"
 	. "self-hosted-cloud/server/services"
 
@@ -23,21 +24,27 @@ func CreateSession(tx *sqlx.Tx, userId int) (Session, IServiceError) {
 		Token:  fmt.Sprintf("%X", token),
 	}
 
-	request := "INSERT INTO sessions(user_id, token) VALUES ($1, $2) RETURNING id"
+	query := "INSERT INTO sessions(user_id, token) VALUES ($1, $2) RETURNING id"
 
-	err = tx.QueryRow(request, session.UserId, session.Token).Scan(&session.Id)
-	if err != nil {
-		return Session{}, NewServiceError(http.StatusInternalServerError, err)
-	}
-	return session, nil
+	serviceError := database.
+		NewRequest(tx, query).
+		QueryRow(session.UserId, session.Token).
+		Scan(&session.Id).
+		OnError("failed to create the user session")
+
+	return session, serviceError
 }
 
 func DeleteSession(tx *sqlx.Tx, session *Session) IServiceError {
-	request := "DELETE FROM sessions WHERE token = $1 AND user_id = $2"
+	query := "DELETE FROM sessions WHERE token = $1 AND user_id = $2"
 
-	res, err := tx.Exec(request, session.Token, session.UserId)
-	if err != nil {
-		return NewServiceError(http.StatusInternalServerError, err)
+	res, serviceError := database.
+		NewRequest(tx, query).
+		Exec(session.Token, session.UserId).
+		OnError("failed to delete the user session")
+
+	if serviceError != nil {
+		return serviceError
 	}
 
 	count, err := res.RowsAffected()

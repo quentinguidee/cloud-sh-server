@@ -2,10 +2,10 @@ package storage
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
+	"self-hosted-cloud/server/database"
 	. "self-hosted-cloud/server/models"
 	. "self-hosted-cloud/server/services"
 	"strconv"
@@ -38,23 +38,20 @@ func SetupDefaultBucket(tx *sqlx.Tx, userId int) IServiceError {
 }
 
 func CreateBucket(tx *sqlx.Tx, name string, kind string) (Bucket, IServiceError) {
-	request := "INSERT INTO buckets(name, type) VALUES ($1, $2) RETURNING id"
+	query := "INSERT INTO buckets(name, type) VALUES ($1, $2) RETURNING id"
 
 	bucket := Bucket{
 		Name: name,
 		Type: kind,
 	}
 
-	err := tx.QueryRow(request,
-		name,
-		kind,
-	).Scan(&bucket.Id)
+	err := database.
+		NewRequest(tx, query).
+		QueryRow(name, kind).
+		Scan(&bucket.Id).
+		OnError("error while creating bucket")
 
-	if err != nil {
-		err := fmt.Errorf("error while creating bucket: %s", err.Error())
-		return Bucket{}, NewServiceError(http.StatusInternalServerError, err)
-	}
-	return bucket, nil
+	return bucket, err
 }
 
 func CreateBucketInFileSystem(bucketId int) IServiceError {
@@ -67,7 +64,7 @@ func CreateBucketInFileSystem(bucketId int) IServiceError {
 }
 
 func GetUserBucket(tx *sqlx.Tx, userId int) (Bucket, IServiceError) {
-	request := `
+	query := `
 		SELECT buckets.*
 		FROM buckets, buckets_to_users access
 		WHERE buckets.id = access.bucket_id
@@ -76,24 +73,26 @@ func GetUserBucket(tx *sqlx.Tx, userId int) (Bucket, IServiceError) {
 	`
 
 	var bucket Bucket
-	err := tx.Get(&bucket, request, userId)
-	if err != nil {
-		err = errors.New("error while getting user bucket")
-		return Bucket{}, NewServiceError(http.StatusNotFound, err)
-	}
-	return bucket, nil
+
+	err := database.
+		NewRequest(tx, query).
+		Get(&bucket, userId).
+		OnError("error while getting user bucket")
+
+	return bucket, err
 }
 
 func GetBucketRootNode(tx *sqlx.Tx, bucketId int) (Node, IServiceError) {
-	request := "SELECT nodes.* FROM nodes WHERE nodes.bucket_id = $1 AND nodes.parent_uuid IS NULL"
+	query := "SELECT nodes.* FROM nodes WHERE nodes.bucket_id = $1 AND nodes.parent_uuid IS NULL"
 
 	var node Node
-	err := tx.Get(&node, request, bucketId)
-	if err != nil {
-		err = fmt.Errorf("failed to get bucket root node: %s", err)
-		return Node{}, NewServiceError(http.StatusInternalServerError, err)
-	}
-	return node, nil
+
+	err := database.
+		NewRequest(tx, query).
+		Get(&node, bucketId).
+		OnError("failed to get bucket root node")
+
+	return node, err
 }
 
 func GetBucketPath(bucketId int) string {

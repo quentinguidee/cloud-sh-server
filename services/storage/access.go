@@ -1,9 +1,9 @@
 package storage
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
+	"self-hosted-cloud/server/database"
 	. "self-hosted-cloud/server/models"
 	. "self-hosted-cloud/server/services"
 
@@ -17,38 +17,35 @@ func CreateBucketAccess(tx *sqlx.Tx, bucketId int, userId int) (BucketAccess, IS
 		AccessType: "admin",
 	}
 
-	request := `
+	query := `
 		INSERT INTO buckets_to_users(bucket_id, user_id, access_type)
 		VALUES ($1, $2, $3)
 		RETURNING id
 	`
 
-	err := tx.QueryRow(request,
-		access.BucketId,
-		access.UserId,
-		access.AccessType,
-	).Scan(&access.Id)
+	err := database.
+		NewRequest(tx, query).
+		QueryRow(access.BucketId, access.UserId, access.AccessType).
+		Scan(&access.Id).
+		OnError("error while creating bucket access")
 
-	if err != nil {
-		err = errors.New("error while creating bucket access")
-		return BucketAccess{}, NewServiceError(http.StatusInternalServerError, err)
-	}
-	return access, nil
+	return access, err
 }
 
 func GetBucketUserAccess(tx *sqlx.Tx, bucketId int, userId int) (BucketAccess, IServiceError) {
-	request := "SELECT * FROM buckets_to_users WHERE bucket_id = $1 AND user_id = $2"
+	query := "SELECT * FROM buckets_to_users WHERE bucket_id = $1 AND user_id = $2"
 
 	access := BucketAccess{
 		BucketId: bucketId,
 		UserId:   userId,
 	}
 
-	err := tx.Get(&access, request, access.BucketId, access.UserId)
-	if err != nil {
-		return BucketAccess{}, NewServiceError(http.StatusInternalServerError, err)
-	}
-	return access, nil
+	err := database.
+		NewRequest(tx, query).
+		Get(&access, access.BucketId, access.UserId).
+		OnError("error while getting bucket user access")
+
+	return access, err
 }
 
 func GetBucketUserAccessType(tx *sqlx.Tx, bucketId int, userId int) (AccessType, IServiceError) {

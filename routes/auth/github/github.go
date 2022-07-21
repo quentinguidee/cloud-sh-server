@@ -2,7 +2,6 @@ package github
 
 import (
 	authContext "context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -112,7 +111,7 @@ func callback(c *gin.Context) {
 	// Create account if it doesn't exist
 	user, serviceError := auth.GetGithubUser(tx, githubUser.Login)
 	if serviceError != nil {
-		if serviceError.Error() != sql.ErrNoRows {
+		if serviceError.Code() != http.StatusNotFound {
 			serviceError.Throws(c)
 			return
 		}

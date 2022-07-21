@@ -66,6 +66,6 @@ func TestGetUser(t *testing.T) {
 		router.ServeHTTP(recorder, req)
 
 		assert.Equal(t, http.StatusNotFound, recorder.Code)
-		assert.Equal(t, `{"message":"the user 'username' doesn't exists"}`, recorder.Body.String())
+		assert.Equal(t, `{"message":"failed to retrieve the user: sql: no rows in result set"}`, recorder.Body.String())
 	})
 }

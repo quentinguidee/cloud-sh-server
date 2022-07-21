@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"self-hosted-cloud/server/database"
 	. "self-hosted-cloud/server/models"
 	. "self-hosted-cloud/server/models/types"
 	. "self-hosted-cloud/server/services"
@@ -16,18 +17,20 @@ import (
 )
 
 func GetBucketNode(tx *sqlx.Tx, uuid string) (Node, IServiceError) {
-	request := "SELECT * FROM nodes WHERE uuid = $1"
+	query := "SELECT * FROM nodes WHERE uuid = $1"
 
 	var node Node
-	err := tx.Get(&node, request, uuid)
-	if err != nil {
-		return Node{}, NewServiceError(http.StatusInternalServerError, err)
-	}
-	return node, nil
+
+	err := database.
+		NewRequest(tx, query).
+		Get(&node, uuid).
+		OnError("error while getting bucket node")
+
+	return node, err
 }
 
 func GetBucketNodes(tx *sqlx.Tx, parentUuid string) ([]Node, IServiceError) {
-	request := `
+	query := `
 		SELECT children.*
 		FROM nodes parent, nodes children
 		WHERE parent.uuid = children.parent_uuid
@@ -35,15 +38,17 @@ func GetBucketNodes(tx *sqlx.Tx, parentUuid string) ([]Node, IServiceError) {
 	`
 
 	var nodes []Node
-	err := tx.Select(&nodes, request, parentUuid)
-	if err != nil {
-		return nil, NewServiceError(http.StatusInternalServerError, err)
-	}
-	return nodes, nil
+
+	err := database.
+		NewRequest(tx, query).
+		Select(&nodes, parentUuid).
+		OnError("error while getting nodes")
+
+	return nodes, err
 }
 
 func GetRecentFiles(tx *sqlx.Tx, userId int) ([]Node, IServiceError) {
-	request := `
+	query := `
 		SELECT nodes.*
 		FROM nodes, nodes_to_users
 		WHERE nodes_to_users.node_uuid = nodes.uuid
@@ -53,15 +58,17 @@ func GetRecentFiles(tx *sqlx.Tx, userId int) ([]Node, IServiceError) {
 	`
 
 	var nodes []Node
-	err := tx.Select(&nodes, request, userId)
-	if err != nil {
-		return nil, NewServiceError(http.StatusInternalServerError, err)
-	}
-	return nodes, nil
+
+	err := database.
+		NewRequest(tx, query).
+		Select(&nodes, userId).
+		OnError("error while getting recent files")
+
+	return nodes, err
 }
 
-func GetBucketNodeParent(tx *sqlx.Tx, nodeUuid string) (Node, IServiceError) {
-	request := `
+func GetBucketNodeParent(tx *sqlx.Tx, uuid string) (Node, IServiceError) {
+	query := `
 		SELECT parent.*
 		FROM nodes parent, nodes child
 		WHERE child.parent_uuid = parent.uuid
@@ -69,11 +76,13 @@ func GetBucketNodeParent(tx *sqlx.Tx, nodeUuid string) (Node, IServiceError) {
 	`
 
 	var parent Node
-	err := tx.Get(&parent, request, nodeUuid)
-	if err != nil {
-		return Node{}, NewServiceError(http.StatusInternalServerError, err)
-	}
-	return parent, nil
+
+	err := database.
+		NewRequest(tx, query).
+		Get(&parent, uuid).
+		OnError("error while getting node parent")
+
+	return parent, err
 }
 
 func GetBucketNodePath(tx *sqlx.Tx, node Node, bucketId int, bucketRootNodeUuid string) (string, IServiceError) {
@@ -116,41 +125,31 @@ func CreateBucketNode(tx *sqlx.Tx, userId int, parentUuid NullableString, bucket
 		Size:       size,
 	}
 
-	request := `
+	query := `
 		INSERT INTO nodes(uuid, parent_uuid, bucket_id, name, type, mime, size)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`
 
-	_, err := tx.Exec(request,
-		node.Uuid,
-		node.ParentUuid,
-		node.BucketId,
-		node.Name,
-		node.Type,
-		node.Mime,
-		node.Size)
+	_, err := database.
+		NewRequest(tx, query).
+		Exec(node.Uuid, node.ParentUuid, node.BucketId, node.Name, node.Type, node.Mime, node.Size).
+		OnError("error while creating node")
 
 	if err != nil {
-		err := fmt.Errorf("error while creating node: %s", err)
-		return Node{}, NewServiceError(http.StatusInternalServerError, err)
+		return node, err
 	}
 
-	request = `
+	query = `
 		INSERT INTO nodes_to_users(user_id, node_uuid, last_view_timestamp, last_edition_timestamp)
 		VALUES ($1, $2, $3, $4)
 	`
 
-	_, err = tx.Exec(request,
-		userId,
-		node.Uuid,
-		time.Now(),
-		time.Now())
+	_, err = database.
+		NewRequest(tx, query).
+		Exec(userId, node.Uuid, time.Now(), time.Now()).
+		OnError("error while creating node user specific data")
 
-	if err != nil {
-		err := fmt.Errorf("error while creating node user specific data: %s", err)
-		return node, NewServiceError(http.StatusInternalServerError, err)
-	}
-	return node, nil
+	return node, err
 }
 
 func CreateBucketNodeInFileSystem(kind string, path string, content string) IServiceError {
@@ -183,23 +182,25 @@ func CreateBucketNodeInFileSystem(kind string, path string, content string) ISer
 }
 
 func DeleteBucketNode(tx *sqlx.Tx, uuid string) IServiceError {
-	request := "DELETE FROM nodes_to_users WHERE node_uuid = $1"
+	query := "DELETE FROM nodes_to_users WHERE node_uuid = $1"
 
-	_, err := tx.Exec(request, uuid)
+	_, err := database.
+		NewRequest(tx, query).
+		Exec(uuid).
+		OnError("error while deleting node user specific data")
+
 	if err != nil {
-		err = fmt.Errorf("error while deleting node user specific data: %s", err)
-		return NewServiceError(http.StatusInternalServerError, err)
+		return err
 	}
 
-	request = "DELETE FROM nodes WHERE uuid = $1"
+	query = "DELETE FROM nodes WHERE uuid = $1"
 
-	_, err = tx.Exec(request, uuid)
-	if err != nil {
-		err = fmt.Errorf("error while deleting node: %s", err.Error())
-		return NewServiceError(http.StatusInternalServerError, err)
-	}
+	_, err = database.
+		NewRequest(tx, query).
+		Exec(uuid).
+		OnError("error while deleting node")
 
-	return nil
+	return err
 }
 
 func DeleteBucketNodeRecursively(tx *sqlx.Tx, node *Node) IServiceError {
@@ -233,17 +234,20 @@ func DeleteBucketNodeInFileSystem(path string) IServiceError {
 }
 
 func UpdateBucketNode(tx *sqlx.Tx, name string, previousType string, uuid string, userId int) IServiceError {
-	request := "UPDATE nodes SET name = $1, type = $2 WHERE uuid = $3"
+	query := "UPDATE nodes SET name = $1, type = $2 WHERE uuid = $3"
 
 	nodeType := previousType
 	if previousType != "directory" {
 		nodeType = DetectFileType(name)
 	}
 
-	res, err := tx.Exec(request, name, nodeType, uuid)
-	if err != nil {
-		err = errors.New("failed to update the node")
-		return NewServiceError(http.StatusInternalServerError, err)
+	res, serviceError := database.
+		NewRequest(tx, query).
+		Exec(name, nodeType, uuid).
+		OnError("failed to update the node")
+
+	if serviceError != nil {
+		return serviceError
 	}
 
 	count, err := res.RowsAffected()
@@ -252,8 +256,7 @@ func UpdateBucketNode(tx *sqlx.Tx, name string, previousType string, uuid string
 		return NewServiceError(http.StatusNotFound, err)
 	}
 
-	serviceError := UpdateLastEditionTimestamp(tx, userId, uuid)
-	return serviceError
+	return UpdateLastEditionTimestamp(tx, userId, uuid)
 }
 
 func RenameBucketNodeInFileSystem(path string, name string) IServiceError {
@@ -293,17 +296,20 @@ func GetDownloadPath(tx *sqlx.Tx, userId int, uuid string, bucketId int) (string
 }
 
 func UpdateLastViewTimestamp(tx *sqlx.Tx, userId int, uuid string) IServiceError {
-	request := `
+	query := `
 		UPDATE nodes_to_users
 		SET last_view_timestamp = $1
 		WHERE node_uuid = $2
 		  AND user_id = $3
 	`
 
-	res, err := tx.Exec(request, time.Now(), uuid, userId)
-	if err != nil {
-		err = fmt.Errorf("failed to update node user specific data: %s", err)
-		return NewServiceError(http.StatusInternalServerError, err)
+	res, serviceError := database.
+		NewRequest(tx, query).
+		Exec(time.Now(), uuid, userId).
+		OnError("failed to update node user specific data")
+
+	if serviceError != nil {
+		return serviceError
 	}
 
 	count, err := res.RowsAffected()
@@ -316,17 +322,20 @@ func UpdateLastViewTimestamp(tx *sqlx.Tx, userId int, uuid string) IServiceError
 }
 
 func UpdateLastEditionTimestamp(tx *sqlx.Tx, userId int, uuid string) IServiceError {
-	request := `
+	query := `
 		UPDATE nodes_to_users
 		SET last_edition_timestamp = $1
 		WHERE node_uuid = $2
 		  AND user_id = $3
 	`
 
-	res, err := tx.Exec(request, time.Now(), uuid, userId)
-	if err != nil {
-		err = fmt.Errorf("failed to update node user specific data: %s", err)
-		return NewServiceError(http.StatusInternalServerError, err)
+	res, serviceError := database.
+		NewRequest(tx, query).
+		Exec(time.Now(), uuid, userId).
+		OnError("failed to update node user specific data")
+
+	if serviceError != nil {
+		return serviceError
 	}
 
 	count, err := res.RowsAffected()
