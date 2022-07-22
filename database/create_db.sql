@@ -45,6 +45,7 @@ CREATE TABLE buckets
     id       INTEGER GENERATED ALWAYS AS IDENTITY UNIQUE,
     name     VARCHAR(255) NOT NULL,
     type     VARCHAR(63)  NOT NULL,
+    size     INTEGER      NOT NULL DEFAULT 0,
     max_size INTEGER
 );
 

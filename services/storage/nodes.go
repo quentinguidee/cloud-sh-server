@@ -160,6 +160,17 @@ func CreateBucketNode(tx *sqlx.Tx, userId int, parentUuid NullableString, bucket
 		Exec(userId, node.Uuid, time.Now(), time.Now()).
 		OnError("error while creating node user specific data")
 
+	if err != nil {
+		return node, err
+	}
+
+	query = "UPDATE buckets SET size = size + $1 WHERE id = $2"
+
+	_, err = database.
+		NewRequest(tx, query).
+		Exec(size, bucketId).
+		OnError("failed to change the bucket size")
+
 	return node, err
 }
 
@@ -204,12 +215,29 @@ func DeleteBucketNode(tx *sqlx.Tx, uuid string) IServiceError {
 		return err
 	}
 
-	query = "DELETE FROM nodes WHERE uuid = $1"
+	query = "DELETE FROM nodes WHERE uuid = $1 RETURNING size, bucket_id"
+
+	var (
+		size     int64
+		bucketId int
+	)
+
+	err = database.
+		NewRequest(tx, query).
+		QueryRow(uuid).
+		Scan(&size, &bucketId).
+		OnError("error while deleting node")
+
+	if err != nil {
+		return err
+	}
+
+	query = "UPDATE buckets SET size = size - $1 WHERE id = $2"
 
 	_, err = database.
 		NewRequest(tx, query).
-		Exec(uuid).
-		OnError("error while deleting node")
+		Exec(size, bucketId).
+		OnError("failed to update the bucket size")
 
 	return err
 }

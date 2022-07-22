@@ -100,24 +100,6 @@ func GetBucketPath(bucketId int) string {
 	return filepath.Join(os.Getenv("DATA_PATH"), "buckets", strconv.Itoa(bucketId))
 }
 
-func GetBucketSize(tx *sqlx.Tx, bucketId int) (int64, IServiceError) {
-	query := `
-		SELECT coalesce(sum(nodes.size), 0)
-		FROM nodes
-		WHERE bucket_id = $1
-	`
-
-	var size int64
-
-	err := database.
-		NewRequest(tx, query).
-		QueryRow(bucketId).
-		Scan(&size).
-		OnError("failed to calculate the bucket size")
-
-	return size, err
-}
-
 func GetBucket(tx *sqlx.Tx, bucketId int) (Bucket, IServiceError) {
 	query := `
 		SELECT *
@@ -135,8 +117,8 @@ func GetBucket(tx *sqlx.Tx, bucketId int) (Bucket, IServiceError) {
 	return bucket, err
 }
 
-func BucketCanAcceptNodeOfSize(tx *sqlx.Tx, bucketId int, size int64) (bool, IServiceError) {
-	if size == 0 {
+func BucketCanAcceptNodeOfSize(tx *sqlx.Tx, bucketId int, nodeSize int64) (bool, IServiceError) {
+	if nodeSize == 0 {
 		return true, nil
 	}
 
@@ -149,10 +131,5 @@ func BucketCanAcceptNodeOfSize(tx *sqlx.Tx, bucketId int, size int64) (bool, ISe
 		return true, nil
 	}
 
-	currentSize, err := GetBucketSize(tx, bucketId)
-	if err != nil {
-		return false, err
-	}
-
-	return (currentSize + size) <= bucket.MaxSize.Int64, err
+	return (bucket.Size + nodeSize) <= bucket.MaxSize.Int64, err
 }
