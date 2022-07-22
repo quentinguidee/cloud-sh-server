@@ -99,3 +99,13 @@ ALTER TABLE nodes_to_users
     ADD FOREIGN KEY (node_uuid) REFERENCES nodes (uuid);
 
 -- endregion
+
+-- region: Views
+
+CREATE VIEW detailed_buckets AS
+    SELECT buckets.*, nodes.uuid root_node_uuid
+    FROM buckets INNER JOIN nodes
+    ON buckets.id = nodes.bucket_id
+    WHERE nodes.parent_uuid IS NULL;
+
+-- endregion

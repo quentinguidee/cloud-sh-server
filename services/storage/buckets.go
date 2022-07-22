@@ -65,13 +65,7 @@ func CreateBucketInFileSystem(bucketId int) IServiceError {
 }
 
 func GetBucket(tx *sqlx.Tx, bucketId int) (Bucket, IServiceError) {
-	query := `
-		SELECT buckets.*, nodes.uuid root_node_uuid
-		FROM buckets, nodes
-		WHERE buckets.id = $1
-		  AND buckets.id = nodes.bucket_id
-		  AND nodes.parent_uuid IS NULL
-	`
+	query := "SELECT * FROM detailed_buckets WHERE id = $1"
 
 	var bucket Bucket
 
@@ -85,12 +79,10 @@ func GetBucket(tx *sqlx.Tx, bucketId int) (Bucket, IServiceError) {
 
 func GetUserBucket(tx *sqlx.Tx, userId int) (Bucket, IServiceError) {
 	query := `
-		SELECT buckets.*, nodes.uuid root_node_uuid
-		FROM buckets, buckets_to_users access, nodes
-		WHERE buckets.id = access.bucket_id
-		  AND buckets.id = nodes.bucket_id
-		  AND nodes.parent_uuid IS NULL
-		  AND buckets.type = 'user_bucket'
+		SELECT buckets.*
+		FROM detailed_buckets buckets INNER JOIN buckets_to_users access
+		ON buckets.id = access.bucket_id
+		WHERE buckets.type = 'user_bucket'
 		  AND access.user_id = $1
 	`
 
