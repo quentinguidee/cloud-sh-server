@@ -317,7 +317,7 @@ func RenameBucketNodeInFileSystem(path string, name string) IServiceError {
 }
 
 func GetDownloadPath(tx *sqlx.Tx, userId int, uuid string, bucketId int) (string, IServiceError) {
-	rootNode, serviceError := GetBucketRootNode(tx, bucketId)
+	bucket, serviceError := GetBucket(tx, bucketId)
 	if serviceError != nil {
 		return "", serviceError
 	}
@@ -327,7 +327,7 @@ func GetDownloadPath(tx *sqlx.Tx, userId int, uuid string, bucketId int) (string
 		return "", serviceError
 	}
 
-	path, serviceError := GetBucketNodePath(tx, node, bucketId, rootNode.Uuid)
+	path, serviceError := GetBucketNodePath(tx, node, bucketId, bucket.RootNodeUuid)
 	if serviceError != nil {
 		return "", serviceError
 	}

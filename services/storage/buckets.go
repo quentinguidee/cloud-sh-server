@@ -96,19 +96,6 @@ func GetUserBucket(tx *sqlx.Tx, userId int) (Bucket, IServiceError) {
 	return bucket, err
 }
 
-func GetBucketRootNode(tx *sqlx.Tx, bucketId int) (Node, IServiceError) {
-	query := "SELECT nodes.* FROM nodes WHERE nodes.bucket_id = $1 AND nodes.parent_uuid IS NULL"
-
-	var node Node
-
-	err := database.
-		NewRequest(tx, query).
-		Get(&node, bucketId).
-		OnError("failed to get bucket root node")
-
-	return node, err
-}
-
 func GetBucketPath(bucketId int) string {
 	return filepath.Join(os.Getenv("DATA_PATH"), "buckets", strconv.Itoa(bucketId))
 }
