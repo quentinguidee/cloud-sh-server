@@ -47,7 +47,7 @@ func TestGetUserFromContext(t *testing.T) {
 			AddRow(user.Username, user.Name)
 
 		mock.ExpectBegin()
-		mock.ExpectQuery("^SELECT (.+) FROM users, sessions WHERE sessions.user_id = users.id AND sessions.token = \\$1$").
+		mock.ExpectQuery("^SELECT (.+) FROM users INNER JOIN sessions ON users.id = sessions.user_id WHERE sessions.token = \\$1$").
 			WithArgs(token).
 			WillReturnRows(usersRows)
 		mock.ExpectCommit()

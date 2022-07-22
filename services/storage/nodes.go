@@ -32,9 +32,9 @@ func GetBucketNode(tx *sqlx.Tx, uuid string) (Node, IServiceError) {
 func GetBucketNodes(tx *sqlx.Tx, parentUuid string) ([]Node, IServiceError) {
 	query := `
 		SELECT children.*
-		FROM nodes parent, nodes children
-		WHERE parent.uuid = children.parent_uuid
-		  AND parent.uuid = $1
+		FROM nodes parent INNER JOIN nodes children
+		ON parent.uuid = children.parent_uuid
+		WHERE parent.uuid = $1
 	`
 
 	var nodes []Node
@@ -50,9 +50,9 @@ func GetBucketNodes(tx *sqlx.Tx, parentUuid string) ([]Node, IServiceError) {
 func GetRecentFiles(tx *sqlx.Tx, userId int) ([]Node, IServiceError) {
 	query := `
 		SELECT nodes.*
-		FROM nodes, nodes_to_users
-		WHERE nodes_to_users.node_uuid = nodes.uuid
-		  AND nodes_to_users.user_id = $1
+		FROM nodes INNER JOIN nodes_to_users
+		ON nodes_to_users.node_uuid = nodes.uuid
+		WHERE nodes_to_users.user_id = $1
 		  AND nodes.type <> 'directory'
 		ORDER BY nodes_to_users.last_view_timestamp DESC
 	`
@@ -70,9 +70,9 @@ func GetRecentFiles(tx *sqlx.Tx, userId int) ([]Node, IServiceError) {
 func GetBucketNodeParent(tx *sqlx.Tx, uuid string) (Node, IServiceError) {
 	query := `
 		SELECT parent.*
-		FROM nodes parent, nodes child
-		WHERE child.parent_uuid = parent.uuid
-		  AND child.uuid = $1
+		FROM nodes parent INNER JOIN nodes child
+		ON child.parent_uuid = parent.uuid
+		WHERE child.uuid = $1
 	`
 
 	var parent Node

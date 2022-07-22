@@ -50,9 +50,9 @@ func GetUser(tx *sqlx.Tx, username string) (User, IServiceError) {
 func GetUserFromToken(tx *sqlx.Tx, token string) (User, IServiceError) {
 	query := `
 		SELECT users.*
-		FROM users, sessions
-		WHERE sessions.user_id = users.id
-		  AND sessions.token = $1
+		FROM users INNER JOIN sessions
+		ON users.id = sessions.user_id
+		WHERE sessions.token = $1
 	`
 
 	var user User

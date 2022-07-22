@@ -22,9 +22,9 @@ func CreateGithubUser(tx *sqlx.Tx, userId int, username string) IServiceError {
 func GetGithubUser(tx *sqlx.Tx, username string) (User, IServiceError) {
 	query := `
 		SELECT users.*
-		FROM users, auth_github
-		WHERE users.id = auth_github.user_id
-		  AND auth_github.username = $1
+		FROM users INNER JOIN auth_github
+		ON users.id = auth_github.user_id
+		WHERE auth_github.username = $1
 	`
 
 	var user User

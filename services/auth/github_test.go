@@ -41,7 +41,7 @@ func TestGetGithubUser(t *testing.T) {
 			AddRow(user.Username, user.Name)
 
 		mock.ExpectBegin()
-		mock.ExpectQuery("^SELECT users(.*) FROM users, auth_github WHERE users.id = auth_github.user_id AND auth_github.username = \\$1$").
+		mock.ExpectQuery("^SELECT users(.*) FROM users INNER JOIN auth_github (.*)$").
 			WithArgs("jean.dupont").
 			WillReturnRows(rows)
 		mock.ExpectCommit()
@@ -59,7 +59,7 @@ func TestGetGithubUser(t *testing.T) {
 		db, mock := tests.NewDB()
 
 		mock.ExpectBegin()
-		mock.ExpectQuery("^SELECT users(.*) FROM users, auth_github WHERE users.id = auth_github.user_id AND auth_github.username = \\$1$").
+		mock.ExpectQuery("^SELECT users(.*) FROM users INNER JOIN auth_github (.*)$").
 			WithArgs("jean.dupont").
 			WillReturnError(sql.ErrNoRows)
 		mock.ExpectCommit()
