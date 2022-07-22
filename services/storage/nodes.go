@@ -16,7 +16,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func GetBucketNode(tx *sqlx.Tx, uuid string) (Node, IServiceError) {
+func GetNode(tx *sqlx.Tx, uuid string) (Node, IServiceError) {
 	query := "SELECT * FROM nodes WHERE uuid = $1"
 
 	var node Node
@@ -29,7 +29,7 @@ func GetBucketNode(tx *sqlx.Tx, uuid string) (Node, IServiceError) {
 	return node, err
 }
 
-func GetBucketNodes(tx *sqlx.Tx, parentUuid string) ([]Node, IServiceError) {
+func GetNodes(tx *sqlx.Tx, parentUuid string) ([]Node, IServiceError) {
 	query := `
 		SELECT children.*
 		FROM nodes parent INNER JOIN nodes children
@@ -67,7 +67,7 @@ func GetRecentFiles(tx *sqlx.Tx, userId int) ([]Node, IServiceError) {
 	return nodes, err
 }
 
-func GetBucketNodeParent(tx *sqlx.Tx, uuid string) (Node, IServiceError) {
+func GetNodeParent(tx *sqlx.Tx, uuid string) (Node, IServiceError) {
 	query := `
 		SELECT parent.*
 		FROM nodes parent INNER JOIN nodes child
@@ -85,7 +85,7 @@ func GetBucketNodeParent(tx *sqlx.Tx, uuid string) (Node, IServiceError) {
 	return parent, err
 }
 
-func GetBucketNodePath(tx *sqlx.Tx, node Node, bucketId int, bucketRootNodeUuid string) (string, IServiceError) {
+func GetNodePath(tx *sqlx.Tx, node Node, bucketId int, bucketRootNodeUuid string) (string, IServiceError) {
 	var (
 		i      = 50
 		parent = node
@@ -94,7 +94,7 @@ func GetBucketNodePath(tx *sqlx.Tx, node Node, bucketId int, bucketRootNodeUuid 
 	)
 
 	for {
-		parent, err = GetBucketNodeParent(tx, parent.Uuid)
+		parent, err = GetNodeParent(tx, parent.Uuid)
 		if parent.Uuid == bucketRootNodeUuid {
 			return filepath.Join(GetBucketPath(bucketId), path), nil
 		}
@@ -110,11 +110,11 @@ func GetBucketNodePath(tx *sqlx.Tx, node Node, bucketId int, bucketRootNodeUuid 
 	}
 }
 
-func CreateBucketRootNode(tx *sqlx.Tx, userId int, bucketId int) (Node, IServiceError) {
-	return CreateBucketNode(tx, userId, NewNullString(), bucketId, "root", "directory", NewNullString(), NewNullInt64())
+func CreateRootNode(tx *sqlx.Tx, userId int, bucketId int) (Node, IServiceError) {
+	return CreateNode(tx, userId, NewNullString(), bucketId, "root", "directory", NewNullString(), NewNullInt64())
 }
 
-func CreateBucketNode(tx *sqlx.Tx, userId int, parentUuid NullableString, bucketId int, name string, kind string, mime NullableString, size NullableInt64) (Node, IServiceError) {
+func CreateNode(tx *sqlx.Tx, userId int, parentUuid NullableString, bucketId int, name string, kind string, mime NullableString, size NullableInt64) (Node, IServiceError) {
 	if size.Valid == true {
 		accepted, err := BucketCanAcceptNodeOfSize(tx, bucketId, size.Int64)
 		if err != nil {
@@ -176,7 +176,7 @@ func CreateBucketNode(tx *sqlx.Tx, userId int, parentUuid NullableString, bucket
 	return node, err
 }
 
-func CreateBucketNodeInFileSystem(kind string, path string, content string) IServiceError {
+func CreateNodeInFileSystem(kind string, path string, content string) IServiceError {
 	_, err := os.Stat(path)
 	if err == nil {
 		err := errors.New("error while creating node in file system: this file already exists")
@@ -205,7 +205,7 @@ func CreateBucketNodeInFileSystem(kind string, path string, content string) ISer
 	return nil
 }
 
-func DeleteBucketNode(tx *sqlx.Tx, uuid string) IServiceError {
+func DeleteNode(tx *sqlx.Tx, uuid string) IServiceError {
 	query := "DELETE FROM nodes_to_users WHERE node_uuid = $1"
 
 	_, err := database.
@@ -244,28 +244,28 @@ func DeleteBucketNode(tx *sqlx.Tx, uuid string) IServiceError {
 	return err
 }
 
-func DeleteBucketNodeRecursively(tx *sqlx.Tx, node *Node) IServiceError {
+func DeleteNodeRecursively(tx *sqlx.Tx, node *Node) IServiceError {
 	if node.Type == "directory" {
-		children, err := GetBucketNodes(tx, node.Uuid)
+		children, err := GetNodes(tx, node.Uuid)
 		if err != nil {
 			return err
 		}
 		for _, node := range children {
-			err := DeleteBucketNodeRecursively(tx, &node)
+			err := DeleteNodeRecursively(tx, &node)
 			if err != nil {
 				return err
 			}
 		}
 	}
 
-	err := DeleteBucketNode(tx, node.Uuid)
+	err := DeleteNode(tx, node.Uuid)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func DeleteBucketNodeInFileSystem(path string) IServiceError {
+func DeleteNodeInFileSystem(path string) IServiceError {
 	err := os.RemoveAll(path)
 	if err != nil {
 		err = errors.New("error while deleting node in file system")
@@ -274,7 +274,7 @@ func DeleteBucketNodeInFileSystem(path string) IServiceError {
 	return nil
 }
 
-func UpdateBucketNode(tx *sqlx.Tx, name string, previousType string, uuid string, userId int) IServiceError {
+func UpdateNode(tx *sqlx.Tx, name string, previousType string, uuid string, userId int) IServiceError {
 	query := "UPDATE nodes SET name = $1, type = $2 WHERE uuid = $3"
 
 	nodeType := previousType
@@ -297,10 +297,10 @@ func UpdateBucketNode(tx *sqlx.Tx, name string, previousType string, uuid string
 		return NewServiceError(http.StatusNotFound, err)
 	}
 
-	return UpdateLastEditionTimestamp(tx, userId, uuid)
+	return UpdateNodeLastEditionTimestamp(tx, userId, uuid)
 }
 
-func RenameBucketNodeInFileSystem(path string, name string) IServiceError {
+func RenameNodeInFileSystem(path string, name string) IServiceError {
 	directoryPath := filepath.Dir(path)
 	newPath := filepath.Join(directoryPath, name)
 
@@ -322,21 +322,21 @@ func GetDownloadPath(tx *sqlx.Tx, userId int, uuid string, bucketId int) (string
 		return "", serviceError
 	}
 
-	node, serviceError := GetBucketNode(tx, uuid)
+	node, serviceError := GetNode(tx, uuid)
 	if serviceError != nil {
 		return "", serviceError
 	}
 
-	path, serviceError := GetBucketNodePath(tx, node, bucketId, bucket.RootNodeUuid)
+	path, serviceError := GetNodePath(tx, node, bucketId, bucket.RootNodeUuid)
 	if serviceError != nil {
 		return "", serviceError
 	}
 
-	serviceError = UpdateLastViewTimestamp(tx, userId, uuid)
+	serviceError = UpdateNodeLastViewTimestamp(tx, userId, uuid)
 	return path, serviceError
 }
 
-func UpdateLastViewTimestamp(tx *sqlx.Tx, userId int, uuid string) IServiceError {
+func UpdateNodeLastViewTimestamp(tx *sqlx.Tx, userId int, uuid string) IServiceError {
 	query := `
 		UPDATE nodes_to_users
 		SET last_view_timestamp = $1
@@ -362,7 +362,7 @@ func UpdateLastViewTimestamp(tx *sqlx.Tx, userId int, uuid string) IServiceError
 	return nil
 }
 
-func UpdateLastEditionTimestamp(tx *sqlx.Tx, userId int, uuid string) IServiceError {
+func UpdateNodeLastEditionTimestamp(tx *sqlx.Tx, userId int, uuid string) IServiceError {
 	query := `
 		UPDATE nodes_to_users
 		SET last_edition_timestamp = $1

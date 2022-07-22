@@ -20,7 +20,7 @@ func SetupDefaultBucket(tx *sqlx.Tx, userId int) IServiceError {
 		return err
 	}
 
-	_, err = CreateBucketRootNode(tx, userId, bucket.Id)
+	_, err = CreateRootNode(tx, userId, bucket.Id)
 	if err != nil {
 		return err
 	}

@@ -39,7 +39,7 @@ func getNodes(c *gin.Context) {
 		return
 	}
 
-	directory, serviceError := storage.GetBucketNode(tx, parentUuid)
+	directory, serviceError := storage.GetNode(tx, parentUuid)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
@@ -57,7 +57,7 @@ func getNodes(c *gin.Context) {
 		return
 	}
 
-	nodes, serviceError := storage.GetBucketNodes(tx, parentUuid)
+	nodes, serviceError := storage.GetNodes(tx, parentUuid)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
@@ -163,7 +163,7 @@ func createNode(c *gin.Context) {
 		nodeType = storage.DetectFileType(params.Name)
 	}
 
-	node, serviceError := storage.CreateBucketNode(tx,
+	node, serviceError := storage.CreateNode(tx,
 		user.Id,
 		types.NewNullableString(parentUuid),
 		bucket.Id,
@@ -177,13 +177,13 @@ func createNode(c *gin.Context) {
 		return
 	}
 
-	path, serviceError := storage.GetBucketNodePath(tx, node, bucket.Id, bucket.RootNodeUuid)
+	path, serviceError := storage.GetNodePath(tx, node, bucket.Id, bucket.RootNodeUuid)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
 	}
 
-	serviceError = storage.CreateBucketNodeInFileSystem(node.Type, path, "")
+	serviceError = storage.CreateNodeInFileSystem(node.Type, path, "")
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
@@ -222,25 +222,25 @@ func deleteNodes(c *gin.Context) {
 		return
 	}
 
-	node, serviceError := storage.GetBucketNode(tx, uuid)
+	node, serviceError := storage.GetNode(tx, uuid)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
 	}
 
-	path, serviceError := storage.GetBucketNodePath(tx, node, bucket.Id, bucket.RootNodeUuid)
+	path, serviceError := storage.GetNodePath(tx, node, bucket.Id, bucket.RootNodeUuid)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
 	}
 
-	serviceError = storage.DeleteBucketNodeRecursively(tx, &node)
+	serviceError = storage.DeleteNodeRecursively(tx, &node)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
 	}
 
-	serviceError = storage.DeleteBucketNodeInFileSystem(path)
+	serviceError = storage.DeleteNodeInFileSystem(path)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
@@ -280,25 +280,25 @@ func renameNode(c *gin.Context) {
 		return
 	}
 
-	node, serviceError := storage.GetBucketNode(tx, uuid)
+	node, serviceError := storage.GetNode(tx, uuid)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
 	}
 
-	path, serviceError := storage.GetBucketNodePath(tx, node, bucket.Id, bucket.RootNodeUuid)
+	path, serviceError := storage.GetNodePath(tx, node, bucket.Id, bucket.RootNodeUuid)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
 	}
 
-	serviceError = storage.UpdateBucketNode(tx, newName, node.Type, uuid, user.Id)
+	serviceError = storage.UpdateNode(tx, newName, node.Type, uuid, user.Id)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
 	}
 
-	serviceError = storage.RenameBucketNodeInFileSystem(path, newName)
+	serviceError = storage.RenameNodeInFileSystem(path, newName)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
@@ -407,7 +407,7 @@ func uploadNode(c *gin.Context) {
 	nodeType := storage.DetectFileType(file.Filename)
 	mime := storage.DetectFileMime(file)
 
-	node, serviceError := storage.CreateBucketNode(tx,
+	node, serviceError := storage.CreateNode(tx,
 		user.Id,
 		types.NewNullableString(parentUuid),
 		bucket.Id,
@@ -421,7 +421,7 @@ func uploadNode(c *gin.Context) {
 		return
 	}
 
-	path, serviceError := storage.GetBucketNodePath(tx, node, bucket.Id, bucket.RootNodeUuid)
+	path, serviceError := storage.GetNodePath(tx, node, bucket.Id, bucket.RootNodeUuid)
 	if serviceError != nil {
 		serviceError.Throws(c)
 		return
