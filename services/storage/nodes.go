@@ -164,12 +164,14 @@ func CreateBucketNode(tx *sqlx.Tx, userId int, parentUuid NullableString, bucket
 		return node, err
 	}
 
-	query = "UPDATE buckets SET size = size + $1 WHERE id = $2"
+	if size.Valid && size.Int64 != 0 {
+		query = "UPDATE buckets SET size = size + $1 WHERE id = $2"
 
-	_, err = database.
-		NewRequest(tx, query).
-		Exec(size, bucketId).
-		OnError("failed to change the bucket size")
+		_, err = database.
+			NewRequest(tx, query).
+			Exec(size, bucketId).
+			OnError("failed to change the bucket size")
+	}
 
 	return node, err
 }
