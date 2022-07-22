@@ -64,11 +64,32 @@ func CreateBucketInFileSystem(bucketId int) IServiceError {
 	return nil
 }
 
+func GetBucket(tx *sqlx.Tx, bucketId int) (Bucket, IServiceError) {
+	query := `
+		SELECT buckets.*, nodes.uuid root_node_uuid
+		FROM buckets, nodes
+		WHERE buckets.id = $1
+		  AND buckets.id = nodes.bucket_id
+		  AND nodes.parent_uuid IS NULL
+	`
+
+	var bucket Bucket
+
+	err := database.
+		NewRequest(tx, query).
+		Get(&bucket, bucketId).
+		OnError("failed to retrieve the bucket")
+
+	return bucket, err
+}
+
 func GetUserBucket(tx *sqlx.Tx, userId int) (Bucket, IServiceError) {
 	query := `
-		SELECT buckets.*
-		FROM buckets, buckets_to_users access
+		SELECT buckets.*, nodes.uuid root_node_uuid
+		FROM buckets, buckets_to_users access, nodes
 		WHERE buckets.id = access.bucket_id
+		  AND buckets.id = nodes.bucket_id
+		  AND nodes.parent_uuid IS NULL
 		  AND buckets.type = 'user_bucket'
 		  AND access.user_id = $1
 	`
@@ -98,23 +119,6 @@ func GetBucketRootNode(tx *sqlx.Tx, bucketId int) (Node, IServiceError) {
 
 func GetBucketPath(bucketId int) string {
 	return filepath.Join(os.Getenv("DATA_PATH"), "buckets", strconv.Itoa(bucketId))
-}
-
-func GetBucket(tx *sqlx.Tx, bucketId int) (Bucket, IServiceError) {
-	query := `
-		SELECT *
-		FROM buckets
-		WHERE id = $1
-	`
-
-	var bucket Bucket
-
-	err := database.
-		NewRequest(tx, query).
-		Get(&bucket, bucketId).
-		OnError("failed to retrieve the bucket")
-
-	return bucket, err
 }
 
 func BucketCanAcceptNodeOfSize(tx *sqlx.Tx, bucketId int, nodeSize int64) (bool, IServiceError) {

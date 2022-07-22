@@ -16,14 +16,18 @@ components:
         name:
           type: string
           example: "Bucket name"
-        root_node:
-          type: string
-          example: "edd91c7b-efa4-4473-aba4-d205cf6007b7"
         type:
           type: string
           enum:
             - "user_bucket"
           example: "user_bucket"
+        root_node_uuid:
+          type: string
+          example: "edd91c7b-efa4-4473-aba4-d205cf6007b7"
+        size:
+          type: integer
+          description: In bytes
+          example: 3000
         max_size:
           type: integer
           description: In bytes. Undefined if infinite.
@@ -424,16 +428,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  bucket:
-                    $ref: "#/components/schemas/Bucket"
-                  root_node:
-                    $ref: "#/components/schemas/Node"
-                  size:
-                    type: integer
-                    description: In bytes
-                    example: 3000
+                $ref: "#/components/schemas/Bucket"
         500:
           description: Failed to retrieve the user bucket
           content:

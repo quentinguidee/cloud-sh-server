@@ -341,18 +341,9 @@ func getBucket(c *gin.Context) {
 		return
 	}
 
-	rootNode, serviceError := storage.GetBucketRootNode(tx, bucket.Id)
-	if serviceError != nil {
-		serviceError.Throws(c)
-		return
-	}
-
 	database.ExecTransaction(c, tx)
 
-	c.JSON(http.StatusOK, gin.H{
-		"bucket":    bucket,
-		"root_node": rootNode,
-	})
+	c.JSON(http.StatusOK, bucket)
 }
 
 func downloadNodes(c *gin.Context) {
