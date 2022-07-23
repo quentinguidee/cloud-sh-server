@@ -227,21 +227,17 @@ func GetDownloadPath(tx *gorm.DB, userId int, uuid string, bucketId int) (string
 }
 
 func UpdateNodeLastViewTimestamp(tx *gorm.DB, userID int, uuid string) error {
-	lastViewAt := time.Now()
-	err := tx.Save(&NodeUser{
-		UserID:     userID,
-		NodeUUID:   uuid,
-		LastViewAt: &lastViewAt,
-	}).Error
+	err := tx.Model(&NodeUser{
+		UserID:   userID,
+		NodeUUID: uuid,
+	}).UpdateColumn("last_view_at", time.Now()).Error
 	return err
 }
 
 func UpdateNodeLastEditionTimestamp(tx *gorm.DB, userID int, uuid string) error {
-	editedAt := time.Now()
-	err := tx.Save(&NodeUser{
+	err := tx.Model(&NodeUser{
 		UserID:   userID,
 		NodeUUID: uuid,
-		EditedAt: &editedAt,
-	}).Error
+	}).UpdateColumn("edited_at", time.Now()).Error
 	return err
 }
