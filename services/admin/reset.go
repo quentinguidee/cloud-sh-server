@@ -2,14 +2,14 @@ package admin
 
 import (
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
-	. "self-hosted-cloud/server/database"
-	. "self-hosted-cloud/server/services"
+	"self-hosted-cloud/server/database"
+
+	"gorm.io/gorm"
 )
 
-func ResetServer(db *Database) IServiceError {
+func ResetServer(tx *gorm.DB) error {
 	log.Println("SERVER RESET…")
 	paths := []string{
 		"buckets",
@@ -19,13 +19,13 @@ func ResetServer(db *Database) IServiceError {
 	for _, path := range paths {
 		err := os.RemoveAll(filepath.Join(os.Getenv("DATA_PATH"), path))
 		if err != nil {
-			return NewServiceError(http.StatusInternalServerError, err)
+			return err
 		}
 	}
 
-	err := db.HardReset()
+	err := database.HardReset(tx)
 	if err != nil {
-		return NewServiceError(http.StatusInternalServerError, err)
+		return err
 	}
 
 	log.Println("SERVER RESET: DONE")

@@ -4,11 +4,12 @@ import (
 	. "self-hosted-cloud/server/database"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
-func DatabaseMiddleware(database *Database) gin.HandlerFunc {
+func DatabaseMiddleware(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Set(KeyDatabase, database)
+		c.Set(KeyDatabase, db)
 		c.Next()
 	}
 }

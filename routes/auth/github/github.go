@@ -6,8 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"os"
-	. "self-hosted-cloud/server/database"
-	. "self-hosted-cloud/server/models"
+	"self-hosted-cloud/server/database"
 	"self-hosted-cloud/server/services/auth"
 	"self-hosted-cloud/server/services/storage"
 
@@ -51,6 +50,13 @@ type CallbackParams struct {
 	State string
 }
 
+type GithubUser struct {
+	Email     string `json:"email"`
+	Name      string `json:"name"`
+	Login     string `json:"login"`
+	AvatarUrl string `json:"avatar_url"`
+}
+
 func callback(c *gin.Context) {
 	var config = getConfig()
 	var params CallbackParams
@@ -71,8 +77,8 @@ func callback(c *gin.Context) {
 	}
 
 	// Generate the Token
-	ctx := authContext.Background()
-	token, err := config.Exchange(ctx, params.Code)
+	cdb := authContext.Background()
+	token, err := config.Exchange(cdb, params.Code)
 	if err != nil {
 		err = errors.New("the server failed to generate your token")
 		c.AbortWithError(http.StatusInternalServerError, err)
@@ -88,7 +94,7 @@ func callback(c *gin.Context) {
 	}
 
 	// Get client info
-	client := config.Client(ctx, token)
+	client := config.Client(cdb, token)
 	res, err := client.Do(req)
 	if err != nil {
 		err = errors.New("failed to fetch GitHub user account")
@@ -105,20 +111,14 @@ func callback(c *gin.Context) {
 		return
 	}
 
-	tx := NewTransaction(c)
-	defer tx.Rollback()
+	tx := database.NewTX(c)
 
 	// Create account if it doesn't exist
-	user, serviceError := auth.GetGithubUser(tx, githubUser.Login)
-	if serviceError != nil {
-		if serviceError.Code() != http.StatusNotFound {
-			serviceError.Throws(c)
-			return
-		}
-
-		admins, serviceError := auth.GetUsersByRole(tx, "admin")
-		if serviceError != nil {
-			serviceError.Throws(c)
+	user, err := auth.GetGithubUser(tx, githubUser.Login)
+	if err != nil {
+		admins, err := auth.GetUsersByRole(tx, "admin")
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 
@@ -129,33 +129,33 @@ func callback(c *gin.Context) {
 			role = "admin"
 		}
 
-		user, serviceError = auth.CreateUser(tx, githubUser.Login, githubUser.Name, githubUser.AvatarUrl, role)
-		if serviceError != nil {
-			serviceError.Throws(c)
+		user, err = auth.CreateUser(tx, githubUser.Login, githubUser.Name, githubUser.AvatarUrl, role)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 
-		serviceError = auth.CreateGithubUser(tx, user.Id, user.Username)
-		if serviceError != nil {
-			serviceError.Throws(c)
+		err = auth.CreateGithubUser(tx, user.ID, user.Username)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 
-		serviceError = storage.SetupDefaultBucket(tx, user.Id)
-		if serviceError != nil {
-			serviceError.Throws(c)
+		err = storage.SetupDefaultBucket(tx, user.ID)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 	}
 
 	// Open session
-	session, serviceError := auth.CreateSession(tx, user.Id)
+	session, err := auth.CreateSession(tx, user.ID)
 	if err != nil {
-		serviceError.Throws(c)
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	ExecTransaction(c, tx)
+	tx.Commit()
 
 	// OK
 	c.JSON(http.StatusOK, gin.H{

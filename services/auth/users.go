@@ -1,79 +1,35 @@
 package auth
 
 import (
-	"self-hosted-cloud/server/database"
 	. "self-hosted-cloud/server/models"
-	"self-hosted-cloud/server/models/types"
-	. "self-hosted-cloud/server/services"
-	"time"
 
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
-func CreateUser(tx *sqlx.Tx, username string, name string, profilePicture string, role string) (User, IServiceError) {
-	query := `
-		INSERT INTO users(username, name, profile_picture, role, creation_date)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id
-	`
-
+func CreateUser(tx *gorm.DB, username string, name string, profilePicture string, role string) (User, error) {
 	user := User{
 		Username:       username,
 		Name:           name,
-		ProfilePicture: types.NewNullableString(profilePicture),
-		Role:           types.NewNullableString(role),
-		CreationDate:   types.NewNullableTime(time.Now()),
+		ProfilePicture: &profilePicture,
+		Role:           &role,
 	}
-
-	err := database.
-		NewRequest(tx, query).
-		QueryRow(user.Username, user.Name, user.ProfilePicture, user.Role, user.CreationDate).
-		Scan(&user.Id).
-		OnError("failed to create the user")
-
-	return user, err
+	return user, tx.Create(&user).Error
 }
 
-func GetUser(tx *sqlx.Tx, username string) (User, IServiceError) {
-	query := "SELECT * FROM users WHERE username = $1"
-
+func GetUser(tx *gorm.DB, username string) (User, error) {
 	var user User
-
-	err := database.
-		NewRequest(tx, query).
-		Get(&user, username).
-		OnError("failed to retrieve the user")
-
+	err := tx.Where(&User{Username: username}).Find(&user).Error
 	return user, err
 }
 
-func GetUserFromToken(tx *sqlx.Tx, token string) (User, IServiceError) {
-	query := `
-		SELECT users.*
-		FROM users INNER JOIN sessions
-		ON users.id = sessions.user_id
-		WHERE sessions.token = $1
-	`
-
+func GetUserFromToken(tx *gorm.DB, token string) (User, error) {
 	var user User
-
-	err := database.
-		NewRequest(tx, query).
-		Get(&user, token).
-		OnError("the user is not connected")
-
+	err := tx.Preload("Sessions", "token = ?", token).Find(&user).Error
 	return user, err
 }
 
-func GetUsersByRole(tx *sqlx.Tx, role string) ([]User, IServiceError) {
-	query := "SELECT * FROM users WHERE role = $1"
-
+func GetUsersByRole(tx *gorm.DB, role string) ([]User, error) {
 	var users []User
-
-	err := database.
-		NewRequest(tx, query).
-		Select(&users, role).
-		OnError("failed to retrieve the user by its role")
-
+	err := tx.Where(&User{Role: &role}).Find(&users).Error
 	return users, err
 }

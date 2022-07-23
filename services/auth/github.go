@@ -1,38 +1,20 @@
 package auth
 
 import (
-	"self-hosted-cloud/server/database"
 	. "self-hosted-cloud/server/models"
-	. "self-hosted-cloud/server/services"
 
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
-func CreateGithubUser(tx *sqlx.Tx, userId int, username string) IServiceError {
-	query := "INSERT INTO auth_github(username, user_id) VALUES ($1, $2)"
-
-	_, err := database.
-		NewRequest(tx, query).
-		Exec(username, userId).
-		OnError("failed to create the github user")
-
-	return err
+func CreateGithubUser(tx *gorm.DB, userID int, username string) error {
+	return tx.Create(&GithubAuth{
+		UserID:   userID,
+		Username: username,
+	}).Error
 }
 
-func GetGithubUser(tx *sqlx.Tx, username string) (User, IServiceError) {
-	query := `
-		SELECT users.*
-		FROM users INNER JOIN auth_github
-		ON users.id = auth_github.user_id
-		WHERE auth_github.username = $1
-	`
-
+func GetGithubUser(tx *gorm.DB, username string) (User, error) {
 	var user User
-
-	err := database.
-		NewRequest(tx, query).
-		Get(&user, username).
-		OnError("failed to get the github user")
-
+	err := tx.Preload("GithubAuths", "username = ?", username).Take(&user).Error
 	return user, err
 }

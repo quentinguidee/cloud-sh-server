@@ -2,35 +2,31 @@ package storage
 
 import (
 	"errors"
-	"net/http"
 	"os"
 	"path/filepath"
-	"self-hosted-cloud/server/database"
 	. "self-hosted-cloud/server/models"
-	"self-hosted-cloud/server/models/types"
-	. "self-hosted-cloud/server/services"
 	"strconv"
 
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
-func SetupDefaultBucket(tx *sqlx.Tx, userId int) IServiceError {
+func SetupDefaultBucket(tx *gorm.DB, userID int) error {
 	bucket, err := CreateBucket(tx, "Main bucket", "user_bucket")
 	if err != nil {
 		return err
 	}
 
-	_, err = CreateRootNode(tx, userId, bucket.Id)
+	_, err = CreateRootNode(tx, userID, bucket.ID)
 	if err != nil {
 		return err
 	}
 
-	_, err = CreateBucketAccess(tx, bucket.Id, userId)
+	_, err = CreateBucketUser(tx, bucket.ID, userID)
 	if err != nil {
 		return err
 	}
 
-	err = CreateBucketInFileSystem(bucket.Id)
+	err = CreateBucketInFileSystem(bucket.ID)
 	if err != nil {
 		return err
 	}
@@ -38,61 +34,45 @@ func SetupDefaultBucket(tx *sqlx.Tx, userId int) IServiceError {
 	return nil
 }
 
-func CreateBucket(tx *sqlx.Tx, name string, kind string) (Bucket, IServiceError) {
-	query := "INSERT INTO buckets(name, type) VALUES ($1, $2) RETURNING id"
-
+func CreateBucket(tx *gorm.DB, name string, kind string) (Bucket, error) {
 	bucket := Bucket{
 		Name: name,
 		Type: kind,
 	}
 
-	err := database.
-		NewRequest(tx, query).
-		QueryRow(name, kind).
-		Scan(&bucket.Id).
-		OnError("error while creating bucket")
+	err := tx.Create(&bucket).Error
 
 	return bucket, err
 }
 
-func CreateBucketInFileSystem(bucketId int) IServiceError {
+func CreateBucketInFileSystem(bucketId int) error {
 	err := os.MkdirAll(filepath.Join(os.Getenv("DATA_PATH"), "buckets", strconv.Itoa(bucketId)), os.ModePerm)
 	if err != nil {
 		err = errors.New("error while creating bucket in file system")
-		return NewServiceError(http.StatusInternalServerError, err)
+		return err
 	}
 	return nil
 }
 
-func GetBucket(tx *sqlx.Tx, bucketId int) (Bucket, IServiceError) {
-	query := "SELECT * FROM detailed_buckets WHERE id = $1"
-
+func GetBucket(tx *gorm.DB, bucketID int) (Bucket, error) {
 	var bucket Bucket
+	err := tx.Take(&bucket, bucketID).Error
+	if err != nil {
+		return bucket, err
+	}
 
-	err := database.
-		NewRequest(tx, query).
-		Get(&bucket, bucketId).
-		OnError("failed to retrieve the bucket")
-
+	err = tx.Where("bucket_id = ?", bucketID).Where("parent_uuid IS NULL").Take(&bucket.RootNode).Error
 	return bucket, err
 }
 
-func GetUserBucket(tx *sqlx.Tx, userId int) (Bucket, IServiceError) {
-	query := `
-		SELECT buckets.*
-		FROM detailed_buckets buckets INNER JOIN buckets_to_users access
-		ON buckets.id = access.bucket_id
-		WHERE buckets.type = 'user_bucket'
-		  AND access.user_id = $1
-	`
+func GetUserBucket(tx *gorm.DB, userID int) (Bucket, error) {
+	var bucketUser BucketUser
+	err := tx.Take(&bucketUser, "user_id = ?", userID).Error
+	if err != nil {
+		return Bucket{}, err
+	}
 
-	var bucket Bucket
-
-	err := database.
-		NewRequest(tx, query).
-		Get(&bucket, userId).
-		OnError("error while getting user bucket")
-
+	bucket, err := GetBucket(tx, bucketUser.BucketID)
 	return bucket, err
 }
 
@@ -100,7 +80,7 @@ func GetBucketPath(bucketId int) string {
 	return filepath.Join(os.Getenv("DATA_PATH"), "buckets", strconv.Itoa(bucketId))
 }
 
-func BucketCanAcceptNodeOfSize(tx *sqlx.Tx, bucketId int, nodeSize int64) (bool, IServiceError) {
+func BucketCanAcceptNodeOfSize(tx *gorm.DB, bucketId int, nodeSize int64) (bool, error) {
 	if nodeSize == 0 {
 		return true, nil
 	}
@@ -110,9 +90,9 @@ func BucketCanAcceptNodeOfSize(tx *sqlx.Tx, bucketId int, nodeSize int64) (bool,
 		return false, err
 	}
 
-	if bucket.MaxSize == types.NewNullInt64() {
+	if bucket.MaxSize == nil {
 		return true, nil
 	}
 
-	return (bucket.Size + nodeSize) <= bucket.MaxSize.Int64, err
+	return (bucket.Size + nodeSize) <= *bucket.MaxSize, err
 }

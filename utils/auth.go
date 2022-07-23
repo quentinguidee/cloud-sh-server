@@ -14,16 +14,6 @@ func GetTokenFromContext(c *gin.Context) string {
 
 func GetUserFromContext(c *gin.Context) (User, error) {
 	token := GetTokenFromContext(c)
-
-	tx := database.NewTransaction(c)
-	defer tx.Rollback()
-
-	user, err := auth.GetUserFromToken(tx, token)
-	if err != nil {
-		return User{}, err.Error()
-	}
-
-	database.ExecTransaction(c, tx)
-
-	return user, nil
+	db := database.GetDatabaseFromContext(c)
+	return auth.GetUserFromToken(db, token)
 }

@@ -24,7 +24,7 @@ func LoadRoutes(router *gin.Engine) {
 func getDemoMode(c *gin.Context) {
 	appIsInDemoMode, err := admin.AppIsInDemoMode()
 	if err != nil {
-		err.Throws(c)
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
@@ -37,7 +37,7 @@ func getDemoMode(c *gin.Context) {
 
 	demoMode, err := admin.GetDemoMode()
 	if err != nil {
-		err.Throws(c)
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
@@ -47,14 +47,30 @@ func getDemoMode(c *gin.Context) {
 }
 
 func enableDemoMode(c *gin.Context) {
-	db := database.GetDatabaseFromContext(c)
+	tx := database.NewTX(c)
 
-	admin.ResetServer(db)
-	admin.SetupDemoMode(DemoMode{
+	err := admin.ResetServer(tx)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	err = admin.SetupDemoMode(DemoMode{
 		Enabled:       true,
 		ResetInterval: "0 0 0 * * *",
 	})
-	admin.StartDemoMode(db)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	err = admin.StartDemoMode(tx)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	tx.Commit()
 }
 
 func hardReset(c *gin.Context) {
@@ -64,7 +80,13 @@ func hardReset(c *gin.Context) {
 		return
 	}
 
-	db := database.GetDatabaseFromContext(c)
+	tx := database.NewTX(c)
 
-	admin.ResetServer(db)
+	err = admin.ResetServer(tx)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	tx.Commit()
 }

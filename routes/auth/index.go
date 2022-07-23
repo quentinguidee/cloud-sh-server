@@ -3,7 +3,7 @@ package auth
 import (
 	"errors"
 	"net/http"
-	. "self-hosted-cloud/server/database"
+	"self-hosted-cloud/server/database"
 	. "self-hosted-cloud/server/models"
 	"self-hosted-cloud/server/routes/auth/github"
 	services "self-hosted-cloud/server/services/auth"
@@ -29,14 +29,13 @@ func logout(c *gin.Context) {
 		return
 	}
 
-	tx := NewTransaction(c)
-	defer tx.Rollback()
+	tx := database.NewTX(c)
 
-	serviceError := services.DeleteSession(tx, &session)
+	err = services.DeleteSession(tx, &session)
 	if err != nil {
-		serviceError.Throws(c)
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	ExecTransaction(c, tx)
+	tx.Commit()
 }

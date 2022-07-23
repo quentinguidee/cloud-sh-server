@@ -61,7 +61,7 @@ func DetectFileType(nodeName string) string {
 		return "php"
 	case ".png":
 		return "png"
-	case ".ppt", ".pptx", ".odp":
+	case ".ppt", ".ppdb", ".odp":
 		return "presentation"
 	case ".py":
 		return "python"

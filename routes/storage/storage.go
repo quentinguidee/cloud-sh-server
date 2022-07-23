@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"self-hosted-cloud/server/database"
 	"self-hosted-cloud/server/models"
-	"self-hosted-cloud/server/models/types"
 	"self-hosted-cloud/server/services/storage"
 	"self-hosted-cloud/server/utils"
 	"strings"
@@ -30,8 +29,7 @@ func LoadRoutes(router *gin.Engine) {
 func getNodes(c *gin.Context) {
 	parentUuid := c.Query("parent_uuid")
 
-	tx := database.NewTransaction(c)
-	defer tx.Rollback()
+	tx := database.NewTX(c)
 
 	user, err := utils.GetUserFromContext(c)
 	if err != nil {
@@ -39,15 +37,15 @@ func getNodes(c *gin.Context) {
 		return
 	}
 
-	directory, serviceError := storage.GetNode(tx, parentUuid)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	directory, err := storage.GetNode(tx, parentUuid)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	accessType, serviceError := storage.GetBucketUserAccessType(tx, directory.BucketId, user.Id)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	accessType, err := storage.GetBucketUserAccessType(tx, directory.BucketID, user.ID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
@@ -57,13 +55,13 @@ func getNodes(c *gin.Context) {
 		return
 	}
 
-	nodes, serviceError := storage.GetNodes(tx, parentUuid)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	nodes, err := storage.GetNodes(tx, parentUuid)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	database.ExecTransaction(c, tx)
+	tx.Commit()
 
 	c.JSON(http.StatusOK, gin.H{
 		"nodes": nodes,
@@ -71,8 +69,7 @@ func getNodes(c *gin.Context) {
 }
 
 func getRecentFiles(c *gin.Context) {
-	tx := database.NewTransaction(c)
-	defer tx.Rollback()
+	tx := database.NewTX(c)
 
 	user, err := utils.GetUserFromContext(c)
 	if err != nil {
@@ -80,15 +77,15 @@ func getRecentFiles(c *gin.Context) {
 		return
 	}
 
-	bucket, serviceError := storage.GetUserBucket(tx, user.Id)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	bucket, err := storage.GetUserBucket(tx, user.ID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	accessType, serviceError := storage.GetBucketUserAccessType(tx, bucket.Id, user.Id)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	accessType, err := storage.GetBucketUserAccessType(tx, bucket.ID, user.ID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
@@ -98,13 +95,13 @@ func getRecentFiles(c *gin.Context) {
 		return
 	}
 
-	nodes, serviceError := storage.GetRecentFiles(tx, user.Id)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	nodes, err := storage.GetRecentFiles(tx, user.ID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	database.ExecTransaction(c, tx)
+	tx.Commit()
 
 	c.JSON(http.StatusOK, gin.H{
 		"nodes": nodes,
@@ -137,18 +134,17 @@ func createNode(c *gin.Context) {
 		return
 	}
 
-	tx := database.NewTransaction(c)
-	defer tx.Rollback()
+	tx := database.NewTX(c)
 
-	bucket, serviceError := storage.GetUserBucket(tx, user.Id)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	bucket, err := storage.GetUserBucket(tx, user.ID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	accessType, serviceError := storage.GetBucketUserAccessType(tx, bucket.Id, user.Id)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	accessType, err := storage.GetBucketUserAccessType(tx, bucket.ID, user.ID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
@@ -163,33 +159,30 @@ func createNode(c *gin.Context) {
 		nodeType = storage.DetectFileType(params.Name)
 	}
 
-	node, serviceError := storage.CreateNode(tx,
-		user.Id,
-		types.NewNullableString(parentUuid),
-		bucket.Id,
-		params.Name,
-		nodeType,
-		types.NewNullString(),
-		types.NewNullableInt64(0),
-	)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	node, err := storage.CreateNode(tx, user.ID, models.Node{
+		ParentUUID: parentUuid,
+		BucketID:   bucket.ID,
+		Name:       params.Name,
+		Type:       nodeType,
+	})
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	path, serviceError := storage.GetNodePath(tx, node, bucket.Id, bucket.RootNodeUuid)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	path, err := storage.GetNodePath(tx, node, bucket.ID, bucket.RootNode.UUID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	serviceError = storage.CreateNodeInFileSystem(node.Type, path, "")
-	if serviceError != nil {
-		serviceError.Throws(c)
+	err = storage.CreateNodeInFileSystem(node.Type, path, "")
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	database.ExecTransaction(c, tx)
+	tx.Commit()
 }
 
 func deleteNodes(c *gin.Context) {
@@ -201,18 +194,17 @@ func deleteNodes(c *gin.Context) {
 		return
 	}
 
-	tx := database.NewTransaction(c)
-	defer tx.Rollback()
+	tx := database.NewTX(c)
 
-	bucket, serviceError := storage.GetUserBucket(tx, user.Id)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	bucket, err := storage.GetUserBucket(tx, user.ID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	accessType, serviceError := storage.GetBucketUserAccessType(tx, bucket.Id, user.Id)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	accessType, err := storage.GetBucketUserAccessType(tx, bucket.ID, user.ID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
@@ -222,31 +214,31 @@ func deleteNodes(c *gin.Context) {
 		return
 	}
 
-	node, serviceError := storage.GetNode(tx, uuid)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	node, err := storage.GetNode(tx, uuid)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	path, serviceError := storage.GetNodePath(tx, node, bucket.Id, bucket.RootNodeUuid)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	path, err := storage.GetNodePath(tx, node, bucket.ID, bucket.RootNode.UUID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	serviceError = storage.DeleteNodeRecursively(tx, &node)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	err = storage.DeleteNodeRecursively(tx, &node)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	serviceError = storage.DeleteNodeInFileSystem(path)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	err = storage.DeleteNodeInFileSystem(path)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	database.ExecTransaction(c, tx)
+	tx.Commit()
 }
 
 func renameNode(c *gin.Context) {
@@ -259,18 +251,17 @@ func renameNode(c *gin.Context) {
 		return
 	}
 
-	tx := database.NewTransaction(c)
-	defer tx.Rollback()
+	tx := database.NewTX(c)
 
-	bucket, serviceError := storage.GetUserBucket(tx, user.Id)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	bucket, err := storage.GetUserBucket(tx, user.ID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	accessType, serviceError := storage.GetBucketUserAccessType(tx, bucket.Id, user.Id)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	accessType, err := storage.GetBucketUserAccessType(tx, bucket.ID, user.ID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
@@ -280,31 +271,36 @@ func renameNode(c *gin.Context) {
 		return
 	}
 
-	node, serviceError := storage.GetNode(tx, uuid)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	node, err := storage.GetNode(tx, uuid)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	path, serviceError := storage.GetNodePath(tx, node, bucket.Id, bucket.RootNodeUuid)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	path, err := storage.GetNodePath(tx, node, bucket.ID, bucket.RootNode.UUID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	serviceError = storage.UpdateNode(tx, newName, node.Type, uuid, user.Id)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	err = storage.UpdateNode(tx, &models.Node{
+		UUID: uuid,
+		Name: newName,
+		Type: node.Type,
+	}, user.ID)
+
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	serviceError = storage.RenameNodeInFileSystem(path, newName)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	err = storage.RenameNodeInFileSystem(path, newName)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	database.ExecTransaction(c, tx)
+	tx.Commit()
 }
 
 func getBucket(c *gin.Context) {
@@ -314,16 +310,15 @@ func getBucket(c *gin.Context) {
 		return
 	}
 
-	tx := database.NewTransaction(c)
-	defer tx.Rollback()
+	tx := database.NewTX(c)
 
-	bucket, serviceError := storage.GetUserBucket(tx, user.Id)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	bucket, err := storage.GetUserBucket(tx, user.ID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	database.ExecTransaction(c, tx)
+	tx.Commit()
 
 	c.JSON(http.StatusOK, bucket)
 }
@@ -337,18 +332,17 @@ func downloadNodes(c *gin.Context) {
 		return
 	}
 
-	tx := database.NewTransaction(c)
-	defer tx.Rollback()
+	tx := database.NewTX(c)
 
-	bucket, serviceError := storage.GetUserBucket(tx, user.Id)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	bucket, err := storage.GetUserBucket(tx, user.ID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	accessType, serviceError := storage.GetBucketUserAccessType(tx, bucket.Id, user.Id)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	accessType, err := storage.GetBucketUserAccessType(tx, bucket.ID, user.ID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
@@ -358,19 +352,19 @@ func downloadNodes(c *gin.Context) {
 		return
 	}
 
-	path, serviceError := storage.GetDownloadPath(tx, user.Id, uuid, bucket.Id)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	path, err := storage.GetDownloadPath(tx, user.ID, uuid, bucket.ID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	database.ExecTransaction(c, tx)
+	tx.Commit()
 
 	c.File(path)
 }
 
 func uploadNode(c *gin.Context) {
-	parentUuid := c.Query("parent_uuid")
+	parentUUID := c.Query("parent_uuid")
 	file, err := c.FormFile("file")
 	if err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
@@ -383,18 +377,17 @@ func uploadNode(c *gin.Context) {
 		return
 	}
 
-	tx := database.NewTransaction(c)
-	defer tx.Rollback()
+	tx := database.NewTX(c)
 
-	bucket, serviceError := storage.GetUserBucket(tx, user.Id)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	bucket, err := storage.GetUserBucket(tx, user.ID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	accessType, serviceError := storage.GetBucketUserAccessType(tx, bucket.Id, user.Id)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	accessType, err := storage.GetBucketUserAccessType(tx, bucket.ID, user.ID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
@@ -407,23 +400,22 @@ func uploadNode(c *gin.Context) {
 	nodeType := storage.DetectFileType(file.Filename)
 	mime := storage.DetectFileMime(file)
 
-	node, serviceError := storage.CreateNode(tx,
-		user.Id,
-		types.NewNullableString(parentUuid),
-		bucket.Id,
-		file.Filename,
-		nodeType,
-		types.NewNullableString(mime),
-		types.NewNullableInt64(file.Size),
-	)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	node, err := storage.CreateNode(tx, user.ID, models.Node{
+		ParentUUID: parentUUID,
+		BucketID:   bucket.ID,
+		Name:       file.Filename,
+		Type:       nodeType,
+		Mime:       &mime,
+		Size:       &file.Size,
+	})
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	path, serviceError := storage.GetNodePath(tx, node, bucket.Id, bucket.RootNodeUuid)
-	if serviceError != nil {
-		serviceError.Throws(c)
+	path, err := storage.GetNodePath(tx, node, bucket.ID, bucket.RootNode.UUID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
@@ -433,5 +425,5 @@ func uploadNode(c *gin.Context) {
 		return
 	}
 
-	database.ExecTransaction(c, tx)
+	tx.Commit()
 }

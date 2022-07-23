@@ -5,17 +5,15 @@ import (
 	"errors"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
-	. "self-hosted-cloud/server/database"
 	. "self-hosted-cloud/server/models"
-	. "self-hosted-cloud/server/services"
 
 	"github.com/robfig/cron"
+	"gorm.io/gorm"
 )
 
-func AppIsInDemoMode() (bool, IServiceError) {
+func AppIsInDemoMode() (bool, error) {
 	_, err := os.Stat(filepath.Join(os.Getenv("DATA_PATH"), "demo.json"))
 	if err == nil {
 		return true, nil
@@ -25,55 +23,55 @@ func AppIsInDemoMode() (bool, IServiceError) {
 		return false, nil
 	}
 
-	return false, NewServiceError(http.StatusInternalServerError, err)
+	return false, err
 }
 
-func GetDemoMode() (DemoMode, IServiceError) {
+func GetDemoMode() (DemoMode, error) {
 	file, err := os.Open(filepath.Join(os.Getenv("DATA_PATH"), "demo.json"))
 	if err != nil {
-		return DemoMode{}, NewServiceError(http.StatusInternalServerError, err)
+		return DemoMode{}, err
 	}
 
 	fileData, err := ioutil.ReadAll(file)
 	if err != nil {
-		return DemoMode{}, NewServiceError(http.StatusInternalServerError, err)
+		return DemoMode{}, err
 	}
 
 	var demoMode DemoMode
 	err = json.Unmarshal(fileData, &demoMode)
 	if err != nil {
-		return DemoMode{}, NewServiceError(http.StatusInternalServerError, err)
+		return DemoMode{}, err
 	}
 
 	return demoMode, nil
 }
 
-func SetupDemoMode(demoMode DemoMode) IServiceError {
+func SetupDemoMode(demoMode DemoMode) error {
 	data, err := json.MarshalIndent(demoMode, "", "\t")
 	if err != nil {
-		return NewServiceError(http.StatusInternalServerError, err)
+		return err
 	}
 
 	err = os.WriteFile(filepath.Join(os.Getenv("DATA_PATH"), "demo.json"), data, 0644)
 	if err != nil {
-		return NewServiceError(http.StatusInternalServerError, err)
+		return err
 	}
 
 	return nil
 }
 
-func StartDemoMode(db *Database) IServiceError {
-	demoMode, serviceError := GetDemoMode()
-	if serviceError != nil {
-		return serviceError
+func StartDemoMode(tx *gorm.DB) error {
+	demoMode, err := GetDemoMode()
+	if err != nil {
+		return err
 	}
 
 	log.Println("DEMO MODE Enabled. The server will reset every: ", demoMode.ResetInterval)
 
 	c := cron.New()
-	err := c.AddFunc(demoMode.ResetInterval, func() { ResetServer(db) })
+	err = c.AddFunc(demoMode.ResetInterval, func() { ResetServer(tx) })
 	if err != nil {
-		return NewServiceError(http.StatusInternalServerError, err)
+		return err
 	}
 	c.Start()
 	return nil

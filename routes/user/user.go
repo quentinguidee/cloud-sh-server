@@ -19,16 +19,15 @@ func LoadRoutes(router *gin.Engine) {
 func getUser(c *gin.Context) {
 	username := c.Param("username")
 
-	tx := database.NewTransaction(c)
-	defer tx.Rollback()
+	tx := database.NewTX(c)
 
 	user, err := auth.GetUser(tx, username)
 	if err != nil {
-		err.Throws(c)
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	database.ExecTransaction(c, tx)
+	tx.Commit()
 
 	c.JSON(http.StatusOK, user)
 }

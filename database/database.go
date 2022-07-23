@@ -5,27 +5,27 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"self-hosted-cloud/server/models"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
-//go:embed create_db.sql
-var createDatabaseRequest string
-
-//go:embed reset_db.sql
-var resetDatabaseRequest string
-
-type Database struct {
-	Instance *sqlx.DB
+var tables = []interface{}{
+	&models.Server{},
+	&models.User{},
+	&models.Bucket{},
+	&models.Node{},
+	&models.Session{},
+	&models.GithubAuth{},
+	&models.NodeUser{},
+	&models.BucketUser{},
 }
 
-func New(instance *sqlx.DB) Database {
-	return Database{Instance: instance}
-}
-
-func OpenConnection() (*sqlx.DB, error) {
+func OpenConnection() (*gorm.DB, error) {
 	source := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		os.Getenv("DATABASE_HOST"),
 		os.Getenv("DATABASE_PORT"),
@@ -34,52 +34,51 @@ func OpenConnection() (*sqlx.DB, error) {
 		os.Getenv("DATABASE_NAME"),
 		os.Getenv("DATABASE_SSL"))
 
-	return sqlx.Open("postgres", source)
+	return gorm.Open(postgres.Open(source), &gorm.Config{})
 }
 
-func GetDatabase() (Database, error) {
-	instance, err := OpenConnection()
+func GetDatabase() (*gorm.DB, error) {
+	db, err := OpenConnection()
 	if err != nil {
-		return Database{}, errors.New("couldn't open connection to the database")
+		return nil, errors.New("couldn't open connection to the database")
 	}
-	db := Database{Instance: instance}
 
-	var serverId int
-	err = db.Instance.QueryRowx("SELECT id FROM servers WHERE id = 1").Scan(&serverId)
-	if err != nil {
-		// The servers table doesn't exist, so, the database is not initialized.
-		err = db.Initialize()
-		return db, err
-	}
-	err = db.Update()
-	return db, err
+	return db, Initialize(db)
 }
 
-func GetDatabaseFromContext(c *gin.Context) *Database {
-	return c.MustGet(KeyDatabase).(*Database)
+func GetDatabaseFromContext(c *gin.Context) *gorm.DB {
+	return c.MustGet(KeyDatabase).(*gorm.DB)
 }
 
-func (db *Database) Initialize() error {
-	_, err := db.Instance.Exec(createDatabaseRequest)
+func Initialize(db *gorm.DB) error {
+	err := db.AutoMigrate(tables...)
+
 	if err != nil {
 		return err
 	}
 
-	query := `
-		INSERT INTO servers(version_major, version_minor, version_patch, database_version)
-		VALUES (0, 0, 0, $1)
-	`
-
-	_, err = db.Instance.Exec(query, Version)
+	var server models.Server
+	err = db.Take(&server, 1).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		err = db.Create(&models.Server{
+			VersionMajor:    0,
+			VersionMinor:    0,
+			VersionPatch:    0,
+			DatabaseVersion: Version,
+		}).Error
+		return err
+	}
 	return err
 }
 
-func (db *Database) HardReset() error {
-	_, err := db.Instance.Exec(resetDatabaseRequest)
-	if err != nil {
-		return err
+func HardReset(db *gorm.DB) error {
+	for _, table := range tables {
+		err := db.Migrator().DropTable(table)
+		if err != nil {
+			return err
+		}
 	}
-	return db.Initialize()
+	return Initialize(db)
 }
 
 const KeyDatabase = "KEY_DATABASE"

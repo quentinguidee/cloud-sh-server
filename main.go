@@ -34,12 +34,16 @@ func main() {
 		return
 	}
 
-	appIsInDemoMode, serviceError := adminservice.AppIsInDemoMode()
-	if serviceError != nil {
-		log.Fatal(serviceError.Error())
+	appIsInDemoMode, err := adminservice.AppIsInDemoMode()
+	if err != nil {
+		log.Fatal(err.Error())
 	}
 	if appIsInDemoMode {
-		adminservice.StartDemoMode(&db)
+		err := adminservice.StartDemoMode(db)
+		if err != nil {
+			log.Fatal(err.Error())
+			return
+		}
 	}
 
 	router := gin.Default()
@@ -48,7 +52,7 @@ func main() {
 		AllowedHeaders: []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
 		MaxAge:         int(12 * time.Hour),
 	}))
-	router.Use(middlewares.DatabaseMiddleware(&db))
+	router.Use(middlewares.DatabaseMiddleware(db))
 	router.Use(middlewares.ErrorMiddleware())
 
 	auth.LoadRoutes(router)

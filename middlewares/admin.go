@@ -15,7 +15,7 @@ func AdminMiddleware() gin.HandlerFunc {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
-		if user.Role.String != "admin" {
+		if user.Role != nil && *user.Role != "admin" {
 			err := errors.New("you must be admin to access this route")
 			c.AbortWithError(http.StatusUnauthorized, err)
 			return

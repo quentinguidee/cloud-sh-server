@@ -1,11 +1,11 @@
 package models
 
 type Server struct {
-	Id              int `json:"id,omitempty" db:"id"`
-	VersionMajor    int `json:"version_major,omitempty" db:"version_major"`
-	VersionMinor    int `json:"version_minor,omitempty" db:"version_minor"`
-	VersionPatch    int `json:"version_patch,omitempty" db:"version_patch"`
-	DatabaseVersion int `json:"database_version" db:"database_version"`
+	ID              int `json:"id,omitempty" gorm:"primaryKey"`
+	VersionMajor    int `json:"version_major,omitempty" gorm:"not null"`
+	VersionMinor    int `json:"version_minor,omitempty" gorm:"not null"`
+	VersionPatch    int `json:"version_patch,omitempty" gorm:"not null"`
+	DatabaseVersion int `json:"database_version" gorm:"not null"`
 }
 
 type ServerVersion struct {

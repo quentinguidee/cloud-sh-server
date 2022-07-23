@@ -1,7 +1,7 @@
 package models
 
 type Session struct {
-	Id     int    `json:"id,omitempty" db:"id"`
-	UserId int    `json:"user_id,omitempty" db:"user_id"`
-	Token  string `json:"token,omitempty" db:"token"`
+	ID     int    `json:"id" gorm:"primaryKey"`
+	UserID int    `json:"user_id" gorm:"not null"`
+	Token  string `json:"token" gorm:"unique,not null"`
 }

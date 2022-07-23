@@ -2,56 +2,38 @@ package storage
 
 import (
 	"fmt"
-	"net/http"
-	"self-hosted-cloud/server/database"
 	. "self-hosted-cloud/server/models"
-	. "self-hosted-cloud/server/services"
 
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
-func CreateBucketAccess(tx *sqlx.Tx, bucketId int, userId int) (BucketAccess, IServiceError) {
-	access := BucketAccess{
-		BucketId:   bucketId,
-		UserId:     userId,
+func CreateBucketUser(tx *gorm.DB, bucketID int, userID int) (BucketUser, error) {
+	access := BucketUser{
+		BucketID:   bucketID,
+		UserID:     userID,
 		AccessType: "admin",
 	}
 
-	query := `
-		INSERT INTO buckets_to_users(bucket_id, user_id, access_type)
-		VALUES ($1, $2, $3)
-		RETURNING id
-	`
-
-	err := database.
-		NewRequest(tx, query).
-		QueryRow(access.BucketId, access.UserId, access.AccessType).
-		Scan(&access.Id).
-		OnError("error while creating bucket access")
+	err := tx.Create(&access).Error
 
 	return access, err
 }
 
-func GetBucketUserAccess(tx *sqlx.Tx, bucketId int, userId int) (BucketAccess, IServiceError) {
-	query := "SELECT * FROM buckets_to_users WHERE bucket_id = $1 AND user_id = $2"
+func GetBucketUserAccess(tx *gorm.DB, bucketID int, userID int) (BucketUser, error) {
+	var access BucketUser
 
-	access := BucketAccess{
-		BucketId: bucketId,
-		UserId:   userId,
-	}
-
-	err := database.
-		NewRequest(tx, query).
-		Get(&access, access.BucketId, access.UserId).
-		OnError("error while getting bucket user access")
+	err := tx.Where(&BucketUser{
+		BucketID: bucketID,
+		UserID:   userID,
+	}).Find(&access).Error
 
 	return access, err
 }
 
-func GetBucketUserAccessType(tx *sqlx.Tx, bucketId int, userId int) (AccessType, IServiceError) {
-	access, serviceError := GetBucketUserAccess(tx, bucketId, userId)
-	if serviceError != nil {
-		return Denied, serviceError
+func GetBucketUserAccessType(tx *gorm.DB, bucketId int, userId int) (AccessType, error) {
+	access, err := GetBucketUserAccess(tx, bucketId, userId)
+	if err != nil {
+		return Denied, err
 	}
 
 	switch access.AccessType {
@@ -59,6 +41,6 @@ func GetBucketUserAccessType(tx *sqlx.Tx, bucketId int, userId int) (AccessType,
 		return Full, nil
 	default:
 		err := fmt.Errorf("the access_type '%s' is not supported", access.AccessType)
-		return Denied, NewServiceError(http.StatusInternalServerError, err)
+		return Denied, err
 	}
 }

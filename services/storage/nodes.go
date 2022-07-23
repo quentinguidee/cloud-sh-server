@@ -3,99 +3,52 @@ package storage
 import (
 	"errors"
 	"fmt"
-	"net/http"
 	"os"
 	"path/filepath"
-	"self-hosted-cloud/server/database"
 	. "self-hosted-cloud/server/models"
-	. "self-hosted-cloud/server/models/types"
-	. "self-hosted-cloud/server/services"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
-func GetNode(tx *sqlx.Tx, uuid string) (Node, IServiceError) {
-	query := "SELECT * FROM nodes WHERE uuid = $1"
-
+func GetNode(tx *gorm.DB, uuid string) (Node, error) {
 	var node Node
-
-	err := database.
-		NewRequest(tx, query).
-		Get(&node, uuid).
-		OnError("error while getting bucket node")
-
+	err := tx.Preload("Parent").Find(&node, "uuid = ?", uuid).Error
 	return node, err
 }
 
-func GetNodes(tx *sqlx.Tx, parentUuid string) ([]Node, IServiceError) {
-	query := `
-		SELECT children.*
-		FROM nodes parent INNER JOIN nodes children
-		ON parent.uuid = children.parent_uuid
-		WHERE parent.uuid = $1
-	`
-
+func GetNodes(tx *gorm.DB, parentUUID string) ([]Node, error) {
 	var nodes []Node
-
-	err := database.
-		NewRequest(tx, query).
-		Select(&nodes, parentUuid).
-		OnError("error while getting nodes")
-
+	err := tx.Preload("Parent", "uuid = ?", parentUUID).Find(&nodes, "parent_uuid = ?", parentUUID).Error
 	return nodes, err
 }
 
-func GetRecentFiles(tx *sqlx.Tx, userId int) ([]Node, IServiceError) {
-	query := `
-		SELECT nodes.*
-		FROM nodes INNER JOIN nodes_to_users
-		ON nodes_to_users.node_uuid = nodes.uuid
-		WHERE nodes_to_users.user_id = $1
-		  AND nodes.type <> 'directory'
-		ORDER BY nodes_to_users.last_view_timestamp DESC
-	`
-
+func GetRecentFiles(tx *gorm.DB, userID int) ([]Node, error) {
 	var nodes []Node
-
-	err := database.
-		NewRequest(tx, query).
-		Select(&nodes, userId).
-		OnError("error while getting recent files")
-
+	err := tx.Preload("NodeUsers", func(db *gorm.DB) *gorm.DB {
+		return db.Where("user_id = ?", userID).Order("last_view_at DESC")
+	}).Where("type <> ?", "directory").Find(&nodes).Error
 	return nodes, err
 }
 
-func GetNodeParent(tx *sqlx.Tx, uuid string) (Node, IServiceError) {
-	query := `
-		SELECT parent.*
-		FROM nodes parent INNER JOIN nodes child
-		ON child.parent_uuid = parent.uuid
-		WHERE child.uuid = $1
-	`
-
-	var parent Node
-
-	err := database.
-		NewRequest(tx, query).
-		Get(&parent, uuid).
-		OnError("error while getting node parent")
-
-	return parent, err
+func GetNodeParent(tx *gorm.DB, uuid string) (Node, error) {
+	node, err := GetNode(tx, uuid)
+	return *node.Parent, err
 }
 
-func GetNodePath(tx *sqlx.Tx, node Node, bucketId int, bucketRootNodeUuid string) (string, IServiceError) {
+func GetNodePath(tx *gorm.DB, node Node, bucketId int, bucketRootNodeUuid string) (string, error) {
 	var (
 		i      = 50
 		parent = node
 		path   = node.Name
-		err    IServiceError
+		err    error
 	)
 
 	for {
-		parent, err = GetNodeParent(tx, parent.Uuid)
-		if parent.Uuid == bucketRootNodeUuid {
+		parent, err = GetNodeParent(tx, parent.UUID)
+		if parent.UUID == bucketRootNodeUuid {
 			return filepath.Join(GetBucketPath(bucketId), path), nil
 		}
 		if err != nil {
@@ -103,84 +56,67 @@ func GetNodePath(tx *sqlx.Tx, node Node, bucketId int, bucketRootNodeUuid string
 		}
 		if i == 0 {
 			err := errors.New("max recursion level reached")
-			return "", NewServiceError(http.StatusInternalServerError, err)
+			return "", err
 		}
 		path = filepath.Join(parent.Name, path)
 		i--
 	}
 }
 
-func CreateRootNode(tx *sqlx.Tx, userId int, bucketId int) (Node, IServiceError) {
-	return CreateNode(tx, userId, NewNullString(), bucketId, "root", "directory", NewNullString(), NewNullInt64())
+func CreateRootNode(tx *gorm.DB, userID int, bucketID int) (Node, error) {
+	node := Node{
+		BucketID: bucketID,
+		Name:     "root",
+		Type:     "directory",
+	}
+	return CreateNode(tx, userID, node)
 }
 
-func CreateNode(tx *sqlx.Tx, userId int, parentUuid NullableString, bucketId int, name string, kind string, mime NullableString, size NullableInt64) (Node, IServiceError) {
-	if size.Valid == true {
-		accepted, err := BucketCanAcceptNodeOfSize(tx, bucketId, size.Int64)
+func CreateNode(tx *gorm.DB, userID int, node Node) (Node, error) {
+	if node.Size != nil {
+		accepted, err := BucketCanAcceptNodeOfSize(tx, node.BucketID, *node.Size)
 		if err != nil {
 			return Node{}, err
 		}
 		if !accepted {
 			err := errors.New("the storage is full")
-			return Node{}, NewServiceError(http.StatusForbidden, err)
+			// TODO: http.StatusForbidden
+			return Node{}, err
 		}
 	}
 
-	node := Node{
-		Uuid:       uuid.NewString(),
-		ParentUuid: parentUuid,
-		BucketId:   bucketId,
-		Name:       name,
-		Type:       kind,
-		Mime:       mime,
-		Size:       size,
-	}
+	now := time.Now()
 
-	query := `
-		INSERT INTO nodes(uuid, parent_uuid, bucket_id, name, type, mime, size)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-	`
+	node.UUID = uuid.NewString()
+	node.NodeUsers = []NodeUser{{
+		UserID:     userID,
+		LastViewAt: &now,
+		EditedAt:   &now,
+	}}
 
-	_, err := database.
-		NewRequest(tx, query).
-		Exec(node.Uuid, node.ParentUuid, node.BucketId, node.Name, node.Type, node.Mime, node.Size).
-		OnError("error while creating node")
-
+	err := tx.Create(&node).Error
 	if err != nil {
 		return node, err
 	}
 
-	query = `
-		INSERT INTO nodes_to_users(user_id, node_uuid, last_view_timestamp, last_edition_timestamp)
-		VALUES ($1, $2, $3, $4)
-	`
-
-	_, err = database.
-		NewRequest(tx, query).
-		Exec(userId, node.Uuid, time.Now(), time.Now()).
-		OnError("error while creating node user specific data")
-
-	if err != nil {
-		return node, err
-	}
-
-	if size.Valid && size.Int64 != 0 {
-		query = "UPDATE buckets SET size = size + $1 WHERE id = $2"
-
-		_, err = database.
-			NewRequest(tx, query).
-			Exec(size, bucketId).
-			OnError("failed to change the bucket size")
+	if node.Size != nil && *node.Size != 0 {
+		var bucket Bucket
+		err := tx.Take(&bucket, node.BucketID).Error
+		if err != nil {
+			return node, err
+		}
+		bucket.Size += *node.Size
+		err = tx.Save(&bucket).Error
 	}
 
 	return node, err
 }
 
-func CreateNodeInFileSystem(kind string, path string, content string) IServiceError {
+func CreateNodeInFileSystem(kind string, path string, content string) error {
 	_, err := os.Stat(path)
 	if err == nil {
 		err := errors.New("error while creating node in file system: this file already exists")
-		return NewServiceError(http.StatusInternalServerError, err)
+		return err
 	}
 
 	if kind == "directory" {
@@ -194,59 +130,31 @@ func CreateNodeInFileSystem(kind string, path string, content string) IServiceEr
 		if len(content) > 0 {
 			_, err := file.WriteString(content)
 			if err != nil {
-				return NewServiceError(http.StatusInternalServerError, err)
+				return err
 			}
 		}
 	}
-
-	if err != nil {
-		return NewServiceError(http.StatusInternalServerError, err)
-	}
-	return nil
-}
-
-func DeleteNode(tx *sqlx.Tx, uuid string) IServiceError {
-	query := "DELETE FROM nodes_to_users WHERE node_uuid = $1"
-
-	_, err := database.
-		NewRequest(tx, query).
-		Exec(uuid).
-		OnError("error while deleting node user specific data")
-
-	if err != nil {
-		return err
-	}
-
-	query = "DELETE FROM nodes WHERE uuid = $1 RETURNING size, bucket_id"
-
-	var (
-		size     int64
-		bucketId int
-	)
-
-	err = database.
-		NewRequest(tx, query).
-		QueryRow(uuid).
-		Scan(&size, &bucketId).
-		OnError("error while deleting node")
-
-	if err != nil {
-		return err
-	}
-
-	query = "UPDATE buckets SET size = size - $1 WHERE id = $2"
-
-	_, err = database.
-		NewRequest(tx, query).
-		Exec(size, bucketId).
-		OnError("failed to update the bucket size")
-
 	return err
 }
 
-func DeleteNodeRecursively(tx *sqlx.Tx, node *Node) IServiceError {
+func DeleteNode(tx *gorm.DB, uuid string) error {
+	err := tx.Delete(&NodeUser{}, "node_uuid = ?", uuid).Error
+	if err != nil {
+		return err
+	}
+
+	var node Node
+	err = tx.Clauses(clause.Returning{}).Delete(&node, "uuid = ?", uuid).Error
+	if err != nil {
+		return err
+	}
+
+	return tx.Model(&Bucket{ID: node.BucketID}).UpdateColumn("size", gorm.Expr("size - ?", *node.Size)).Error
+}
+
+func DeleteNodeRecursively(tx *gorm.DB, node *Node) error {
 	if node.Type == "directory" {
-		children, err := GetNodes(tx, node.Uuid)
+		children, err := GetNodes(tx, node.UUID)
 		if err != nil {
 			return err
 		}
@@ -258,49 +166,31 @@ func DeleteNodeRecursively(tx *sqlx.Tx, node *Node) IServiceError {
 		}
 	}
 
-	err := DeleteNode(tx, node.Uuid)
+	err := DeleteNode(tx, node.UUID)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func DeleteNodeInFileSystem(path string) IServiceError {
+func DeleteNodeInFileSystem(path string) error {
 	err := os.RemoveAll(path)
 	if err != nil {
 		err = errors.New("error while deleting node in file system")
-		return NewServiceError(http.StatusInternalServerError, err)
+		return err
 	}
 	return nil
 }
 
-func UpdateNode(tx *sqlx.Tx, name string, previousType string, uuid string, userId int) IServiceError {
-	query := "UPDATE nodes SET name = $1, type = $2 WHERE uuid = $3"
-
-	nodeType := previousType
-	if previousType != "directory" {
-		nodeType = DetectFileType(name)
+func UpdateNode(tx *gorm.DB, node *Node, userId int) error {
+	err := tx.Save(&node).Error
+	if err != nil {
+		return err
 	}
-
-	res, serviceError := database.
-		NewRequest(tx, query).
-		Exec(name, nodeType, uuid).
-		OnError("failed to update the node")
-
-	if serviceError != nil {
-		return serviceError
-	}
-
-	count, err := res.RowsAffected()
-	if err != nil && count == 0 {
-		err = errors.New("couldn't find the node")
-		return NewServiceError(http.StatusNotFound, err)
-	}
-
-	return UpdateNodeLastEditionTimestamp(tx, userId, uuid)
+	return UpdateNodeLastEditionTimestamp(tx, userId, node.UUID)
 }
 
-func RenameNodeInFileSystem(path string, name string) IServiceError {
+func RenameNodeInFileSystem(path string, name string) error {
 	directoryPath := filepath.Dir(path)
 	newPath := filepath.Join(directoryPath, name)
 
@@ -311,79 +201,47 @@ func RenameNodeInFileSystem(path string, name string) IServiceError {
 	err := os.Rename(path, newPath)
 	if err != nil {
 		err = fmt.Errorf("failed to rename this file from %s to %s", path, newPath)
-		return NewServiceError(http.StatusInternalServerError, err)
+		return err
 	}
 	return nil
 }
 
-func GetDownloadPath(tx *sqlx.Tx, userId int, uuid string, bucketId int) (string, IServiceError) {
-	bucket, serviceError := GetBucket(tx, bucketId)
-	if serviceError != nil {
-		return "", serviceError
+func GetDownloadPath(tx *gorm.DB, userId int, uuid string, bucketId int) (string, error) {
+	bucket, err := GetBucket(tx, bucketId)
+	if err != nil {
+		return "", err
 	}
 
-	node, serviceError := GetNode(tx, uuid)
-	if serviceError != nil {
-		return "", serviceError
+	node, err := GetNode(tx, uuid)
+	if err != nil {
+		return "", err
 	}
 
-	path, serviceError := GetNodePath(tx, node, bucketId, bucket.RootNodeUuid)
-	if serviceError != nil {
-		return "", serviceError
+	path, err := GetNodePath(tx, node, bucketId, bucket.RootNode.UUID)
+	if err != nil {
+		return "", err
 	}
 
-	serviceError = UpdateNodeLastViewTimestamp(tx, userId, uuid)
-	return path, serviceError
+	err = UpdateNodeLastViewTimestamp(tx, userId, uuid)
+	return path, err
 }
 
-func UpdateNodeLastViewTimestamp(tx *sqlx.Tx, userId int, uuid string) IServiceError {
-	query := `
-		UPDATE nodes_to_users
-		SET last_view_timestamp = $1
-		WHERE node_uuid = $2
-		  AND user_id = $3
-	`
-
-	res, serviceError := database.
-		NewRequest(tx, query).
-		Exec(time.Now(), uuid, userId).
-		OnError("failed to update node user specific data")
-
-	if serviceError != nil {
-		return serviceError
-	}
-
-	count, err := res.RowsAffected()
-	if err != nil && count == 0 {
-		err = errors.New("couldn't find the node user specific data")
-		return NewServiceError(http.StatusNotFound, err)
-	}
-
-	return nil
+func UpdateNodeLastViewTimestamp(tx *gorm.DB, userID int, uuid string) error {
+	lastViewAt := time.Now()
+	err := tx.Save(&NodeUser{
+		UserID:     userID,
+		NodeUUID:   uuid,
+		LastViewAt: &lastViewAt,
+	}).Error
+	return err
 }
 
-func UpdateNodeLastEditionTimestamp(tx *sqlx.Tx, userId int, uuid string) IServiceError {
-	query := `
-		UPDATE nodes_to_users
-		SET last_edition_timestamp = $1
-		WHERE node_uuid = $2
-		  AND user_id = $3
-	`
-
-	res, serviceError := database.
-		NewRequest(tx, query).
-		Exec(time.Now(), uuid, userId).
-		OnError("failed to update node user specific data")
-
-	if serviceError != nil {
-		return serviceError
-	}
-
-	count, err := res.RowsAffected()
-	if err != nil && count == 0 {
-		err = errors.New("couldn't find the node user specific data")
-		return NewServiceError(http.StatusNotFound, err)
-	}
-
-	return nil
+func UpdateNodeLastEditionTimestamp(tx *gorm.DB, userID int, uuid string) error {
+	editedAt := time.Now()
+	err := tx.Save(&NodeUser{
+		UserID:   userID,
+		NodeUUID: uuid,
+		EditedAt: &editedAt,
+	}).Error
+	return err
 }
