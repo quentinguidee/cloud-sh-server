@@ -27,6 +27,7 @@ func GetNodes(tx *gorm.DB, parentUUID string) ([]Node, error) {
 
 func GetRecentFiles(tx *gorm.DB, userID int) ([]Node, error) {
 	var nodes []Node
+	// TODO: This request isn't correctly ordered by last_view_at.
 	err := tx.Preload("NodeUsers", func(db *gorm.DB) *gorm.DB {
 		return db.Where("user_id = ?", userID).Order("last_view_at DESC")
 	}).Where("type <> ?", "directory").Find(&nodes).Error
