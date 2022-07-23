@@ -149,7 +149,10 @@ func DeleteNode(tx *gorm.DB, uuid string) error {
 		return err
 	}
 
-	return tx.Model(&Bucket{ID: node.BucketID}).UpdateColumn("size", gorm.Expr("size - ?", *node.Size)).Error
+	if node.Size != nil {
+		return tx.Model(&Bucket{ID: node.BucketID}).UpdateColumn("size", gorm.Expr("size - ?", *node.Size)).Error
+	}
+	return nil
 }
 
 func DeleteNodeRecursively(tx *gorm.DB, node *Node) error {
