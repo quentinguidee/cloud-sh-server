@@ -10,9 +10,9 @@ components:
 
     Bucket:
       properties:
-        id:
-          type: integer
-          example: 1
+        uuid:
+          type: string
+          example: "edd91c7b-efa4-4473-aba4-d205cf6007b7"
         name:
           type: string
           example: "Bucket name"
@@ -67,6 +67,9 @@ components:
           type: integer
           nullable: true
           example: 1806
+        bucket_uuid:
+          type: string
+          example: "d205cf60-aba4-1285-efa4-07b7edd91c7b"
 
     Nodes:
       properties:

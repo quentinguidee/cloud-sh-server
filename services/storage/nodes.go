@@ -45,12 +45,12 @@ func GetRecentFiles(tx *gorm.DB, userID int) ([]Node, error) {
 	return nodes, err
 }
 
-func GetDeletedNodes(tx *gorm.DB, bucketID int) ([]Node, error) {
+func GetDeletedNodes(tx *gorm.DB, bucketUUID uuid.UUID) ([]Node, error) {
 	var nodes []Node
 	err := tx.
 		Unscoped().
 		Where("deleted_at IS NOT NULL").
-		Find(&nodes, "bucket_id = ?", bucketID).
+		Find(&nodes, "bucket_uuid = ?", bucketUUID).
 		Error
 
 	return nodes, err
@@ -61,7 +61,7 @@ func GetNodeParent(tx *gorm.DB, uuid string) (Node, error) {
 	return *node.Parent, err
 }
 
-func GetNodePath(tx *gorm.DB, node Node, bucketId int, bucketRootNodeUuid string) (string, error) {
+func GetNodePath(tx *gorm.DB, node Node, bucketUUID uuid.UUID, bucketRootNodeUuid string) (string, error) {
 	var (
 		i      = 50
 		parent = node
@@ -72,7 +72,7 @@ func GetNodePath(tx *gorm.DB, node Node, bucketId int, bucketRootNodeUuid string
 	for {
 		parent, err = GetNodeParent(tx, parent.UUID)
 		if parent.UUID == bucketRootNodeUuid {
-			return filepath.Join(GetBucketPath(bucketId), path), nil
+			return filepath.Join(GetBucketPath(bucketUUID), path), nil
 		}
 		if err != nil {
 			return "", err
@@ -86,17 +86,17 @@ func GetNodePath(tx *gorm.DB, node Node, bucketId int, bucketRootNodeUuid string
 	}
 }
 
-func CreateRootNode(tx *gorm.DB, userID int, bucketID int) (Node, error) {
+func CreateRootNode(tx *gorm.DB, userID int, bucketUUID uuid.UUID) (Node, error) {
 	return CreateNode(tx, userID, Node{
-		BucketID: bucketID,
-		Name:     "root",
-		Type:     "directory",
+		BucketUUID: bucketUUID,
+		Name:       "root",
+		Type:       "directory",
 	})
 }
 
 func CreateNode(tx *gorm.DB, userID int, node Node) (Node, error) {
 	if node.Size != nil {
-		accepted, err := BucketCanAcceptNodeOfSize(tx, node.BucketID, *node.Size)
+		accepted, err := BucketCanAcceptNodeOfSize(tx, node.BucketUUID, *node.Size)
 		if err != nil {
 			return Node{}, err
 		}
@@ -123,7 +123,7 @@ func CreateNode(tx *gorm.DB, userID int, node Node) (Node, error) {
 
 	if node.Size != nil && *node.Size != 0 {
 		var bucket Bucket
-		err := tx.Take(&bucket, node.BucketID).Error
+		err := tx.Take(&bucket, node.BucketUUID).Error
 		if err != nil {
 			return node, err
 		}
@@ -178,7 +178,7 @@ func DeleteNode(tx *gorm.DB, uuid string, softDelete bool) error {
 	}
 
 	if node.Size != nil {
-		return tx.Model(&Bucket{ID: node.BucketID}).UpdateColumn("size", gorm.Expr("size - ?", *node.Size)).Error
+		return tx.Model(&Bucket{UUID: node.BucketUUID}).UpdateColumn("size", gorm.Expr("size - ?", *node.Size)).Error
 	}
 	return nil
 }
@@ -240,8 +240,8 @@ func RenameNodeInFileSystem(path string, name string) error {
 	return nil
 }
 
-func GetDownloadPath(tx *gorm.DB, userId int, uuid string, bucketId int) (string, error) {
-	bucket, err := GetBucket(tx, bucketId)
+func GetDownloadPath(tx *gorm.DB, userId int, uuid string, bucketUUID uuid.UUID) (string, error) {
+	bucket, err := GetBucket(tx, bucketUUID)
 	if err != nil {
 		return "", err
 	}
@@ -251,7 +251,7 @@ func GetDownloadPath(tx *gorm.DB, userId int, uuid string, bucketId int) (string
 		return "", err
 	}
 
-	path, err := GetNodePath(tx, node, bucketId, bucket.RootNode.UUID)
+	path, err := GetNodePath(tx, node, bucketUUID, bucket.RootNode.UUID)
 	if err != nil {
 		return "", err
 	}

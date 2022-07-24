@@ -2,14 +2,15 @@ package storage
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	. "self-hosted-cloud/server/models"
 
 	"gorm.io/gorm"
 )
 
-func CreateBucketUser(tx *gorm.DB, bucketID int, userID int) (BucketUser, error) {
+func CreateBucketUser(tx *gorm.DB, bucketUUID uuid.UUID, userID int) (BucketUser, error) {
 	access := BucketUser{
-		BucketID:   bucketID,
+		BucketUUID: bucketUUID,
 		UserID:     userID,
 		AccessType: "admin",
 	}
@@ -19,10 +20,10 @@ func CreateBucketUser(tx *gorm.DB, bucketID int, userID int) (BucketUser, error)
 	return access, err
 }
 
-func GetBucketUserAccess(tx *gorm.DB, bucketID int, userID int) (BucketUser, error) {
+func GetBucketUserAccess(tx *gorm.DB, bucketUUID uuid.UUID, userID int) (BucketUser, error) {
 	bucketUser := BucketUser{
-		BucketID: bucketID,
-		UserID:   userID,
+		BucketUUID: bucketUUID,
+		UserID:     userID,
 	}
 
 	err := tx.Find(&bucketUser).Error
@@ -30,8 +31,8 @@ func GetBucketUserAccess(tx *gorm.DB, bucketID int, userID int) (BucketUser, err
 	return bucketUser, err
 }
 
-func GetBucketUserAccessType(tx *gorm.DB, bucketId int, userId int) (AccessType, error) {
-	access, err := GetBucketUserAccess(tx, bucketId, userId)
+func GetBucketUserAccessType(tx *gorm.DB, bucketUUID uuid.UUID, userId int) (AccessType, error) {
+	access, err := GetBucketUserAccess(tx, bucketUUID, userId)
 	if err != nil {
 		return Denied, err
 	}

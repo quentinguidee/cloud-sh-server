@@ -44,7 +44,7 @@ func getNodes(c *gin.Context) {
 		return
 	}
 
-	accessType, err := storage.GetBucketUserAccessType(tx, directory.BucketID, user.ID)
+	accessType, err := storage.GetBucketUserAccessType(tx, directory.BucketUUID, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -84,7 +84,7 @@ func getRecentFiles(c *gin.Context) {
 		return
 	}
 
-	accessType, err := storage.GetBucketUserAccessType(tx, bucket.ID, user.ID)
+	accessType, err := storage.GetBucketUserAccessType(tx, bucket.UUID, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -124,7 +124,7 @@ func getBin(c *gin.Context) {
 		return
 	}
 
-	accessType, err := storage.GetBucketUserAccessType(tx, bucket.ID, user.ID)
+	accessType, err := storage.GetBucketUserAccessType(tx, bucket.UUID, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -136,7 +136,7 @@ func getBin(c *gin.Context) {
 		return
 	}
 
-	nodes, err := storage.GetDeletedNodes(tx, user.ID)
+	nodes, err := storage.GetDeletedNodes(tx, bucket.UUID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -183,7 +183,7 @@ func createNode(c *gin.Context) {
 		return
 	}
 
-	accessType, err := storage.GetBucketUserAccessType(tx, bucket.ID, user.ID)
+	accessType, err := storage.GetBucketUserAccessType(tx, bucket.UUID, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -202,7 +202,7 @@ func createNode(c *gin.Context) {
 
 	node, err := storage.CreateNode(tx, user.ID, models.Node{
 		ParentUUID: parentUuid,
-		BucketID:   bucket.ID,
+		BucketUUID: bucket.UUID,
 		Name:       params.Name,
 		Type:       nodeType,
 	})
@@ -211,7 +211,7 @@ func createNode(c *gin.Context) {
 		return
 	}
 
-	path, err := storage.GetNodePath(tx, node, bucket.ID, bucket.RootNode.UUID)
+	path, err := storage.GetNodePath(tx, node, bucket.UUID, bucket.RootNode.UUID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -248,7 +248,7 @@ func deleteNodes(c *gin.Context) {
 		return
 	}
 
-	accessType, err := storage.GetBucketUserAccessType(tx, bucket.ID, user.ID)
+	accessType, err := storage.GetBucketUserAccessType(tx, bucket.UUID, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -266,7 +266,7 @@ func deleteNodes(c *gin.Context) {
 		return
 	}
 
-	path, err := storage.GetNodePath(tx, node, bucket.ID, bucket.RootNode.UUID)
+	path, err := storage.GetNodePath(tx, node, bucket.UUID, bucket.RootNode.UUID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -309,7 +309,7 @@ func renameNode(c *gin.Context) {
 		return
 	}
 
-	accessType, err := storage.GetBucketUserAccessType(tx, bucket.ID, user.ID)
+	accessType, err := storage.GetBucketUserAccessType(tx, bucket.UUID, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -327,7 +327,7 @@ func renameNode(c *gin.Context) {
 		return
 	}
 
-	path, err := storage.GetNodePath(tx, node, bucket.ID, bucket.RootNode.UUID)
+	path, err := storage.GetNodePath(tx, node, bucket.UUID, bucket.RootNode.UUID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -387,7 +387,7 @@ func downloadNodes(c *gin.Context) {
 		return
 	}
 
-	accessType, err := storage.GetBucketUserAccessType(tx, bucket.ID, user.ID)
+	accessType, err := storage.GetBucketUserAccessType(tx, bucket.UUID, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -399,7 +399,7 @@ func downloadNodes(c *gin.Context) {
 		return
 	}
 
-	path, err := storage.GetDownloadPath(tx, user.ID, uuid, bucket.ID)
+	path, err := storage.GetDownloadPath(tx, user.ID, uuid, bucket.UUID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -432,7 +432,7 @@ func uploadNode(c *gin.Context) {
 		return
 	}
 
-	accessType, err := storage.GetBucketUserAccessType(tx, bucket.ID, user.ID)
+	accessType, err := storage.GetBucketUserAccessType(tx, bucket.UUID, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -449,7 +449,7 @@ func uploadNode(c *gin.Context) {
 
 	node, err := storage.CreateNode(tx, user.ID, models.Node{
 		ParentUUID: parentUUID,
-		BucketID:   bucket.ID,
+		BucketUUID: bucket.UUID,
 		Name:       file.Filename,
 		Type:       nodeType,
 		Mime:       &mime,
@@ -460,7 +460,7 @@ func uploadNode(c *gin.Context) {
 		return
 	}
 
-	path, err := storage.GetNodePath(tx, node, bucket.ID, bucket.RootNode.UUID)
+	path, err := storage.GetNodePath(tx, node, bucket.UUID, bucket.RootNode.UUID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return

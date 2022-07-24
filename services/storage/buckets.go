@@ -2,12 +2,11 @@ package storage
 
 import (
 	"fmt"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 	"os"
 	"path/filepath"
 	. "self-hosted-cloud/server/models"
-	"strconv"
-
-	"gorm.io/gorm"
 )
 
 func SetupDefaultBucket(tx *gorm.DB, userID int) error {
@@ -16,17 +15,17 @@ func SetupDefaultBucket(tx *gorm.DB, userID int) error {
 		return err
 	}
 
-	_, err = CreateRootNode(tx, userID, bucket.ID)
+	_, err = CreateRootNode(tx, userID, bucket.UUID)
 	if err != nil {
 		return err
 	}
 
-	_, err = CreateBucketUser(tx, bucket.ID, userID)
+	_, err = CreateBucketUser(tx, bucket.UUID, userID)
 	if err != nil {
 		return err
 	}
 
-	err = CreateBucketInFileSystem(bucket.ID)
+	err = CreateBucketInFileSystem(bucket.UUID)
 	if err != nil {
 		return err
 	}
@@ -36,6 +35,7 @@ func SetupDefaultBucket(tx *gorm.DB, userID int) error {
 
 func CreateBucket(tx *gorm.DB, name string, kind string) (Bucket, error) {
 	bucket := Bucket{
+		UUID: uuid.New(),
 		Name: name,
 		Type: kind,
 	}
@@ -45,8 +45,8 @@ func CreateBucket(tx *gorm.DB, name string, kind string) (Bucket, error) {
 	return bucket, err
 }
 
-func CreateBucketInFileSystem(bucketId int) error {
-	err := os.MkdirAll(filepath.Join(os.Getenv("DATA_PATH"), "buckets", strconv.Itoa(bucketId)), os.ModePerm)
+func CreateBucketInFileSystem(bucketUUID uuid.UUID) error {
+	err := os.MkdirAll(filepath.Join(os.Getenv("DATA_PATH"), "buckets", bucketUUID.String()), os.ModePerm)
 	if err != nil {
 		err = fmt.Errorf("error while creating bucket in file system: %s", err)
 		return err
@@ -54,14 +54,14 @@ func CreateBucketInFileSystem(bucketId int) error {
 	return nil
 }
 
-func GetBucket(tx *gorm.DB, bucketID int) (Bucket, error) {
+func GetBucket(tx *gorm.DB, bucketUUID uuid.UUID) (Bucket, error) {
 	var bucket Bucket
-	err := tx.Take(&bucket, bucketID).Error
+	err := tx.Take(&bucket, bucketUUID).Error
 	if err != nil {
 		return bucket, err
 	}
 
-	err = tx.Where("bucket_id = ?", bucketID).Where("parent_uuid IS NULL").Take(&bucket.RootNode).Error
+	err = tx.Where("bucket_uuid = ?", bucketUUID).Where("parent_uuid IS NULL").Take(&bucket.RootNode).Error
 	return bucket, err
 }
 
@@ -72,20 +72,20 @@ func GetUserBucket(tx *gorm.DB, userID int) (Bucket, error) {
 		return Bucket{}, err
 	}
 
-	bucket, err := GetBucket(tx, bucketUser.BucketID)
+	bucket, err := GetBucket(tx, bucketUser.BucketUUID)
 	return bucket, err
 }
 
-func GetBucketPath(bucketId int) string {
-	return filepath.Join(os.Getenv("DATA_PATH"), "buckets", strconv.Itoa(bucketId))
+func GetBucketPath(bucketUUID uuid.UUID) string {
+	return filepath.Join(os.Getenv("DATA_PATH"), "buckets", bucketUUID.String())
 }
 
-func BucketCanAcceptNodeOfSize(tx *gorm.DB, bucketId int, nodeSize int64) (bool, error) {
+func BucketCanAcceptNodeOfSize(tx *gorm.DB, bucketUUID uuid.UUID, nodeSize int64) (bool, error) {
 	if nodeSize == 0 {
 		return true, nil
 	}
 
-	bucket, err := GetBucket(tx, bucketId)
+	bucket, err := GetBucket(tx, bucketUUID)
 	if err != nil {
 		return false, err
 	}

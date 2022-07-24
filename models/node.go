@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"time"
 )
@@ -9,7 +10,7 @@ type Node struct {
 	UUID       string         `json:"uuid,omitempty" gorm:"primaryKey"`
 	ParentUUID string         `json:"parent_uuid" gorm:"default:NULL"`
 	Parent     *Node          `json:"parent" gorm:"foreignKey:ParentUUID"`
-	BucketID   int            `json:"bucket_id" gorm:"not null"`
+	BucketUUID uuid.UUID      `json:"bucket_uuid" gorm:"type:uuid;not null"`
 	Name       string         `json:"name" gorm:"not null"`
 	Type       string         `json:"type" gorm:"not null"`
 	Mime       *string        `json:"mime"`
