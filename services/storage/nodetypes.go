@@ -57,6 +57,8 @@ func DetectFileType(nodeName string) string {
 		return "ocaml"
 	case ".ogg":
 		return "ogg"
+	case ".pdf":
+		return "pdf"
 	case ".php":
 		return "php"
 	case ".png":
