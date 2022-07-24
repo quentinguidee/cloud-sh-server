@@ -8,22 +8,15 @@ import (
 	"gorm.io/gorm"
 )
 
-func CreateBucketUser(tx *gorm.DB, bucketUUID uuid.UUID, userID int) (BucketUser, error) {
-	access := BucketUser{
-		BucketUUID: bucketUUID,
-		UserID:     userID,
-		AccessType: "admin",
-	}
-
-	err := tx.Create(&access).Error
-
-	return access, err
+func CreateUserBucket(tx *gorm.DB, userBucket UserBucket) (UserBucket, error) {
+	err := tx.Create(&userBucket).Error
+	return userBucket, err
 }
 
-func GetBucketUserAccess(tx *gorm.DB, bucketUUID uuid.UUID, userID int) (BucketUser, error) {
-	bucketUser := BucketUser{
-		BucketUUID: bucketUUID,
-		UserID:     userID,
+func GetBucketUserAccess(tx *gorm.DB, bucketUUID uuid.UUID, userID int) (UserBucket, error) {
+	bucketUser := UserBucket{
+		Bucket: Bucket{UUID: bucketUUID},
+		UserID: userID,
 	}
 
 	err := tx.Find(&bucketUser).Error

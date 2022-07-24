@@ -14,7 +14,7 @@ type User struct {
 	Sessions       []Session    `json:"sessions"`
 	GithubAuths    []GithubAuth `json:"github_auths"`
 	Nodes          []User       `json:"users" gorm:"many2many:node_users;"`
-	Buckets        []Bucket     `json:"buckets" gorm:"many2many:node_users;"`
+	Buckets        []Bucket     `json:"buckets" gorm:"many2many:user_buckets;"`
 }
 
 type GithubAuth struct {

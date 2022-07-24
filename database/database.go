@@ -22,7 +22,7 @@ var tables = []interface{}{
 	&models.Session{},
 	&models.GithubAuth{},
 	&models.NodeUser{},
-	&models.BucketUser{},
+	&models.UserBucket{},
 }
 
 func OpenConnection() (*gorm.DB, error) {

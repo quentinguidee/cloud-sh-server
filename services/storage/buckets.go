@@ -10,39 +10,25 @@ import (
 )
 
 func SetupDefaultBucket(tx *gorm.DB, userID int) error {
-	bucket, err := CreateBucket(tx, "Main bucket", "user_bucket")
+	userBucket, err := CreateUserBucket(tx, UserBucket{
+		Bucket: Bucket{
+			UUID: uuid.New(),
+			Name: "Main bucket",
+			Type: "user_bucket",
+		},
+		UserID:     userID,
+		AccessType: "admin",
+	})
 	if err != nil {
 		return err
 	}
 
-	_, err = CreateRootNode(tx, userID, bucket.UUID)
+	_, err = CreateRootNode(tx, userID, userBucket.Bucket.UUID)
 	if err != nil {
 		return err
 	}
 
-	_, err = CreateBucketUser(tx, bucket.UUID, userID)
-	if err != nil {
-		return err
-	}
-
-	err = CreateBucketInFileSystem(bucket.UUID)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func CreateBucket(tx *gorm.DB, name string, kind string) (Bucket, error) {
-	bucket := Bucket{
-		UUID: uuid.New(),
-		Name: name,
-		Type: kind,
-	}
-
-	err := tx.Create(&bucket).Error
-
-	return bucket, err
+	return CreateBucketInFileSystem(userBucket.Bucket.UUID)
 }
 
 func CreateBucketInFileSystem(bucketUUID uuid.UUID) error {
@@ -56,7 +42,7 @@ func CreateBucketInFileSystem(bucketUUID uuid.UUID) error {
 
 func GetBucket(tx *gorm.DB, bucketUUID uuid.UUID) (Bucket, error) {
 	var bucket Bucket
-	err := tx.Take(&bucket, bucketUUID).Error
+	err := tx.Take(&bucket, "uuid = ?", bucketUUID).Error
 	if err != nil {
 		return bucket, err
 	}
@@ -66,14 +52,12 @@ func GetBucket(tx *gorm.DB, bucketUUID uuid.UUID) (Bucket, error) {
 }
 
 func GetUserBucket(tx *gorm.DB, userID int) (Bucket, error) {
-	var bucketUser BucketUser
-	err := tx.Take(&bucketUser, "user_id = ?", userID).Error
+	var bucketUser UserBucket
+	err := tx.Preload("Bucket").Take(&bucketUser, "user_id = ?", userID).Error
 	if err != nil {
 		return Bucket{}, err
 	}
-
-	bucket, err := GetBucket(tx, bucketUser.BucketUUID)
-	return bucket, err
+	return GetBucket(tx, bucketUser.Bucket.UUID)
 }
 
 func GetBucketPath(bucketUUID uuid.UUID) string {
