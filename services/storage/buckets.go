@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	. "self-hosted-cloud/server/models"
@@ -48,7 +48,7 @@ func CreateBucket(tx *gorm.DB, name string, kind string) (Bucket, error) {
 func CreateBucketInFileSystem(bucketId int) error {
 	err := os.MkdirAll(filepath.Join(os.Getenv("DATA_PATH"), "buckets", strconv.Itoa(bucketId)), os.ModePerm)
 	if err != nil {
-		err = errors.New("error while creating bucket in file system")
+		err = fmt.Errorf("error while creating bucket in file system: %s", err)
 		return err
 	}
 	return nil

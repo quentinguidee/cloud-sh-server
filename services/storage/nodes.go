@@ -65,12 +65,11 @@ func GetNodePath(tx *gorm.DB, node Node, bucketId int, bucketRootNodeUuid string
 }
 
 func CreateRootNode(tx *gorm.DB, userID int, bucketID int) (Node, error) {
-	node := Node{
+	return CreateNode(tx, userID, Node{
 		BucketID: bucketID,
 		Name:     "root",
 		Type:     "directory",
-	}
-	return CreateNode(tx, userID, node)
+	})
 }
 
 func CreateNode(tx *gorm.DB, userID int, node Node) (Node, error) {
@@ -141,12 +140,14 @@ func CreateNodeInFileSystem(kind string, path string, content string) error {
 func DeleteNode(tx *gorm.DB, uuid string) error {
 	err := tx.Delete(&NodeUser{}, "node_uuid = ?", uuid).Error
 	if err != nil {
+		err = fmt.Errorf("error while deleting node user data: %s", err)
 		return err
 	}
 
 	var node Node
 	err = tx.Clauses(clause.Returning{}).Delete(&node, "uuid = ?", uuid).Error
 	if err != nil {
+		err = fmt.Errorf("error while deleting node: %s", err)
 		return err
 	}
 
@@ -170,17 +171,13 @@ func DeleteNodeRecursively(tx *gorm.DB, node *Node) error {
 		}
 	}
 
-	err := DeleteNode(tx, node.UUID)
-	if err != nil {
-		return err
-	}
-	return nil
+	return DeleteNode(tx, node.UUID)
 }
 
 func DeleteNodeInFileSystem(path string) error {
 	err := os.RemoveAll(path)
 	if err != nil {
-		err = errors.New("error while deleting node in file system")
+		err = fmt.Errorf("error while deleting node in file system: %s", err)
 		return err
 	}
 	return nil
@@ -189,6 +186,7 @@ func DeleteNodeInFileSystem(path string) error {
 func UpdateNode(tx *gorm.DB, node *Node, userId int) error {
 	err := tx.Save(&node).Error
 	if err != nil {
+		err = fmt.Errorf("error while updating node: %s", err)
 		return err
 	}
 	return UpdateNodeLastEditionTimestamp(tx, userId, node.UUID)
@@ -231,17 +229,15 @@ func GetDownloadPath(tx *gorm.DB, userId int, uuid string, bucketId int) (string
 }
 
 func UpdateNodeLastViewTimestamp(tx *gorm.DB, userID int, uuid string) error {
-	err := tx.Model(&NodeUser{
+	return tx.Model(&NodeUser{
 		UserID:   userID,
 		NodeUUID: uuid,
 	}).UpdateColumn("last_view_at", time.Now()).Error
-	return err
 }
 
 func UpdateNodeLastEditionTimestamp(tx *gorm.DB, userID int, uuid string) error {
-	err := tx.Model(&NodeUser{
+	return tx.Model(&NodeUser{
 		UserID:   userID,
 		NodeUUID: uuid,
 	}).UpdateColumn("edited_at", time.Now()).Error
-	return err
 }

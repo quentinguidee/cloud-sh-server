@@ -20,14 +20,14 @@ func CreateBucketUser(tx *gorm.DB, bucketID int, userID int) (BucketUser, error)
 }
 
 func GetBucketUserAccess(tx *gorm.DB, bucketID int, userID int) (BucketUser, error) {
-	var access BucketUser
-
-	err := tx.Where(&BucketUser{
+	bucketUser := BucketUser{
 		BucketID: bucketID,
 		UserID:   userID,
-	}).Find(&access).Error
+	}
 
-	return access, err
+	err := tx.Find(&bucketUser).Error
+
+	return bucketUser, err
 }
 
 func GetBucketUserAccessType(tx *gorm.DB, bucketId int, userId int) (AccessType, error) {

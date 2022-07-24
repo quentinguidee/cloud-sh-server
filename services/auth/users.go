@@ -13,7 +13,8 @@ func CreateUser(tx *gorm.DB, username string, name string, profilePicture string
 		ProfilePicture: &profilePicture,
 		Role:           &role,
 	}
-	return user, tx.Create(&user).Error
+	err := tx.Create(&user).Error
+	return user, err
 }
 
 func GetUser(tx *gorm.DB, username string) (User, error) {
