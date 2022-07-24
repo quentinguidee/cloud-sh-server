@@ -208,8 +208,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-
-
   /auth/github/login:
     get:
       summary: Get the login with github link
@@ -363,6 +361,13 @@ paths:
           required: true
           example: "edd91c7b-efa4-4473-aba4-d205cf6007b7"
           description: The node UUID to delete. It can be a folder.
+        - in: query
+          name: soft_delete
+          schema:
+            type: boolean
+          required: false
+          example: true
+          description: If defined, the node is not deleted but moved to the bin.
       responses:
         200:
           description: OK
@@ -514,6 +519,33 @@ paths:
   /storage/recent:
     get:
       summary: Get the user's recently accessed nodes
+      tags:
+        - "Storage"
+      parameters:
+        - $ref: "#/components/parameters/AuthorizationHeader"
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Nodes"
+        401:
+          description: Unauthorized access to this bucket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        500:
+          description: Failed to retrieve the user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /storage/bin:
+    get:
+      summary: Get the user's bin
       tags:
         - "Storage"
       parameters:

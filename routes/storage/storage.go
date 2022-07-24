@@ -17,6 +17,7 @@ func LoadRoutes(router *gin.Engine) {
 	{
 		group.GET("", getNodes)
 		group.GET("/recent", getRecentFiles)
+		group.GET("/bin", getBin)
 		group.PUT("", createNode)
 		group.DELETE("", deleteNodes)
 		group.PATCH("", renameNode)
@@ -96,6 +97,46 @@ func getRecentFiles(c *gin.Context) {
 	}
 
 	nodes, err := storage.GetRecentFiles(tx, user.ID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	tx.Commit()
+
+	c.JSON(http.StatusOK, gin.H{
+		"nodes": nodes,
+	})
+}
+
+func getBin(c *gin.Context) {
+	tx := database.NewTX(c)
+
+	user, err := utils.GetUserFromContext(c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	bucket, err := storage.GetUserBucket(tx, user.ID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	accessType, err := storage.GetBucketUserAccessType(tx, bucket.ID, user.ID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	if accessType < models.ReadOnly {
+		err := errors.New("cannot access this bucket: insufficient permissions")
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
+
+	nodes, err := storage.GetDeletedNodes(tx, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -188,6 +229,11 @@ func createNode(c *gin.Context) {
 func deleteNodes(c *gin.Context) {
 	uuid := c.Query("node_uuid")
 
+	softDeleteValue, softDelete := c.GetQuery("soft_delete")
+	if softDeleteValue == "false" {
+		softDelete = false
+	}
+
 	user, err := utils.GetUserFromContext(c)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
@@ -226,13 +272,17 @@ func deleteNodes(c *gin.Context) {
 		return
 	}
 
-	err = storage.DeleteNodeRecursively(tx, &node)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
+	if softDelete {
+		err = storage.DeleteNode(tx, node.UUID, softDelete)
+	} else {
+		err = storage.DeleteNodeRecursively(tx, &node)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+		err = storage.DeleteNodeInFileSystem(path)
 	}
 
-	err = storage.DeleteNodeInFileSystem(path)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return

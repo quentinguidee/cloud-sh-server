@@ -15,13 +15,24 @@ import (
 
 func GetNode(tx *gorm.DB, uuid string) (Node, error) {
 	var node Node
-	err := tx.Preload("Parent").Find(&node, "uuid = ?", uuid).Error
+	err := tx.
+		Preload("Parent", func(db *gorm.DB) *gorm.DB {
+			return db.Unscoped()
+		}).
+		Unscoped().
+		Find(&node, "uuid = ?", uuid).
+		Error
+
 	return node, err
 }
 
 func GetNodes(tx *gorm.DB, parentUUID string) ([]Node, error) {
 	var nodes []Node
-	err := tx.Preload("Parent", "uuid = ?", parentUUID).Find(&nodes, "parent_uuid = ?", parentUUID).Error
+	err := tx.
+		Preload("Parent", "uuid = ?", parentUUID).
+		Find(&nodes, "parent_uuid = ?", parentUUID).
+		Error
+
 	return nodes, err
 }
 
@@ -31,6 +42,17 @@ func GetRecentFiles(tx *gorm.DB, userID int) ([]Node, error) {
 	err := tx.Preload("NodeUsers", func(db *gorm.DB) *gorm.DB {
 		return db.Where("user_id = ?", userID).Order("last_view_at DESC")
 	}).Where("type <> ?", "directory").Find(&nodes).Error
+	return nodes, err
+}
+
+func GetDeletedNodes(tx *gorm.DB, bucketID int) ([]Node, error) {
+	var nodes []Node
+	err := tx.
+		Unscoped().
+		Where("deleted_at IS NOT NULL").
+		Find(&nodes, "bucket_id = ?", bucketID).
+		Error
+
 	return nodes, err
 }
 
@@ -137,15 +159,19 @@ func CreateNodeInFileSystem(kind string, path string, content string) error {
 	return err
 }
 
-func DeleteNode(tx *gorm.DB, uuid string) error {
+func DeleteNode(tx *gorm.DB, uuid string, softDelete bool) error {
+	var node Node
+	if softDelete {
+		return tx.Delete(&node, "uuid = ?", uuid).Error
+	}
+
 	err := tx.Delete(&NodeUser{}, "node_uuid = ?", uuid).Error
 	if err != nil {
 		err = fmt.Errorf("error while deleting node user data: %s", err)
 		return err
 	}
 
-	var node Node
-	err = tx.Clauses(clause.Returning{}).Delete(&node, "uuid = ?", uuid).Error
+	err = tx.Clauses(clause.Returning{}).Unscoped().Delete(&node, "uuid = ?", uuid).Error
 	if err != nil {
 		err = fmt.Errorf("error while deleting node: %s", err)
 		return err
@@ -159,7 +185,13 @@ func DeleteNode(tx *gorm.DB, uuid string) error {
 
 func DeleteNodeRecursively(tx *gorm.DB, node *Node) error {
 	if node.Type == "directory" {
-		children, err := GetNodes(tx, node.UUID)
+		var children []Node
+		err := tx.
+			Unscoped().
+			Preload("Parent", "uuid = ?", node.UUID).
+			Find(&children, "parent_uuid = ?", node.UUID).
+			Error
+
 		if err != nil {
 			return err
 		}
@@ -171,7 +203,7 @@ func DeleteNodeRecursively(tx *gorm.DB, node *Node) error {
 		}
 	}
 
-	return DeleteNode(tx, node.UUID)
+	return DeleteNode(tx, node.UUID, false)
 }
 
 func DeleteNodeInFileSystem(path string) error {
