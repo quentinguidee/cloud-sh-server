@@ -283,12 +283,9 @@ func renameNode(c *gin.Context) {
 		return
 	}
 
-	err = storage.UpdateNode(tx, &models.Node{
-		UUID: uuid,
-		Name: newName,
-		Type: node.Type,
-	}, user.ID)
+	node.Name = newName
 
+	err = storage.UpdateNode(tx, &node, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
