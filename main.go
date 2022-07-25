@@ -5,10 +5,7 @@ import (
 	"os"
 	"self-hosted-cloud/server/database"
 	"self-hosted-cloud/server/middlewares"
-	"self-hosted-cloud/server/routes/admin"
-	"self-hosted-cloud/server/routes/auth"
-	"self-hosted-cloud/server/routes/storage"
-	"self-hosted-cloud/server/routes/user"
+	"self-hosted-cloud/server/routes"
 	adminservice "self-hosted-cloud/server/services/admin"
 	"time"
 
@@ -18,19 +15,19 @@ import (
 )
 
 func main() {
-	if godotenv.Load() != nil {
-		log.Fatal(".env Couldn't be loaded.")
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf(".env Couldn't be loaded: %s", err.Error())
 	}
 
 	err := os.Mkdir(os.Getenv("DATA_PATH"), os.ModePerm)
 	if err != nil && !os.IsExist(err) {
-		log.Fatal(err.Error())
+		log.Fatalf("failed to create DATA_PATH: %s", err.Error())
 		return
 	}
 
 	db, err := database.GetDatabase()
 	if err != nil {
-		log.Fatal(err.Error())
+		log.Fatalf("failed to get the database: %s", err.Error())
 		return
 	}
 
@@ -55,13 +52,10 @@ func main() {
 	router.Use(middlewares.DatabaseMiddleware(db))
 	router.Use(middlewares.ErrorMiddleware())
 
-	auth.LoadRoutes(router)
-	user.LoadRoutes(router)
-	storage.LoadRoutes(router)
-	admin.LoadRoutes(router)
+	routes.LoadRoutes(router)
 
-	err = router.Run(os.Getenv("SERVER_URI"))
-	if err != nil {
+	if err := router.Run(os.Getenv("SERVER_URI")); err != nil {
+		log.Fatal(err.Error())
 		return
 	}
 }

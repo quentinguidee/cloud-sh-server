@@ -9,9 +9,8 @@ import (
 	"gorm.io/gorm"
 )
 
-func CreateUserBucket(tx *gorm.DB, userBucket UserBucket) (UserBucket, error) {
-	err := tx.Create(&userBucket).Error
-	return userBucket, err
+func CreateUserBucket(tx *gorm.DB, userBucket *UserBucket) error {
+	return tx.Create(userBucket).Error
 }
 
 func GetBucketUserAccess(tx *gorm.DB, bucketUUID uuid.UUID, userID int) (UserBucket, error) {

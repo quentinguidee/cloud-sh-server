@@ -1,4 +1,4 @@
-package github
+package api
 
 import (
 	authContext "context"
@@ -27,15 +27,7 @@ func getConfig() oauth2.Config {
 	}
 }
 
-func LoadRoutes(router *gin.RouterGroup) {
-	github := router.Group("/github")
-	{
-		github.GET("/login", login)
-		github.POST("/callback", callback)
-	}
-}
-
-func login(c *gin.Context) {
+func Login(c *gin.Context) (int, error) {
 	var config = getConfig()
 
 	url := config.AuthCodeURL(os.Getenv("AUTH_STATE"), oauth2.AccessTypeOffline)
@@ -43,6 +35,8 @@ func login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"url": url,
 	})
+
+	return http.StatusOK, nil
 }
 
 type CallbackParams struct {
@@ -50,30 +44,27 @@ type CallbackParams struct {
 	State string
 }
 
-type GithubUser struct {
+type GitHubUser struct {
 	Email     string `json:"email"`
 	Name      string `json:"name"`
-	Login     string `json:"login"`
+	Login     string `json:"Login"`
 	AvatarUrl string `json:"avatar_url"`
 }
 
-func callback(c *gin.Context) {
+func Callback(c *gin.Context) (int, error) {
 	var config = getConfig()
 	var params CallbackParams
 
 	// Decode JSON
-	err := c.BindJSON(&params)
-	if err != nil {
+	if err := c.BindJSON(&params); err != nil {
 		err = errors.New("body can't be decoded into an CallbackParams object")
-		c.AbortWithError(http.StatusBadRequest, err)
-		return
+		return http.StatusBadRequest, err
 	}
 
 	// Ensure the AUTH_STATE is correct.
 	if params.State != os.Getenv("AUTH_STATE") {
-		err = errors.New("the states don't match")
-		c.AbortWithError(http.StatusBadRequest, err)
-		return
+		err := errors.New("the states don't match")
+		return http.StatusBadRequest, err
 	}
 
 	// Generate the Token
@@ -81,16 +72,14 @@ func callback(c *gin.Context) {
 	token, err := config.Exchange(cdb, params.Code)
 	if err != nil {
 		err = errors.New("the server failed to generate your token")
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
+		return http.StatusInternalServerError, err
 	}
 
 	// Get user info
 	req, err := http.NewRequest("GET", "https://api.github.com/user", nil)
 	if err != nil {
 		err = errors.New("failed to fetch GitHub user account")
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
+		return http.StatusInternalServerError, err
 	}
 
 	// Get client info
@@ -98,17 +87,14 @@ func callback(c *gin.Context) {
 	res, err := client.Do(req)
 	if err != nil {
 		err = errors.New("failed to fetch GitHub user account")
-		c.AbortWithError(res.StatusCode, err)
-		return
+		return res.StatusCode, err
 	}
 
 	// Decode client info
-	var githubUser GithubUser
-	err = json.NewDecoder(res.Body).Decode(&githubUser)
-	if err != nil {
+	var githubUser GitHubUser
+	if err = json.NewDecoder(res.Body).Decode(&githubUser); err != nil {
 		err = errors.New("failed to decode GitHub user account")
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
+		return http.StatusInternalServerError, err
 	}
 
 	tx := database.NewTX(c)
@@ -118,8 +104,7 @@ func callback(c *gin.Context) {
 	if err != nil {
 		admins, err := auth.GetUsersByRole(tx, "admin")
 		if err != nil {
-			c.AbortWithError(http.StatusInternalServerError, err)
-			return
+			return http.StatusInternalServerError, err
 		}
 
 		var role string
@@ -136,30 +121,24 @@ func callback(c *gin.Context) {
 			ProfilePicture: &githubUser.AvatarUrl,
 			Role:           &role,
 		}
-		err = auth.CreateUser(tx, &user)
-		if err != nil {
-			c.AbortWithError(http.StatusInternalServerError, err)
-			return
+
+		if err = auth.CreateUser(tx, &user); err != nil {
+			return http.StatusInternalServerError, err
 		}
 
-		err = auth.CreateGithubUser(tx, user.ID, user.Username)
-		if err != nil {
-			c.AbortWithError(http.StatusInternalServerError, err)
-			return
+		if err = auth.CreateGithubUser(tx, user.ID, user.Username); err != nil {
+			return http.StatusInternalServerError, err
 		}
 
-		err = storage.SetupDefaultBucket(tx, user.ID)
-		if err != nil {
-			c.AbortWithError(http.StatusInternalServerError, err)
-			return
+		if err := storage.SetupDefaultBucket(tx, user.ID); err != nil {
+			return http.StatusInternalServerError, err
 		}
 	}
 
 	// Open session
-	session, err := auth.CreateSession(tx, user.ID)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
+	session := models.Session{UserID: user.ID}
+	if err := auth.CreateSession(tx, &session); err != nil {
+		return http.StatusInternalServerError, err
 	}
 
 	tx.Commit()
@@ -169,4 +148,6 @@ func callback(c *gin.Context) {
 		"user":    user,
 		"session": session,
 	})
+
+	return http.StatusOK, nil
 }

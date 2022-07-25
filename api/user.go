@@ -1,4 +1,4 @@
-package user
+package api
 
 import (
 	"net/http"
@@ -8,26 +8,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func LoadRoutes(router *gin.Engine) {
-	group := router.Group("/user")
-	{
-		group.GET("/", getUser)
-		group.GET("/:username", getUser)
-	}
-}
-
-func getUser(c *gin.Context) {
+func GetUser(c *gin.Context) (int, error) {
 	username := c.Param("username")
 
 	tx := database.NewTX(c)
 
 	user, err := auth.GetUser(tx, username)
 	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
+		return http.StatusInternalServerError, err
 	}
 
 	tx.Commit()
 
 	c.JSON(http.StatusOK, user)
+
+	return http.StatusOK, nil
 }

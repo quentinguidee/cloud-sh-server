@@ -8,19 +8,15 @@ import (
 	"gorm.io/gorm"
 )
 
-func CreateSession(tx *gorm.DB, userID int) (Session, error) {
+func CreateSession(tx *gorm.DB, session *Session) error {
 	token := make([]byte, 32)
-	_, err := rand.Read(token)
-	if err != nil {
-		return Session{}, err
+	if _, err := rand.Read(token); err != nil {
+		return err
 	}
 
-	session := Session{
-		UserID: userID,
-		Token:  fmt.Sprintf("%X", token),
-	}
+	session.Token = fmt.Sprintf("%X", token)
 
-	return session, tx.Create(&session).Error
+	return tx.Create(session).Error
 }
 
 func DeleteSession(tx *gorm.DB, session *Session) error {

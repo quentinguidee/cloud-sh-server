@@ -10,7 +10,7 @@ import (
 )
 
 func SetupDefaultBucket(tx *gorm.DB, userID int) error {
-	userBucket, err := CreateUserBucket(tx, UserBucket{
+	userBucket := UserBucket{
 		Bucket: Bucket{
 			UUID: uuid.New(),
 			Name: "Main bucket",
@@ -18,13 +18,15 @@ func SetupDefaultBucket(tx *gorm.DB, userID int) error {
 		},
 		UserID:     userID,
 		AccessType: "admin",
-	})
-	if err != nil {
+	}
+
+	if err := CreateUserBucket(tx, &userBucket); err != nil {
 		return err
 	}
 
-	_, err = CreateRootNode(tx, userID, userBucket.Bucket.UUID)
-	if err != nil {
+	node := Node{BucketUUID: userBucket.Bucket.UUID}
+
+	if err := CreateRootNode(tx, userID, &node); err != nil {
 		return err
 	}
 
@@ -32,11 +34,12 @@ func SetupDefaultBucket(tx *gorm.DB, userID int) error {
 }
 
 func CreateBucketInFileSystem(bucketUUID uuid.UUID) error {
-	err := os.MkdirAll(filepath.Join(os.Getenv("DATA_PATH"), "buckets", bucketUUID.String()), os.ModePerm)
-	if err != nil {
-		err = fmt.Errorf("error while creating bucket in file system: %s", err)
-		return err
+	path := filepath.Join(os.Getenv("DATA_PATH"), "buckets", bucketUUID.String())
+
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
+		return fmt.Errorf("error while creating bucket in file system: %s", err)
 	}
+
 	return nil
 }
 

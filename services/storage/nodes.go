@@ -86,24 +86,22 @@ func GetNodePath(tx *gorm.DB, node Node, bucketUUID uuid.UUID, bucketRootNodeUui
 	}
 }
 
-func CreateRootNode(tx *gorm.DB, userID int, bucketUUID uuid.UUID) (Node, error) {
-	return CreateNode(tx, userID, Node{
-		BucketUUID: bucketUUID,
-		Name:       "root",
-		Type:       "directory",
-	})
+func CreateRootNode(tx *gorm.DB, userID int, node *Node) error {
+	node.Name = "root"
+	node.Type = "directory"
+	return CreateNode(tx, userID, node)
 }
 
-func CreateNode(tx *gorm.DB, userID int, node Node) (Node, error) {
+func CreateNode(tx *gorm.DB, userID int, node *Node) error {
 	if node.Size != nil {
 		accepted, err := BucketCanAcceptNodeOfSize(tx, node.BucketUUID, *node.Size)
 		if err != nil {
-			return Node{}, err
+			return err
 		}
 		if !accepted {
 			err := errors.New("the storage is full")
 			// TODO: http.StatusForbidden
-			return Node{}, err
+			return err
 		}
 	}
 
@@ -116,22 +114,22 @@ func CreateNode(tx *gorm.DB, userID int, node Node) (Node, error) {
 		EditedAt:   &now,
 	}}
 
-	err := tx.Create(&node).Error
+	err := tx.Create(node).Error
 	if err != nil {
-		return node, err
+		return err
 	}
 
 	if node.Size != nil && *node.Size != 0 {
 		var bucket Bucket
 		err := tx.Take(&bucket, node.BucketUUID).Error
 		if err != nil {
-			return node, err
+			return err
 		}
 		bucket.Size += *node.Size
 		err = tx.Save(&bucket).Error
 	}
 
-	return node, err
+	return err
 }
 
 func CreateNodeInFileSystem(kind string, path string, content string) error {
