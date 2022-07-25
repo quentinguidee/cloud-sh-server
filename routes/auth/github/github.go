@@ -130,7 +130,6 @@ func callback(c *gin.Context) {
 		}
 
 		user = models.User{
-			ID:             0,
 			Username:       githubUser.Login,
 			Name:           githubUser.Name,
 			Email:          githubUser.Email,
