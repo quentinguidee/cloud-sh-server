@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	. "self-hosted-cloud/server/models"
@@ -24,8 +25,20 @@ func GetBucketUserAccess(tx *gorm.DB, bucketUUID uuid.UUID, userID int) (UserBuc
 	return bucketUser, err
 }
 
-func GetBucketUserAccessType(tx *gorm.DB, bucketUUID uuid.UUID, userId int) (AccessType, error) {
-	access, err := GetBucketUserAccess(tx, bucketUUID, userId)
+// AuthorizeAccess will return an error if the user cannot access this bucket ; nil error otherwise.
+func AuthorizeAccess(tx *gorm.DB, desiredAccessType AccessType, bucketUUID uuid.UUID, userID int) error {
+	maxAccessType, err := GetBucketUserAccessType(tx, bucketUUID, userID)
+	if err != nil {
+		return err
+	}
+	if maxAccessType < desiredAccessType {
+		return errors.New("insufficient permissions")
+	}
+	return nil
+}
+
+func GetBucketUserAccessType(tx *gorm.DB, bucketUUID uuid.UUID, userID int) (AccessType, error) {
+	access, err := GetBucketUserAccess(tx, bucketUUID, userID)
 	if err != nil {
 		return Denied, err
 	}

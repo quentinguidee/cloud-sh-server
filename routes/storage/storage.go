@@ -44,15 +44,9 @@ func getNodes(c *gin.Context) {
 		return
 	}
 
-	accessType, err := storage.GetBucketUserAccessType(tx, directory.BucketUUID, user.ID)
+	err = storage.AuthorizeAccess(tx, models.ReadOnly, directory.BucketUUID, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-
-	if accessType < models.ReadOnly {
-		err := errors.New("cannot access this bucket: insufficient permissions")
-		c.AbortWithError(http.StatusUnauthorized, err)
 		return
 	}
 
@@ -84,15 +78,9 @@ func getRecentFiles(c *gin.Context) {
 		return
 	}
 
-	accessType, err := storage.GetBucketUserAccessType(tx, bucket.UUID, user.ID)
+	err = storage.AuthorizeAccess(tx, models.ReadOnly, bucket.UUID, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-
-	if accessType < models.ReadOnly {
-		err := errors.New("cannot access this bucket: insufficient permissions")
-		c.AbortWithError(http.StatusUnauthorized, err)
 		return
 	}
 
@@ -124,15 +112,9 @@ func getBin(c *gin.Context) {
 		return
 	}
 
-	accessType, err := storage.GetBucketUserAccessType(tx, bucket.UUID, user.ID)
+	err = storage.AuthorizeAccess(tx, models.ReadOnly, bucket.UUID, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-
-	if accessType < models.ReadOnly {
-		err := errors.New("cannot access this bucket: insufficient permissions")
-		c.AbortWithError(http.StatusUnauthorized, err)
 		return
 	}
 
@@ -183,15 +165,9 @@ func createNode(c *gin.Context) {
 		return
 	}
 
-	accessType, err := storage.GetBucketUserAccessType(tx, bucket.UUID, user.ID)
+	err = storage.AuthorizeAccess(tx, models.Write, bucket.UUID, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-
-	if accessType < models.Write {
-		err := errors.New("cannot write in this bucket: insufficient permissions")
-		c.AbortWithError(http.StatusUnauthorized, err)
 		return
 	}
 
@@ -248,15 +224,9 @@ func deleteNodes(c *gin.Context) {
 		return
 	}
 
-	accessType, err := storage.GetBucketUserAccessType(tx, bucket.UUID, user.ID)
+	err = storage.AuthorizeAccess(tx, models.Write, bucket.UUID, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-
-	if accessType < models.Write {
-		err := errors.New("cannot delete elements in this bucket: insufficient permissions")
-		c.AbortWithError(http.StatusUnauthorized, err)
 		return
 	}
 
@@ -309,15 +279,9 @@ func renameNode(c *gin.Context) {
 		return
 	}
 
-	accessType, err := storage.GetBucketUserAccessType(tx, bucket.UUID, user.ID)
+	err = storage.AuthorizeAccess(tx, models.Write, bucket.UUID, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-
-	if accessType < models.Write {
-		err := errors.New("cannot rename elements in this bucket: insufficient permissions")
-		c.AbortWithError(http.StatusUnauthorized, err)
 		return
 	}
 
@@ -387,15 +351,9 @@ func downloadNodes(c *gin.Context) {
 		return
 	}
 
-	accessType, err := storage.GetBucketUserAccessType(tx, bucket.UUID, user.ID)
+	err = storage.AuthorizeAccess(tx, models.ReadOnly, bucket.UUID, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-
-	if accessType < models.ReadOnly {
-		err := errors.New("cannot download elements from this bucket: insufficient permissions")
-		c.AbortWithError(http.StatusUnauthorized, err)
 		return
 	}
 
@@ -432,15 +390,9 @@ func uploadNode(c *gin.Context) {
 		return
 	}
 
-	accessType, err := storage.GetBucketUserAccessType(tx, bucket.UUID, user.ID)
+	err = storage.AuthorizeAccess(tx, models.Write, bucket.UUID, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-
-	if accessType < models.Write {
-		err := errors.New("cannot upload elements in this bucket: insufficient permissions")
-		c.AbortWithError(http.StatusUnauthorized, err)
 		return
 	}
 
