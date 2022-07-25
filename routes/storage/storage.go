@@ -2,6 +2,7 @@ package storage
 
 import (
 	"errors"
+	"github.com/google/uuid"
 	"net/http"
 	"self-hosted-cloud/server/database"
 	"self-hosted-cloud/server/models"
@@ -15,20 +16,38 @@ import (
 func LoadRoutes(router *gin.Engine) {
 	group := router.Group("/storage")
 	{
-		group.GET("", getNodes)
-		group.GET("/recent", getRecentFiles)
-		group.GET("/bin", getBin)
-		group.PUT("", createNode)
-		group.DELETE("", deleteNodes)
-		group.PATCH("", renameNode)
+		subGroup := group.Group("/:bucket_uuid")
+		{
+			subGroup.GET("", getNodes)
+			subGroup.GET("/recent", getRecentFiles)
+			subGroup.GET("/bin", getBin)
+			subGroup.PUT("", createNode)
+			subGroup.DELETE("", deleteNodes)
+			subGroup.PATCH("", renameNode)
+			subGroup.GET("/download", downloadNodes)
+			subGroup.POST("/upload", uploadNode)
+		}
 		group.GET("/bucket", getBucket)
-		group.GET("/download", downloadNodes)
-		group.POST("/upload", uploadNode)
 	}
+}
+
+func getBucketUUID(c *gin.Context) (uuid.UUID, error) {
+	bucketUUID, err := uuid.Parse(c.Param("bucket_uuid"))
+	if err != nil {
+		err := errors.New("bad request: failed to parse bucket_uuid")
+		return uuid.UUID{}, err
+	}
+	return bucketUUID, nil
 }
 
 func getNodes(c *gin.Context) {
 	parentUuid := c.Query("parent_uuid")
+
+	bucketUUID, err := getBucketUUID(c)
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
 
 	tx := database.NewTX(c)
 
@@ -38,13 +57,7 @@ func getNodes(c *gin.Context) {
 		return
 	}
 
-	directory, err := storage.GetNode(tx, parentUuid)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-
-	err = storage.AuthorizeAccess(tx, models.ReadOnly, directory.BucketUUID, user.ID)
+	err = storage.AuthorizeAccess(tx, models.ReadOnly, bucketUUID, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -66,19 +79,19 @@ func getNodes(c *gin.Context) {
 func getRecentFiles(c *gin.Context) {
 	tx := database.NewTX(c)
 
+	bucketUUID, err := getBucketUUID(c)
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
 	user, err := utils.GetUserFromContext(c)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	bucket, err := storage.GetUserBucket(tx, user.ID)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-
-	err = storage.AuthorizeAccess(tx, models.ReadOnly, bucket.UUID, user.ID)
+	err = storage.AuthorizeAccess(tx, models.ReadOnly, bucketUUID, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -100,25 +113,25 @@ func getRecentFiles(c *gin.Context) {
 func getBin(c *gin.Context) {
 	tx := database.NewTX(c)
 
+	bucketUUID, err := getBucketUUID(c)
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
 	user, err := utils.GetUserFromContext(c)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	bucket, err := storage.GetUserBucket(tx, user.ID)
+	err = storage.AuthorizeAccess(tx, models.ReadOnly, bucketUUID, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	err = storage.AuthorizeAccess(tx, models.ReadOnly, bucket.UUID, user.ID)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-
-	nodes, err := storage.GetDeletedNodes(tx, bucket.UUID)
+	nodes, err := storage.GetDeletedNodes(tx, bucketUUID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -151,6 +164,13 @@ func createNode(c *gin.Context) {
 	}
 
 	parentUuid := c.Query("parent_uuid")
+
+	bucketUUID, err := getBucketUUID(c)
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
 	user, err := utils.GetUserFromContext(c)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
@@ -159,13 +179,7 @@ func createNode(c *gin.Context) {
 
 	tx := database.NewTX(c)
 
-	bucket, err := storage.GetUserBucket(tx, user.ID)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-
-	err = storage.AuthorizeAccess(tx, models.Write, bucket.UUID, user.ID)
+	err = storage.AuthorizeAccess(tx, models.Write, bucketUUID, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -174,6 +188,12 @@ func createNode(c *gin.Context) {
 	nodeType := params.Type
 	if nodeType != "directory" {
 		nodeType = storage.DetectFileType(params.Name)
+	}
+
+	bucket, err := storage.GetBucket(tx, bucketUUID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
 	}
 
 	node, err := storage.CreateNode(tx, user.ID, models.Node{
@@ -203,7 +223,13 @@ func createNode(c *gin.Context) {
 }
 
 func deleteNodes(c *gin.Context) {
-	uuid := c.Query("node_uuid")
+	nodeUUID := c.Query("node_uuid")
+
+	bucketUUID, err := getBucketUUID(c)
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
 
 	softDeleteValue, softDelete := c.GetQuery("soft_delete")
 	if softDeleteValue == "false" {
@@ -218,19 +244,19 @@ func deleteNodes(c *gin.Context) {
 
 	tx := database.NewTX(c)
 
-	bucket, err := storage.GetUserBucket(tx, user.ID)
+	err = storage.AuthorizeAccess(tx, models.Write, bucketUUID, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	err = storage.AuthorizeAccess(tx, models.Write, bucket.UUID, user.ID)
+	node, err := storage.GetNode(tx, nodeUUID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	node, err := storage.GetNode(tx, uuid)
+	bucket, err := storage.GetBucket(tx, bucketUUID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -262,8 +288,14 @@ func deleteNodes(c *gin.Context) {
 }
 
 func renameNode(c *gin.Context) {
-	uuid := c.Query("node_uuid")
+	nodeUUID := c.Query("node_uuid")
 	newName := c.Query("new_name")
+
+	bucketUUID, err := getBucketUUID(c)
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
 
 	user, err := utils.GetUserFromContext(c)
 	if err != nil {
@@ -273,7 +305,7 @@ func renameNode(c *gin.Context) {
 
 	tx := database.NewTX(c)
 
-	bucket, err := storage.GetUserBucket(tx, user.ID)
+	bucket, err := storage.GetBucket(tx, bucketUUID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -285,7 +317,7 @@ func renameNode(c *gin.Context) {
 		return
 	}
 
-	node, err := storage.GetNode(tx, uuid)
+	node, err := storage.GetNode(tx, nodeUUID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -335,7 +367,13 @@ func getBucket(c *gin.Context) {
 }
 
 func downloadNodes(c *gin.Context) {
-	uuid := c.Query("node_uuid")
+	nodeUUID := c.Query("node_uuid")
+
+	bucketUUID, err := getBucketUUID(c)
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
 
 	user, err := utils.GetUserFromContext(c)
 	if err != nil {
@@ -345,19 +383,19 @@ func downloadNodes(c *gin.Context) {
 
 	tx := database.NewTX(c)
 
-	bucket, err := storage.GetUserBucket(tx, user.ID)
+	err = storage.AuthorizeAccess(tx, models.ReadOnly, bucketUUID, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	err = storage.AuthorizeAccess(tx, models.ReadOnly, bucket.UUID, user.ID)
+	bucket, err := storage.GetBucket(tx, bucketUUID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	path, err := storage.GetDownloadPath(tx, user.ID, uuid, bucket.UUID)
+	path, err := storage.GetDownloadPath(tx, user.ID, nodeUUID, bucket.UUID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -370,6 +408,13 @@ func downloadNodes(c *gin.Context) {
 
 func uploadNode(c *gin.Context) {
 	parentUUID := c.Query("parent_uuid")
+
+	bucketUUID, err := getBucketUUID(c)
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
 	file, err := c.FormFile("file")
 	if err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
@@ -384,13 +429,13 @@ func uploadNode(c *gin.Context) {
 
 	tx := database.NewTX(c)
 
-	bucket, err := storage.GetUserBucket(tx, user.ID)
+	err = storage.AuthorizeAccess(tx, models.Write, bucketUUID, user.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	err = storage.AuthorizeAccess(tx, models.Write, bucket.UUID, user.ID)
+	bucket, err := storage.GetBucket(tx, bucketUUID)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return

@@ -125,6 +125,13 @@ components:
       description: The session token
       example: "AD0EZ92B6ECD1EF95C46C813C3757D58D364D6BB2DF3BD50760CEF620C85EAD9"
 
+    BucketUUID:
+      in: path
+      name: bucket_uuid
+      required: true
+      description: The bucket UUID.
+      example: "2f30d554-ca13-40d7-zc3e-8f4918e5a745"
+
 paths:
 
   /admin/demo:
@@ -261,13 +268,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /storage:
+  /storage/:bucket_uuid:
     get:
       summary: Get nodes contained in a directory
       tags:
         - "Storage"
       parameters:
         - $ref: "#/components/parameters/AuthorizationHeader"
+        - $ref: "#/components/parameters/BucketUUID"
         - in: query
           name: parent_uuid
           schema:
@@ -301,6 +309,7 @@ paths:
         - "Storage"
       parameters:
         - $ref: "#/components/parameters/AuthorizationHeader"
+        - $ref: "#/components/parameters/BucketUUID"
         - in: header
           name: Body
           required: true
@@ -357,6 +366,7 @@ paths:
         - "Storage"
       parameters:
         - $ref: "#/components/parameters/AuthorizationHeader"
+        - $ref: "#/components/parameters/BucketUUID"
         - in: query
           name: node_uuid
           schema:
@@ -393,6 +403,7 @@ paths:
         - "Storage"
       parameters:
         - $ref: "#/components/parameters/AuthorizationHeader"
+        - $ref: "#/components/parameters/BucketUUID"
         - in: query
           name: node_uuid
           description: The UUID of the node to rename
@@ -444,13 +455,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /storage/download:
+  /storage/:bucket_uuid/download:
     get:
       summary: Download a node
       tags:
         - "Storage"
       parameters:
         - $ref: "#/components/parameters/AuthorizationHeader"
+        - $ref: "#/components/parameters/BucketUUID"
         - in: query
           name: node_uuid
           description: The UUID of the node to download
@@ -474,13 +486,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /storage/upload:
+  /storage/:bucket_uuid/upload:
     post:
       summary: Upload a node
       tags:
         - "Storage"
       parameters:
         - $ref: "#/components/parameters/AuthorizationHeader"
+        - $ref: "#/components/parameters/BucketUUID"
         - in: query
           name: parent_uuid
           description: The parent directory
@@ -519,13 +532,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /storage/recent:
+  /storage/:bucket_uuid/recent:
     get:
       summary: Get the user's recently accessed nodes
       tags:
         - "Storage"
       parameters:
         - $ref: "#/components/parameters/AuthorizationHeader"
+        - $ref: "#/components/parameters/BucketUUID"
       responses:
         200:
           description: OK
@@ -546,13 +560,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /storage/bin:
+  /storage/:bucket_uuid/bin:
     get:
       summary: Get the user's bin
       tags:
         - "Storage"
       parameters:
         - $ref: "#/components/parameters/AuthorizationHeader"
+        - $ref: "#/components/parameters/BucketUUID"
       responses:
         200:
           description: OK
