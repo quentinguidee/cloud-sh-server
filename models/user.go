@@ -8,13 +8,13 @@ type User struct {
 	ID             int          `json:"id" gorm:"primaryKey"`
 	Username       string       `json:"username" gorm:"unique,not null"`
 	Name           string       `json:"name" gorm:"not null"`
-	ProfilePicture *string      `json:"profile_picture"`
-	Role           *string      `json:"role"`
-	CreatedAt      time.Time    `json:"created_at" gorm:"not null"`
-	Sessions       []Session    `json:"sessions"`
-	GithubUsers    []GithubUser `json:"github_users"`
-	Nodes          []User       `json:"users" gorm:"many2many:node_users;"`
-	Buckets        []Bucket     `json:"buckets" gorm:"many2many:user_buckets;"`
+	ProfilePicture *string      `json:"profile_picture,omitempty"`
+	Role           *string      `json:"role,omitempty"`
+	CreatedAt      time.Time    `json:"created_at,omitempty" gorm:"not null"`
+	Sessions       []Session    `json:"sessions,omitempty"`
+	GithubUsers    []GithubUser `json:"github_users,omitempty"`
+	Nodes          []User       `json:"users,omitempty" gorm:"many2many:node_users;"`
+	Buckets        []Bucket     `json:"buckets,omitempty" gorm:"many2many:user_buckets;"`
 }
 
 type GithubUser struct {

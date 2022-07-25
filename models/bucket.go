@@ -8,8 +8,8 @@ type Bucket struct {
 	Type     string    `json:"type" gorm:"not null"`
 	Size     int64     `json:"size" gorm:"not null;default:0"`
 	RootNode *Node     `json:"root_node" gorm:"-:all"`
-	MaxSize  *int64    `json:"max_size"`
-	Users    []User    `json:"users" gorm:"many2many:user_buckets;"`
+	MaxSize  *int64    `json:"max_size,omitempty"`
+	Users    []User    `json:"users,omitempty" gorm:"many2many:user_buckets;"`
 }
 
 type UserBucket struct {
