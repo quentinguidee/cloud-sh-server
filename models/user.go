@@ -12,12 +12,13 @@ type User struct {
 	Role           *string      `json:"role"`
 	CreatedAt      time.Time    `json:"created_at" gorm:"not null"`
 	Sessions       []Session    `json:"sessions"`
-	GithubAuths    []GithubAuth `json:"github_auths"`
+	GithubUsers    []GithubUser `json:"github_users"`
 	Nodes          []User       `json:"users" gorm:"many2many:node_users;"`
 	Buckets        []Bucket     `json:"buckets" gorm:"many2many:user_buckets;"`
 }
 
-type GithubAuth struct {
-	Username string `json:"username"`
-	UserID   int    `json:"user_id"`
+type GithubUser struct {
+	Username string `json:"username" gorm:"primaryKey"`
+	UserID   int    `json:"user_id" gorm:"primaryKey"`
+	User     User   `json:"user" gorm:"foreignKey:UserID"`
 }

@@ -20,7 +20,7 @@ var tables = []interface{}{
 	&models.Bucket{},
 	&models.Node{},
 	&models.Session{},
-	&models.GithubAuth{},
+	&models.GithubUser{},
 	&models.NodeUser{},
 	&models.UserBucket{},
 }
