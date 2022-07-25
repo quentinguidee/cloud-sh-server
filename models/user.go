@@ -8,6 +8,7 @@ type User struct {
 	ID             int          `json:"id" gorm:"primaryKey"`
 	Username       string       `json:"username" gorm:"unique,not null"`
 	Name           string       `json:"name" gorm:"not null"`
+	Email          string       `json:"email" gorm:"not null"`
 	ProfilePicture *string      `json:"profile_picture,omitempty"`
 	Role           *string      `json:"role,omitempty"`
 	CreatedAt      time.Time    `json:"created_at,omitempty" gorm:"not null"`

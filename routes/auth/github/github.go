@@ -4,14 +4,14 @@ import (
 	authContext "context"
 	"encoding/json"
 	"errors"
+	"github.com/gin-gonic/gin"
+	"golang.org/x/oauth2"
 	"net/http"
 	"os"
 	"self-hosted-cloud/server/database"
+	"self-hosted-cloud/server/models"
 	"self-hosted-cloud/server/services/auth"
 	"self-hosted-cloud/server/services/storage"
-
-	"github.com/gin-gonic/gin"
-	"golang.org/x/oauth2"
 )
 
 func getConfig() oauth2.Config {
@@ -129,7 +129,15 @@ func callback(c *gin.Context) {
 			role = "admin"
 		}
 
-		user, err = auth.CreateUser(tx, githubUser.Login, githubUser.Name, githubUser.AvatarUrl, role)
+		user = models.User{
+			ID:             0,
+			Username:       githubUser.Login,
+			Name:           githubUser.Name,
+			Email:          githubUser.Email,
+			ProfilePicture: &githubUser.AvatarUrl,
+			Role:           &role,
+		}
+		err = auth.CreateUser(tx, &user)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return

@@ -6,15 +6,8 @@ import (
 	"gorm.io/gorm"
 )
 
-func CreateUser(tx *gorm.DB, username string, name string, profilePicture string, role string) (User, error) {
-	user := User{
-		Username:       username,
-		Name:           name,
-		ProfilePicture: &profilePicture,
-		Role:           &role,
-	}
-	err := tx.Create(&user).Error
-	return user, err
+func CreateUser(tx *gorm.DB, user *User) error {
+	return tx.Create(user).Error
 }
 
 func GetUser(tx *gorm.DB, username string) (User, error) {
