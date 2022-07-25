@@ -21,6 +21,7 @@ func LoadRoutes(router *gin.Engine) {
 			subGroup.GET("", getNodes)
 			subGroup.GET("/recent", getRecentFiles)
 			subGroup.GET("/bin", getBin)
+			subGroup.DELETE("/bin", emptyBin)
 			subGroup.PUT("", createNode)
 			subGroup.DELETE("", deleteNodes)
 			subGroup.PATCH("", renameNode)
@@ -108,6 +109,66 @@ func getRecentFiles(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"nodes": nodes,
 	})
+}
+
+func emptyBin(c *gin.Context) {
+	tx := database.NewTX(c)
+
+	bucketUUID, err := getBucketUUID(c)
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	user, err := utils.GetUserFromContext(c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	err = storage.AuthorizeAccess(tx, models.ReadOnly, bucketUUID, user.ID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	nodes, err := storage.GetDeletedNodes(tx, bucketUUID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	bucket, err := storage.GetBucket(tx, bucketUUID)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	tx.Commit()
+
+	for _, node := range nodes {
+		tx := database.NewTX(c)
+
+		path, err := storage.GetNodePath(tx, node, bucketUUID, bucket.RootNode.UUID)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		err = storage.DeleteNodeRecursively(tx, &node)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		err = storage.DeleteNodeInFileSystem(path)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		tx.Commit()
+	}
 }
 
 func getBin(c *gin.Context) {

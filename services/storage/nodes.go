@@ -167,14 +167,12 @@ func DeleteNode(tx *gorm.DB, uuid string, softDelete bool) error {
 
 	err := tx.Delete(&NodeUser{}, "node_uuid = ?", uuid).Error
 	if err != nil {
-		err = fmt.Errorf("error while deleting node user data: %s", err)
-		return err
+		return fmt.Errorf("error while deleting node user data: %s", err)
 	}
 
 	err = tx.Clauses(clause.Returning{}).Unscoped().Delete(&node, "uuid = ?", uuid).Error
 	if err != nil {
-		err = fmt.Errorf("error while deleting node: %s", err)
-		return err
+		return fmt.Errorf("error while deleting node: %s", err)
 	}
 
 	if node.Size != nil {
