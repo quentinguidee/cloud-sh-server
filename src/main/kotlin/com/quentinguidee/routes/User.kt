@@ -18,6 +18,6 @@ fun Route.userRouting() {
             status = HttpStatusCode.NotFound
         )
 
-        call.respond(user)
+        call.respond(user.toJSON())
     }
 }

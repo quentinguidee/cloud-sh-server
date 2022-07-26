@@ -1,35 +1,38 @@
 package com.quentinguidee.models
 
-import kotlinx.serialization.Serializable
-import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.Table
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import org.jetbrains.exposed.dao.IntEntity
+import org.jetbrains.exposed.dao.IntEntityClass
+import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.dao.id.IntIdTable
 
-object Users : Table() {
-    val id = integer("id").autoIncrement()
+object Users : IntIdTable() {
     val username = varchar("username", 127).uniqueIndex()
     val name = varchar("name", 127)
     val email = varchar("email", 255)
     val profilePicture = varchar("profile_picture", 255)
     val role = varchar("role", 63).nullable()
-
-    override val primaryKey = PrimaryKey(id)
 }
 
-@Serializable
-data class User(
-    val id: Int? = null,
-    val username: String,
-    val name: String,
-    val email: String,
-    val profilePicture: String,
-    val role: String?,
-)
+class User(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<User>(Users)
 
-fun Users.fromRow(row: ResultRow): User = User(
-    id = row[id],
-    username = row[username],
-    name = row[name],
-    email = row[email],
-    profilePicture = row[profilePicture],
-    role = row[role],
-)
+    val username by Users.username
+    val name by Users.name
+    val email by Users.email
+    val profilePicture by Users.profilePicture
+    val role by Users.role
+
+    fun toJSON(): JsonObject {
+        return buildJsonObject {
+            put("id", id.value)
+            put("username", username)
+            put("name", name)
+            put("email", email)
+            put("profile_picture", profilePicture)
+            put("role", role)
+        }
+    }
+}
