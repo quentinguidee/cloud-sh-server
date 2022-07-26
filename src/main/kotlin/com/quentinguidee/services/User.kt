@@ -1,14 +1,11 @@
 package com.quentinguidee.services
 
-import com.quentinguidee.models.User
-import com.quentinguidee.models.Users
+import com.quentinguidee.dao.daoUser
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class UserService {
-    fun get(username: String) = transaction {
-        User
-            .find { Users.username eq username }
-            .singleOrNull()
+    suspend fun get(username: String) = transaction {
+        daoUser.get(username)
     }
 }
 
