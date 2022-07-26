@@ -5,14 +5,11 @@ import com.quentinguidee.models.Users
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class UserService {
-    fun getUser(username: String): User? {
-        return transaction {
-            return@transaction User
-                .find { Users.username eq username }
-                .firstOrNull()
-        }
+    fun get(username: String) = transaction {
+        User
+            .find { Users.username eq username }
+            .singleOrNull()
     }
-
 }
 
 val userService = UserService()

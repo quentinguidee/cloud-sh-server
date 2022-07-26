@@ -13,7 +13,7 @@ fun Route.userRouting() {
             status = HttpStatusCode.BadRequest
         )
 
-        val user = userService.getUser(username) ?: return@get call.respondText(
+        val user = userService.get(username) ?: return@get call.respondText(
             "user not found",
             status = HttpStatusCode.NotFound
         )
