@@ -10,7 +10,7 @@ import org.jetbrains.exposed.dao.id.UUIDTable
 import java.util.*
 
 object Nodes : UUIDTable() {
-    val parent = reference("parent", Nodes)
+    val parent = reference("parent", Nodes).nullable()
     val bucket = reference("bucket", Buckets)
     val name = varchar("name", 255)
     val type = varchar("type", 255)
@@ -30,7 +30,7 @@ class Node(id: EntityID<UUID>) : UUIDEntity(id) {
 
     fun toJSON(): JsonObject {
         return buildJsonObject {
-            put("parent", parent.value.toString())
+            put("parent", parent?.value.toString())
             put("bucket", bucket.value.toString())
             put("name", name)
             put("type", type)
