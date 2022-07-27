@@ -1,13 +1,20 @@
 package com.quentinguidee
 
-import com.quentinguidee.plugins.configureDatabase
-import com.quentinguidee.plugins.configureHTTP
-import com.quentinguidee.plugins.configureRouting
-import com.quentinguidee.plugins.configureSerialization
+import com.quentinguidee.plugins.*
 import com.typesafe.config.ConfigFactory
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.config.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+
+val client = HttpClient(CIO) {
+    install(ContentNegotiation) {
+        json()
+    }
+}
 
 fun main() {
     embeddedServer(Netty, environment = applicationEngineEnvironment {
@@ -17,6 +24,7 @@ fun main() {
             configureDatabase()
             configureHTTP()
             configureSerialization()
+            configureOAuth()
             configureRouting()
         }
 
