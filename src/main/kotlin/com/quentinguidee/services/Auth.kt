@@ -37,29 +37,25 @@ class AuthService {
             .body()
     }
 
-    private suspend fun createAccount(
-        username: String,
-        name: String,
-        email: String,
-        profilePicture: String
-    ): Session = transaction {
-        val user = User.new {
-            this.username = username
-            this.name = name
-            this.email = email
-            this.profilePicture = profilePicture
-        }
+    private suspend fun createAccount(username: String, name: String, email: String, profilePicture: String): Session =
+        transaction {
+            val user = User.new {
+                this.username = username
+                this.name = name
+                this.email = email
+                this.profilePicture = profilePicture
+            }
 
-        GitHubUser.new {
-            this.user = user
-            this.username = username
-        }
+            GitHubUser.new {
+                this.user = user
+                this.username = username
+            }
 
-        return@transaction Session.new {
-            this.user = user
-            this.token = UUID.randomUUID().toString()
+            return@transaction Session.new {
+                this.user = user
+                this.token = UUID.randomUUID().toString()
+            }
         }
-    }
 
     suspend fun createAccount(gitHubUser: GitHubUserBody) = authService.createAccount(
         username = gitHubUser.login,
