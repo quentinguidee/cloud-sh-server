@@ -9,7 +9,7 @@ enum class AccessType {
 object UserBuckets : Table("user_buckets") {
     val bucket = reference("bucket_uuid", Buckets)
     val user = reference("user_id", Users)
-    val accessType = enumeration<AccessType>("access_type")
+    val accessType = enumerationByName("access_type", 63, AccessType::class)
 
     override val primaryKey = PrimaryKey(bucket, user, name = "PK_user_buckets")
 }
