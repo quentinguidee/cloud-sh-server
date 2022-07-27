@@ -18,7 +18,13 @@ class BucketService {
             }
             .firstOrNull() ?: return@transaction null
 
-        return@transaction Bucket.wrapRow(query)
+        val bucket = Bucket.wrapRow(query)
+
+        bucket.rootNode = Node
+            .find { Nodes.bucket eq bucket.id and Nodes.parent.isNull() }
+            .firstOrNull()
+
+        return@transaction bucket
     }
 
     suspend fun createBucket(userID: Int) =
@@ -36,11 +42,13 @@ class BucketService {
             it[UserBuckets.bucket] = bucket.id
         }
 
-        Node.new {
+        val rootNode = Node.new {
             this.bucket = bucket
             this.name = "root"
             this.type = "directory"
         }
+
+        bucket.rootNode = rootNode
 
         return@transaction bucket
     }

@@ -30,8 +30,9 @@ class Node(id: EntityID<UUID>) : UUIDEntity(id) {
 
     fun toJSON() = transaction {
         return@transaction buildJsonObject {
-            put("parent", parent?.id.toString())
-            put("bucket", bucket.toJSON())
+            if (parent != null)
+                put("parent", parent!!.id.toString())
+            put("bucket_id", bucket.id.toString())
             put("name", name)
             put("type", type)
             put("mime", mime)
