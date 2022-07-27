@@ -1,7 +1,7 @@
 package com.quentinguidee.services
 
 import com.quentinguidee.client
-import com.quentinguidee.models.*
+import com.quentinguidee.models.db.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*

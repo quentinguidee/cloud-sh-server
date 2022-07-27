@@ -1,11 +1,13 @@
 package com.quentinguidee.routes
 
+import com.quentinguidee.models.UserSession
 import com.quentinguidee.services.authService
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.sessions.*
 
 fun Route.authRoutes() {
     route("/github") {
@@ -27,6 +29,7 @@ fun Route.authRoutes() {
                     authService.getAccount(githubUser.username)
                 }
 
+                call.sessions.set(UserSession(session.user.id.value, session.user.username))
                 call.respond(session.toJSON())
             }
         }

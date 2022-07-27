@@ -1,4 +1,4 @@
-package com.quentinguidee.models
+package com.quentinguidee.models.db
 
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put

@@ -1,6 +1,6 @@
 package com.quentinguidee.plugins
 
-import com.quentinguidee.models.*
+import com.quentinguidee.models.db.*
 import io.ktor.server.application.*
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils

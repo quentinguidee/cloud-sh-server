@@ -1,7 +1,7 @@
 package com.quentinguidee.services
 
-import com.quentinguidee.models.User
-import com.quentinguidee.models.Users
+import com.quentinguidee.models.db.User
+import com.quentinguidee.models.db.Users
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class UserService {
