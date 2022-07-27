@@ -11,7 +11,7 @@ fun Application.configureOAuth() {
 
     install(Authentication) {
         oauth("oauth-github") {
-            urlProvider = { "http://localhost:8080/callback" }
+            urlProvider = { "http://localhost:8080/auth/github/callback" }
             providerLookup = {
                 OAuthServerSettings.OAuth2ServerSettings(
                     name = "github",

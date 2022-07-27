@@ -20,12 +20,11 @@ object Buckets : UUIDTable() {
 class Bucket(id: EntityID<UUID>) : UUIDEntity(id) {
     companion object : UUIDEntityClass<Bucket>(Buckets)
 
-    val name by Buckets.name
-    val type by Buckets.type
-    val size by Buckets.size
-    val maxSize by Buckets.maxSize
-    val rootNode by Buckets.rootNode
-
+    var name by Buckets.name
+    var type by Buckets.type
+    var size by Buckets.size
+    var maxSize by Buckets.maxSize
+    var rootNode by Node referencedOn Buckets.rootNode
 
     fun toJSON(): JsonObject {
         return buildJsonObject {
@@ -33,7 +32,7 @@ class Bucket(id: EntityID<UUID>) : UUIDEntity(id) {
             put("type", type)
             put("size", size)
             put("max_size", maxSize)
-            put("root_node", rootNode.value.toString())
+            put("root_node", rootNode.toJSON())
         }
     }
 }

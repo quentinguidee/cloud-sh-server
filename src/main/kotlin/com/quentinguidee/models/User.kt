@@ -19,11 +19,11 @@ object Users : IntIdTable() {
 class User(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<User>(Users)
 
-    val username by Users.username
-    val name by Users.name
-    val email by Users.email
-    val profilePicture by Users.profilePicture
-    val role by Users.role
+    var username by Users.username
+    var name by Users.name
+    var email by Users.email
+    var profilePicture by Users.profilePicture
+    var role by Users.role
 
     fun toJSON(): JsonObject {
         return buildJsonObject {
