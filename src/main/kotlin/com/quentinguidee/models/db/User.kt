@@ -1,12 +1,12 @@
 package com.quentinguidee.models.db
 
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.sql.transactions.transaction
 
 object Users : IntIdTable() {
     val username = varchar("username", 127).uniqueIndex()
@@ -25,9 +25,9 @@ class User(id: EntityID<Int>) : IntEntity(id) {
     var profilePicture by Users.profilePicture
     var role by Users.role
 
-    fun toJSON(): JsonObject {
-        return buildJsonObject {
-            put("id", id.value)
+    fun toJSON() = transaction {
+        return@transaction buildJsonObject {
+            put("id", id)
             put("username", username)
             put("name", name)
             put("email", email)

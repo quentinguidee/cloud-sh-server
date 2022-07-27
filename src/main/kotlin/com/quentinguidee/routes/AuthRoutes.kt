@@ -8,6 +8,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
+import org.jetbrains.exposed.sql.transactions.transaction
 
 fun Route.authRoutes() {
     route("/github") {
@@ -29,7 +30,10 @@ fun Route.authRoutes() {
                     authService.getAccount(githubUser.username)
                 }
 
-                call.sessions.set(UserSession(session.user.id.value, session.user.username))
+                transaction {
+                    val user = session.user
+                    call.sessions.set(UserSession(user.id.value, user.username))
+                }
                 call.respond(session.toJSON())
             }
         }
