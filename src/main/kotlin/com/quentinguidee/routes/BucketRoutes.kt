@@ -15,10 +15,10 @@ fun Route.bucketRoutes() {
             status = HttpStatusCode.InternalServerError
         )
 
-        val bucket = bucketService.bucket(session.userID) ?: return@get call.respondText(
-            "failed to find the user bucket",
-            status = HttpStatusCode.NotFound
-        )
+        var bucket = bucketService.bucket(session.userID)
+        if (bucket == null) {
+            bucket = bucketService.createBucket(session.userID)
+        }
 
         call.respond(bucket.toJSON())
     }

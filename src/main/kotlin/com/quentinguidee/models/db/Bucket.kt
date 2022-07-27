@@ -9,9 +9,13 @@ import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.UUIDTable
 import java.util.*
 
+enum class BucketType {
+    USER_BUCKET
+}
+
 object Buckets : UUIDTable() {
     val name = varchar("name", 255)
-    val type = varchar("type", 255)
+    val type = enumerationByName("type", 63, BucketType::class)
     val size = integer("size").default(0)
     val maxSize = integer("max_size").nullable()
 }
@@ -30,7 +34,7 @@ class Bucket(id: EntityID<UUID>) : UUIDEntity(id) {
     fun toJSON(): JsonObject {
         return buildJsonObject {
             put("name", name)
-            put("type", type)
+            put("type", type.name)
             put("size", size)
             put("max_size", maxSize)
             if (rootNode != null)
