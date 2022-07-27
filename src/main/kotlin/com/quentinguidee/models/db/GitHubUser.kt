@@ -9,7 +9,7 @@ import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object GitHubUsers : IntIdTable("github_users") {
-    val user = reference("user", Users)
+    val user = reference("user_id", Users)
     val username = varchar("username", 255)
 }
 

@@ -25,6 +25,8 @@ class User(id: EntityID<Int>) : IntEntity(id) {
     var profilePicture by Users.profilePicture
     var role by Users.role
 
+    var buckets by Bucket via UserBuckets
+
     fun toJSON() = transaction {
         return@transaction buildJsonObject {
             put("id", id)

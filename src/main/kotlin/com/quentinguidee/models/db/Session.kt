@@ -9,7 +9,7 @@ import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.transactions.transaction
 
 object Sessions : IntIdTable() {
-    val user = reference("user", Users)
+    val user = reference("user_id", Users)
     val token = varchar("token", 63)
 }
 

@@ -14,7 +14,6 @@ object Buckets : UUIDTable() {
     val type = varchar("type", 255)
     val size = integer("size").default(0)
     val maxSize = integer("max_size").nullable()
-    val rootNode = reference("root_node", Nodes)
 }
 
 class Bucket(id: EntityID<UUID>) : UUIDEntity(id) {
@@ -24,7 +23,9 @@ class Bucket(id: EntityID<UUID>) : UUIDEntity(id) {
     var type by Buckets.type
     var size by Buckets.size
     var maxSize by Buckets.maxSize
-    var rootNode by Node referencedOn Buckets.rootNode
+
+    var users by User via UserBuckets
+    var rootNode: Node? = null
 
     fun toJSON(): JsonObject {
         return buildJsonObject {
@@ -32,7 +33,8 @@ class Bucket(id: EntityID<UUID>) : UUIDEntity(id) {
             put("type", type)
             put("size", size)
             put("max_size", maxSize)
-            put("root_node", rootNode.toJSON())
+            if (rootNode != null)
+                put("root_node", rootNode!!.toJSON())
         }
     }
 }

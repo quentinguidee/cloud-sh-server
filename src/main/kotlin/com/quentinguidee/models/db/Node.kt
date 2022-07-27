@@ -10,8 +10,8 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 
 object Nodes : UUIDTable() {
-    val parent = reference("parent", Nodes).nullable()
-    val bucket = reference("bucket", Buckets)
+    val parent = reference("parent_uuid", Nodes).nullable()
+    val bucket = reference("bucket_uuid", Buckets)
     val name = varchar("name", 255)
     val type = varchar("type", 255)
     val mime = varchar("mime", 255)
