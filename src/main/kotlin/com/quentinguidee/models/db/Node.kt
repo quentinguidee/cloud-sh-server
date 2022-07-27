@@ -14,8 +14,8 @@ object Nodes : UUIDTable() {
     val bucket = reference("bucket_uuid", Buckets)
     val name = varchar("name", 255)
     val type = varchar("type", 255)
-    val mime = varchar("mime", 255)
-    val size = integer("size")
+    val mime = varchar("mime", 255).nullable()
+    val size = integer("size").default(0)
 }
 
 class Node(id: EntityID<UUID>) : UUIDEntity(id) {

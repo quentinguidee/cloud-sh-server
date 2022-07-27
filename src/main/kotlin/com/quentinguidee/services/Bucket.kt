@@ -36,6 +36,12 @@ class BucketService {
             it[UserBuckets.bucket] = bucket.id
         }
 
+        Node.new {
+            this.bucket = bucket
+            this.name = "root"
+            this.type = "directory"
+        }
+
         return@transaction bucket
     }
 }
