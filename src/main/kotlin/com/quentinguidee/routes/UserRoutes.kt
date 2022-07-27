@@ -6,7 +6,7 @@ import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
-fun Route.userRouting() {
+fun Route.userRoutes() {
     get("/{username}") {
         val username = call.parameters["username"] ?: return@get call.respondText(
             "missing username",
