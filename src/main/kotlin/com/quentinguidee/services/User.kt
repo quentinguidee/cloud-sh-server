@@ -8,7 +8,7 @@ class UserService {
     suspend fun get(username: String) = transaction {
         User
             .find { Users.username eq username }
-            .singleOrNull()
+            .single()
     }
 }
 

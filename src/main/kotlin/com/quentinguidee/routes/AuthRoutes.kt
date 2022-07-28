@@ -3,7 +3,6 @@ package com.quentinguidee.routes
 import com.quentinguidee.services.authService
 import com.quentinguidee.utils.OAuth
 import com.quentinguidee.utils.OAuthConfig
-import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -14,8 +13,8 @@ import kotlinx.serialization.json.put
 
 @Serializable
 data class CallbackParams(
-    val code: String?,
-    val state: String?,
+    val code: String,
+    val state: String,
 )
 
 fun Route.authRoutes() {
@@ -42,26 +41,20 @@ fun Route.authRoutes() {
             post("/callback") {
                 val params = call.receive<CallbackParams>()
 
-                val code = params.code ?: return@post call.respondText(
-                    "missing code in request parameters",
-                    status = HttpStatusCode.BadRequest
-                )
+                val code = params.code
 
                 // TODO: Check that states are equals
-                val state = params.state ?: return@post call.respondText(
-                    "missing state in request parameters",
-                    status = HttpStatusCode.BadRequest
-                )
+                // val state = params.state
 
                 // TODO: Handle exchange fail
                 val token = oAuth.exchange(oAuthConfig, code).accessToken
                 val githubUserBody = authService.fetchGitHubUser(token)
-                val githubUser = authService.githubUser(githubUserBody.login)
 
-                val session = if (githubUser == null) {
-                    authService.createAccount(githubUserBody)
-                } else {
+                val session = try {
+                    val githubUser = authService.githubUser(githubUserBody.login)
                     authService.session(githubUser.username)
+                } catch (e: NoSuchElementException) {
+                    authService.createAccount(githubUserBody)
                 }
 
                 call.respond(session.toJSON())

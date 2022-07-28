@@ -16,13 +16,13 @@ class BucketService {
                 Users.id eq userID and
                         (Buckets.type eq BucketType.USER_BUCKET)
             }
-            .firstOrNull() ?: return@transaction null
+            .first()
 
         val bucket = Bucket.wrapRow(query)
 
         bucket.rootNode = Node
             .find { Nodes.bucket eq bucket.id and Nodes.parent.isNull() }
-            .firstOrNull()
+            .first()
 
         return@transaction bucket
     }

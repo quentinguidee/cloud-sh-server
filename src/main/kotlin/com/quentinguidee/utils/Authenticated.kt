@@ -27,10 +27,7 @@ fun Route.authenticated(build: Route.() -> Unit): Route {
             status = HttpStatusCode.BadRequest
         )
 
-        val session = sessionServices.session(token) ?: return@intercept call.respondText(
-            "user session not found",
-            status = HttpStatusCode.NotFound
-        )
+        val session = sessionServices.session(token)
 
         call.attributes.put(sessionKey, session)
         transaction {

@@ -2,10 +2,10 @@ package com.quentinguidee.routes
 
 import com.quentinguidee.services.userService
 import com.quentinguidee.utils.user
-import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.util.*
 
 fun Route.userRoutes() {
     route("/user") {
@@ -14,15 +14,9 @@ fun Route.userRoutes() {
         }
 
         get("/{username}") {
-            val username = call.parameters["username"] ?: return@get call.respondText(
-                "missing username",
-                status = HttpStatusCode.BadRequest
-            )
+            val username = call.parameters.getOrFail("username")
 
-            val user = userService.get(username) ?: return@get call.respondText(
-                "user not found",
-                status = HttpStatusCode.NotFound
-            )
+            val user = userService.get(username)
 
             call.respond(user.toJSON())
         }

@@ -8,6 +8,7 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.util.*
 import kotlinx.serialization.json.buildJsonArray
 import java.util.*
 
@@ -16,7 +17,11 @@ fun Route.bucketRoutes() {
         get {
             val userID = call.userID
 
-            val bucket = bucketService.bucket(userID) ?: bucketService.createBucket(userID)
+            val bucket = try {
+                bucketService.bucket(userID)
+            } catch (e: NoSuchElementException) {
+                bucketService.createBucket(userID)
+            }
 
             call.respond(bucket.toJSON())
         }
@@ -24,22 +29,13 @@ fun Route.bucketRoutes() {
 
     route("{bucket_uuid}") {
         get {
-            val bucketUUID = call.parameters["bucket_uuid"] ?: return@get call.respondText(
-                "missing bucket_uuid",
-                status = HttpStatusCode.BadRequest
-            )
+            val bucketUUID = call.parameters.getOrFail("bucket_uuid")
 
             if (!bucketService.authorize(AccessType.READ, UUID.fromString(bucketUUID), call.userID)) {
-                call.respondText(
-                    "unauthorized access",
-                    status = HttpStatusCode.Unauthorized
-                )
+                call.respondText("unauthorized access", status = HttpStatusCode.Unauthorized)
             }
 
-            val parentUUID = call.parameters["parent_uuid"] ?: return@get call.respondText(
-                "missing parent_uuid",
-                status = HttpStatusCode.BadRequest
-            )
+            val parentUUID = call.parameters.getOrFail("parent_uuid")
 
             val nodes = nodeService.nodes(parentUUID)
 

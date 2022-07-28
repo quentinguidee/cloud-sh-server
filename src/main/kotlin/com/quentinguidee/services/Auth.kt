@@ -24,7 +24,7 @@ class AuthService {
     suspend fun githubUser(username: String) = transaction {
         GitHubUser
             .find { GitHubUsers.username eq username }
-            .firstOrNull()
+            .first()
     }
 
     suspend fun fetchGitHubUser(token: String): GitHubUserBody {

@@ -8,7 +8,7 @@ class SessionServices {
     suspend fun session(token: String) = transaction {
         Session
             .find { Sessions.token eq token }
-            .firstOrNull()
+            .first()
     }
 }
 
