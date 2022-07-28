@@ -5,7 +5,9 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.nio.file.Files
 import java.util.*
+import kotlin.io.path.Path
 
 class BucketService {
     suspend fun bucket(userID: Int) = transaction {
@@ -49,6 +51,9 @@ class BucketService {
         }
 
         bucket.rootNode = rootNode
+
+        val path = Path("data", "buckets", bucket.id.value.toString())
+        Files.createDirectories(path)
 
         return@transaction bucket
     }
