@@ -1,23 +1,30 @@
 package com.quentinguidee.routes
 
-import com.quentinguidee.models.UserSession
 import com.quentinguidee.services.bucketService
+import com.quentinguidee.services.sessionServices
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.server.sessions.*
 
 fun Route.bucketRoutes() {
     get {
-        val session = call.sessions.get<UserSession>() ?: return@get call.respondText(
-            "failed to retrieve user session",
-            status = HttpStatusCode.InternalServerError
+        val token = call.request.header(HttpHeaders.Authorization) ?: return@get call.respondText(
+            "missing authentication token",
+            status = HttpStatusCode.BadRequest
         )
 
-        var bucket = bucketService.bucket(session.userID)
+        val session = sessionServices.session(token) ?: return@get call.respondText(
+            "user session not found",
+            status = HttpStatusCode.NotFound
+        )
+
+        val userID = session.user.id.value
+
+        var bucket = bucketService.bucket(userID)
         if (bucket == null) {
-            bucket = bucketService.createBucket(session.userID)
+            bucket = bucketService.createBucket(userID)
         }
 
         call.respond(bucket.toJSON())

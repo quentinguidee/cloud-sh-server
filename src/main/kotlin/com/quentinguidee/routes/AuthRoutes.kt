@@ -1,6 +1,5 @@
 package com.quentinguidee.routes
 
-import com.quentinguidee.models.UserSession
 import com.quentinguidee.services.authService
 import com.quentinguidee.utils.OAuth
 import com.quentinguidee.utils.OAuthConfig
@@ -9,11 +8,9 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.server.sessions.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.jetbrains.exposed.sql.transactions.transaction
 
 @Serializable
 data class CallbackParams(
@@ -64,11 +61,6 @@ fun Route.authRoutes() {
                 authService.createAccount(githubUserBody)
             } else {
                 authService.session(githubUser.username)
-            }
-
-            transaction {
-                val user = session.user
-                call.sessions.set(UserSession(user.id.value, user.username))
             }
 
             call.respond(session.toJSON())

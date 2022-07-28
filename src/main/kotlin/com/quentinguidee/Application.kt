@@ -1,6 +1,9 @@
 package com.quentinguidee
 
-import com.quentinguidee.plugins.*
+import com.quentinguidee.plugins.configureDatabase
+import com.quentinguidee.plugins.configureHTTP
+import com.quentinguidee.plugins.configureRouting
+import com.quentinguidee.plugins.configureSerialization
 import com.typesafe.config.ConfigFactory
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
@@ -27,7 +30,6 @@ fun main() {
             configureDatabase()
             configureHTTP()
             configureSerialization()
-            configureSessions()
             configureRouting()
         }
 
