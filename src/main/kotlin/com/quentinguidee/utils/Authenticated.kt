@@ -1,6 +1,7 @@
 package com.quentinguidee.utils
 
 import com.quentinguidee.models.db.Session
+import com.quentinguidee.models.db.User
 import com.quentinguidee.services.sessionServices
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -8,8 +9,11 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.util.pipeline.*
+import org.jetbrains.exposed.sql.transactions.transaction
 
 private val sessionKey = io.ktor.util.AttributeKey<Session>("SESSION_KEY")
+private val userKey = io.ktor.util.AttributeKey<User>("USER_KEY")
+private val userIDKey = io.ktor.util.AttributeKey<Int>("USER_ID_KEY")
 
 fun Route.authenticated(build: Route.() -> Unit): Route {
     val pipelinePhase = PipelinePhase("Validate")
@@ -29,6 +33,10 @@ fun Route.authenticated(build: Route.() -> Unit): Route {
         )
 
         call.attributes.put(sessionKey, session)
+        transaction {
+            call.attributes.put(userKey, session.user)
+            call.attributes.put(userIDKey, session.user.id.value)
+        }
     }
     route.build()
 
@@ -40,5 +48,11 @@ class AuthenticatedSelector : RouteSelector() {
         RouteSelectorEvaluation.Transparent
 }
 
-val ApplicationCall.session: Session
+val ApplicationCall.session
     get() = attributes[sessionKey]
+
+val ApplicationCall.user
+    get() = attributes[userKey]
+
+val ApplicationCall.userID
+    get() = attributes[userIDKey]

@@ -21,49 +21,51 @@ data class CallbackParams(
 fun Route.authRoutes() {
     val environment = environment
 
-    route("/github") {
-        val oAuthConfig = OAuthConfig(
-            clientID = environment!!.config.property("auth.github.client_id").getString(),
-            clientSecret = environment.config.property("auth.github.client_secret").getString(),
-            authorizeURL = "https://github.com/login/oauth/authorize",
-            accessTokenURL = "https://github.com/login/oauth/access_token",
-            redirectURL = "http://localhost:3000/login",
-        )
-
-        val oAuth = OAuth(oAuthConfig)
-
-        get("/login") {
-            call.respond(buildJsonObject {
-                put("url", oAuth.getLoginURL())
-            })
-        }
-
-        post("/callback") {
-            val params = call.receive<CallbackParams>()
-
-            val code = params.code ?: return@post call.respondText(
-                "missing code in request parameters",
-                status = HttpStatusCode.BadRequest
+    route("/auth") {
+        route("/github") {
+            val oAuthConfig = OAuthConfig(
+                clientID = environment!!.config.property("auth.github.client_id").getString(),
+                clientSecret = environment.config.property("auth.github.client_secret").getString(),
+                authorizeURL = "https://github.com/login/oauth/authorize",
+                accessTokenURL = "https://github.com/login/oauth/access_token",
+                redirectURL = "http://localhost:3000/login",
             )
 
-            // TODO: Check that states are equals
-            val state = params.state ?: return@post call.respondText(
-                "missing state in request parameters",
-                status = HttpStatusCode.BadRequest
-            )
+            val oAuth = OAuth(oAuthConfig)
 
-            // TODO: Handle exchange fail
-            val token = oAuth.exchange(oAuthConfig, code).accessToken
-            val githubUserBody = authService.fetchGitHubUser(token)
-            val githubUser = authService.githubUser(githubUserBody.login)
-
-            val session = if (githubUser == null) {
-                authService.createAccount(githubUserBody)
-            } else {
-                authService.session(githubUser.username)
+            get("/login") {
+                call.respond(buildJsonObject {
+                    put("url", oAuth.getLoginURL())
+                })
             }
 
-            call.respond(session.toJSON())
+            post("/callback") {
+                val params = call.receive<CallbackParams>()
+
+                val code = params.code ?: return@post call.respondText(
+                    "missing code in request parameters",
+                    status = HttpStatusCode.BadRequest
+                )
+
+                // TODO: Check that states are equals
+                val state = params.state ?: return@post call.respondText(
+                    "missing state in request parameters",
+                    status = HttpStatusCode.BadRequest
+                )
+
+                // TODO: Handle exchange fail
+                val token = oAuth.exchange(oAuthConfig, code).accessToken
+                val githubUserBody = authService.fetchGitHubUser(token)
+                val githubUser = authService.githubUser(githubUserBody.login)
+
+                val session = if (githubUser == null) {
+                    authService.createAccount(githubUserBody)
+                } else {
+                    authService.session(githubUser.username)
+                }
+
+                call.respond(session.toJSON())
+            }
         }
     }
 }
