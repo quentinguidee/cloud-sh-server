@@ -64,7 +64,7 @@ class AuthService {
         profilePicture = gitHubUser.avatarURL,
     )
 
-    suspend fun getAccount(username: String) = transaction {
+    suspend fun session(username: String) = transaction {
         val user = User
             .find { Users.username eq username }
             .first()

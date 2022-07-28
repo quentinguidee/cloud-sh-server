@@ -27,7 +27,6 @@ fun main() {
             configureDatabase()
             configureHTTP()
             configureSerialization()
-            configureOAuth()
             configureSessions()
             configureRouting()
         }
