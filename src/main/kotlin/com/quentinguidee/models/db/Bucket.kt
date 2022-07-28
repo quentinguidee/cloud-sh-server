@@ -1,12 +1,12 @@
 package com.quentinguidee.models.db
 
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.jetbrains.exposed.dao.UUIDEntity
 import org.jetbrains.exposed.dao.UUIDEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.UUIDTable
+import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 
 enum class BucketType {
@@ -31,8 +31,9 @@ class Bucket(id: EntityID<UUID>) : UUIDEntity(id) {
     var users by User via UserBuckets
     var rootNode: Node? = null
 
-    fun toJSON(): JsonObject {
-        return buildJsonObject {
+    fun toJSON() = transaction {
+        return@transaction buildJsonObject {
+            put("uuid", this@Bucket.id.value.toString())
             put("name", name)
             put("type", type.name)
             put("size", size)

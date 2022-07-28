@@ -29,7 +29,7 @@ class User(id: EntityID<Int>) : IntEntity(id) {
 
     fun toJSON() = transaction {
         return@transaction buildJsonObject {
-            put("id", id)
+            put("id", this@User.id.value.toString())
             put("username", username)
             put("name", name)
             put("email", email)
