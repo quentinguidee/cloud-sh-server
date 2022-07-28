@@ -24,17 +24,6 @@ data class CallbackParams(
 fun Route.authRoutes() {
     val environment = environment
 
-    get("/session") {
-        val userSession = call.sessions.get<UserSession>() ?: return@get call.respondText(
-            "not authenticated",
-            status = HttpStatusCode.Unauthorized
-        )
-
-        val session = authService.session(userSession.username)
-
-        call.respond(session.toJSON())
-    }
-
     route("/github") {
         val oAuthConfig = OAuthConfig(
             clientID = environment!!.config.property("auth.github.client_id").getString(),
