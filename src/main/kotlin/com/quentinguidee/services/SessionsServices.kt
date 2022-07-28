@@ -10,6 +10,13 @@ class SessionsServices {
             .find { Sessions.token eq token }
             .first()
     }
+
+    suspend fun revokeSession(token: String) = transaction {
+        Session
+            .find { Sessions.token eq token }
+            .first()
+            .delete()
+    }
 }
 
 val sessionsServices = SessionsServices()

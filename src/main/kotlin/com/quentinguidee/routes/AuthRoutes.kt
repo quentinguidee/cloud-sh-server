@@ -1,8 +1,10 @@
 package com.quentinguidee.routes
 
 import com.quentinguidee.services.authServices
+import com.quentinguidee.services.sessionsServices
 import com.quentinguidee.utils.OAuth
 import com.quentinguidee.utils.OAuthConfig
+import com.quentinguidee.utils.ok
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -17,10 +19,21 @@ data class CallbackParams(
     val state: String,
 )
 
+@Serializable
+data class LogoutParams(
+    val token: String,
+)
+
 fun Route.authRoutes() {
     val environment = environment
 
     route("/auth") {
+        post("/logout") {
+            val params = call.receive<LogoutParams>()
+            sessionsServices.revokeSession(params.token)
+            call.ok()
+        }
+
         route("/github") {
             val oAuthConfig = OAuthConfig(
                 clientID = environment!!.config.property("auth.github.client_id").getString(),
