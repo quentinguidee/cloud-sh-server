@@ -4,7 +4,7 @@ import com.quentinguidee.models.db.Session
 import com.quentinguidee.models.db.Sessions
 import org.jetbrains.exposed.sql.transactions.transaction
 
-class SessionServices {
+class SessionsServices {
     suspend fun session(token: String) = transaction {
         Session
             .find { Sessions.token eq token }
@@ -12,4 +12,4 @@ class SessionServices {
     }
 }
 
-val sessionServices = SessionServices()
+val sessionsServices = SessionsServices()

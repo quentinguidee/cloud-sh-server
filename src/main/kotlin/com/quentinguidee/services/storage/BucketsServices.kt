@@ -1,4 +1,4 @@
-package com.quentinguidee.services
+package com.quentinguidee.services.storage
 
 import com.quentinguidee.models.db.*
 import org.jetbrains.exposed.sql.and
@@ -9,7 +9,7 @@ import java.nio.file.Files
 import java.util.*
 import kotlin.io.path.Path
 
-class BucketService {
+class BucketsServices {
     suspend fun bucket(userID: Int) = transaction {
         val query = Buckets
             .innerJoin(UserBuckets)
@@ -52,8 +52,12 @@ class BucketService {
 
         bucket.rootNode = rootNode
 
-        val path = Path("data", "buckets", bucket.id.value.toString())
-        Files.createDirectories(path)
+        val path = Path("data", "buckets", bucket.id.value.toString(), "root")
+        try {
+            Files.createDirectories(path)
+        } catch (e: Exception) {
+            rollback()
+        }
 
         return@transaction bucket
     }
@@ -78,4 +82,4 @@ class BucketService {
     }
 }
 
-val bucketService = BucketService()
+val bucketsServices = BucketsServices()

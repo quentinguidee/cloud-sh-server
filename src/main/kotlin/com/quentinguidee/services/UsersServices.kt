@@ -4,7 +4,7 @@ import com.quentinguidee.models.db.User
 import com.quentinguidee.models.db.Users
 import org.jetbrains.exposed.sql.transactions.transaction
 
-class UserService {
+class UsersServices {
     suspend fun get(username: String) = transaction {
         User
             .find { Users.username eq username }
@@ -12,4 +12,4 @@ class UserService {
     }
 }
 
-val userService = UserService()
+val usersServices = UsersServices()

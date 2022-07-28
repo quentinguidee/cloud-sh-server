@@ -1,11 +1,11 @@
-package com.quentinguidee.services
+package com.quentinguidee.services.storage
 
 import com.quentinguidee.models.db.Node
 import com.quentinguidee.models.db.Nodes
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 
-class NodeService {
+class NodesServices {
     suspend fun nodes(parentUUID: String) =
         nodes(UUID.fromString(parentUUID))
 
@@ -16,4 +16,4 @@ class NodeService {
     }
 }
 
-val nodeService = NodeService()
+val nodesServices = NodesServices()

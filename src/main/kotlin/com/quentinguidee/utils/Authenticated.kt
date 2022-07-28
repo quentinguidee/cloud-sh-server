@@ -2,7 +2,7 @@ package com.quentinguidee.utils
 
 import com.quentinguidee.models.db.Session
 import com.quentinguidee.models.db.User
-import com.quentinguidee.services.sessionServices
+import com.quentinguidee.services.sessionsServices
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -27,7 +27,7 @@ fun Route.authenticated(build: Route.() -> Unit): Route {
             status = HttpStatusCode.BadRequest
         )
 
-        val session = sessionServices.session(token)
+        val session = sessionsServices.session(token)
 
         call.attributes.put(sessionKey, session)
         transaction {

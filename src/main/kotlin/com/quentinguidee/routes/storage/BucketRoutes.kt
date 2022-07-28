@@ -1,8 +1,8 @@
 package com.quentinguidee.routes.storage
 
 import com.quentinguidee.models.db.AccessType
-import com.quentinguidee.services.bucketService
-import com.quentinguidee.services.nodeService
+import com.quentinguidee.services.storage.bucketsServices
+import com.quentinguidee.services.storage.nodesServices
 import com.quentinguidee.utils.userID
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -18,9 +18,9 @@ fun Route.bucketRoutes() {
             val userID = call.userID
 
             val bucket = try {
-                bucketService.bucket(userID)
+                bucketsServices.bucket(userID)
             } catch (e: NoSuchElementException) {
-                bucketService.createBucket(userID)
+                bucketsServices.createBucket(userID)
             }
 
             call.respond(bucket.toJSON())
@@ -31,13 +31,13 @@ fun Route.bucketRoutes() {
         get {
             val bucketUUID = call.parameters.getOrFail("bucket_uuid")
 
-            if (!bucketService.authorize(AccessType.READ, UUID.fromString(bucketUUID), call.userID)) {
+            if (!bucketsServices.authorize(AccessType.READ, UUID.fromString(bucketUUID), call.userID)) {
                 call.respondText("unauthorized access", status = HttpStatusCode.Unauthorized)
             }
 
             val parentUUID = call.parameters.getOrFail("parent_uuid")
 
-            val nodes = nodeService.nodes(parentUUID)
+            val nodes = nodesServices.nodes(parentUUID)
 
             call.respond(buildJsonArray {
                 nodes.forEach { add(it.toJSON()) }

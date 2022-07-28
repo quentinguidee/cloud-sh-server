@@ -1,6 +1,6 @@
 package com.quentinguidee.routes
 
-import com.quentinguidee.services.authService
+import com.quentinguidee.services.authServices
 import com.quentinguidee.utils.OAuth
 import com.quentinguidee.utils.OAuthConfig
 import io.ktor.server.application.*
@@ -48,13 +48,13 @@ fun Route.authRoutes() {
 
                 // TODO: Handle exchange fail
                 val token = oAuth.exchange(oAuthConfig, code).accessToken
-                val githubUserBody = authService.fetchGitHubUser(token)
+                val githubUserBody = authServices.fetchGitHubUser(token)
 
                 val session = try {
-                    val githubUser = authService.githubUser(githubUserBody.login)
-                    authService.session(githubUser.username)
+                    val githubUser = authServices.githubUser(githubUserBody.login)
+                    authServices.session(githubUser.username)
                 } catch (e: NoSuchElementException) {
-                    authService.createAccount(githubUserBody)
+                    authServices.createAccount(githubUserBody)
                 }
 
                 call.respond(session.toJSON())

@@ -20,7 +20,7 @@ data class GitHubUserBody(
     val login: String,
 )
 
-class AuthService {
+class AuthServices {
     suspend fun githubUser(username: String) = transaction {
         GitHubUser
             .find { GitHubUsers.username eq username }
@@ -57,7 +57,7 @@ class AuthService {
             }
         }
 
-    suspend fun createAccount(gitHubUser: GitHubUserBody) = authService.createAccount(
+    suspend fun createAccount(gitHubUser: GitHubUserBody) = authServices.createAccount(
         username = gitHubUser.login,
         name = gitHubUser.name,
         email = gitHubUser.email,
@@ -76,4 +76,4 @@ class AuthService {
     }
 }
 
-val authService = AuthService()
+val authServices = AuthServices()
