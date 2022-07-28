@@ -1,5 +1,6 @@
-package com.quentinguidee.routes
+package com.quentinguidee.routes.storage
 
+import com.quentinguidee.models.db.AccessType
 import com.quentinguidee.services.bucketService
 import com.quentinguidee.services.nodeService
 import com.quentinguidee.utils.userID
@@ -8,6 +9,7 @@ import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.json.buildJsonArray
+import java.util.*
 
 fun Route.bucketRoutes() {
     route("/bucket") {
@@ -22,6 +24,18 @@ fun Route.bucketRoutes() {
 
     route("{bucket_uuid}") {
         get {
+            val bucketUUID = call.parameters["bucket_uuid"] ?: return@get call.respondText(
+                "missing bucket_uuid",
+                status = HttpStatusCode.BadRequest
+            )
+
+            if (!bucketService.authorize(AccessType.READ, UUID.fromString(bucketUUID), call.userID)) {
+                call.respondText(
+                    "unauthorized access",
+                    status = HttpStatusCode.Unauthorized
+                )
+            }
+
             val parentUUID = call.parameters["parent_uuid"] ?: return@get call.respondText(
                 "missing parent_uuid",
                 status = HttpStatusCode.BadRequest

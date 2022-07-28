@@ -5,6 +5,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.util.*
 
 class BucketService {
     suspend fun bucket(userID: Int) = transaction {
@@ -13,7 +14,6 @@ class BucketService {
             .innerJoin(Users)
             .select {
                 Users.id eq userID and
-                        (UserBuckets.accessType eq AccessType.ADMIN) and
                         (Buckets.type eq BucketType.USER_BUCKET)
             }
             .firstOrNull() ?: return@transaction null
@@ -51,6 +51,25 @@ class BucketService {
         bucket.rootNode = rootNode
 
         return@transaction bucket
+    }
+
+    private suspend fun accessType(bucketUUID: UUID, userID: Int) = transaction {
+        val query = UserBuckets
+            .select {
+                UserBuckets.user eq userID and
+                        (UserBuckets.bucket eq bucketUUID)
+            }
+            .firstOrNull() ?: return@transaction null
+
+        return@transaction query.let {
+            it[UserBuckets.accessType]
+        }
+    }
+
+    suspend fun authorize(desiredAccessType: AccessType, bucketUUID: UUID, userID: Int): Boolean {
+        val accessType = accessType(bucketUUID, userID) ?: return false
+        println("${accessType.ordinal} ${desiredAccessType.ordinal}")
+        return accessType >= desiredAccessType
     }
 }
 

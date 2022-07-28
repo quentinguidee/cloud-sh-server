@@ -3,7 +3,11 @@ package com.quentinguidee.models.db
 import org.jetbrains.exposed.sql.Table
 
 enum class AccessType {
-    ADMIN
+    NONE,
+    READ,
+    WRITE,
+    MODERATOR,
+    ADMIN;
 }
 
 object UserBuckets : Table("user_buckets") {
