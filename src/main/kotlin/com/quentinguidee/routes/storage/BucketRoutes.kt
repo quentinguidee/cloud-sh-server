@@ -9,7 +9,6 @@ import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.util.*
-import kotlinx.serialization.json.buildJsonArray
 import java.util.*
 
 fun Route.bucketRoutes() {
@@ -23,7 +22,7 @@ fun Route.bucketRoutes() {
                 bucketsServices.createBucket(userID)
             }
 
-            call.respond(bucket.toJSON())
+            call.respond(bucket)
         }
     }
 
@@ -37,11 +36,9 @@ fun Route.bucketRoutes() {
 
             val parentUUID = call.parameters.getOrFail("parent_uuid")
 
-            val nodes = nodesServices.nodes(parentUUID)
+            val nodes = nodesServices.getChildren(parentUUID)
 
-            call.respond(buildJsonArray {
-                nodes.forEach { add(it.toJSON()) }
-            })
+            call.respond(nodes)
         }
     }
 }

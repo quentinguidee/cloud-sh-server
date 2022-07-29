@@ -1,15 +1,16 @@
 package com.quentinguidee.services
 
 import com.quentinguidee.client
-import com.quentinguidee.models.db.*
+import com.quentinguidee.dao.gitHubUsersDAO
+import com.quentinguidee.dao.sessionsDAO
+import com.quentinguidee.dao.usersDAO
+import com.quentinguidee.models.db.Session
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import org.jetbrains.exposed.dao.load
 import org.jetbrains.exposed.sql.transactions.transaction
-import java.util.*
 
 @Serializable
 data class GitHubUserBody(
@@ -22,9 +23,7 @@ data class GitHubUserBody(
 
 class AuthServices {
     suspend fun githubUser(username: String) = transaction {
-        GitHubUser
-            .find { GitHubUsers.username eq username }
-            .first()
+        gitHubUsersDAO.get(username)
     }
 
     suspend fun fetchGitHubUser(token: String): GitHubUserBody {
@@ -39,22 +38,16 @@ class AuthServices {
 
     private suspend fun createAccount(username: String, name: String, email: String, profilePicture: String): Session =
         transaction {
-            val user = User.new {
-                this.username = username
-                this.name = name
-                this.email = email
-                this.profilePicture = profilePicture
-            }
+            val user = usersDAO.create(
+                username = username,
+                name = name,
+                email = email,
+                profilePicture = profilePicture,
+            )
 
-            GitHubUser.new {
-                this.user = user
-                this.username = username
-            }
+            gitHubUsersDAO.create(user.id, username)
 
-            return@transaction Session.new {
-                this.user = user
-                this.token = UUID.randomUUID().toString()
-            }
+            return@transaction sessionsDAO.create(user.id)
         }
 
     suspend fun createAccount(gitHubUser: GitHubUserBody) = authServices.createAccount(
@@ -65,14 +58,8 @@ class AuthServices {
     )
 
     suspend fun session(username: String) = transaction {
-        val user = User
-            .find { Users.username eq username }
-            .first()
-
-        return@transaction Session
-            .find { Sessions.user eq user.id }
-            .first()
-            .load(Session::user)
+        val user = usersDAO.get(username)
+        return@transaction sessionsDAO.get(user.id)
     }
 }
 

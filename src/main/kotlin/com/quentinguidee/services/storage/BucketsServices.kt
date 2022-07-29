@@ -1,9 +1,10 @@
 package com.quentinguidee.services.storage
 
-import com.quentinguidee.models.db.*
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.select
+import com.quentinguidee.dao.bucketsDAO
+import com.quentinguidee.dao.nodesDAO
+import com.quentinguidee.dao.usersBucketsDAO
+import com.quentinguidee.models.db.AccessType
+import com.quentinguidee.models.db.BucketType
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.nio.file.Files
 import java.util.*
@@ -11,48 +12,19 @@ import kotlin.io.path.Path
 
 class BucketsServices {
     suspend fun bucket(userID: Int) = transaction {
-        val query = Buckets
-            .innerJoin(UserBuckets)
-            .innerJoin(Users)
-            .select {
-                Users.id eq userID and
-                        (Buckets.type eq BucketType.USER_BUCKET)
-            }
-            .first()
-
-        val bucket = Bucket.wrapRow(query)
-
-        bucket.rootNode = Node
-            .find { Nodes.bucket eq bucket.id and Nodes.parent.isNull() }
-            .first()
-
-        return@transaction bucket
+        return@transaction bucketsDAO.getUserBucket(userID)
     }
 
     suspend fun createBucket(userID: Int) =
         createBucket(userID, "User bucket", BucketType.USER_BUCKET)
 
     private suspend fun createBucket(userID: Int, name: String, type: BucketType) = transaction {
-        val bucket = Bucket.new {
-            this.name = name
-            this.type = type
-        }
+        val bucket = bucketsDAO.create(name, type)
+        val bucketUUID = UUID.fromString(bucket.uuid)
+        usersBucketsDAO.create(bucketUUID, userID, AccessType.ADMIN)
+        nodesDAO.create(bucketUUID, "root", "directory")
 
-        UserBuckets.insert {
-            it[accessType] = AccessType.ADMIN
-            it[user] = userID
-            it[UserBuckets.bucket] = bucket.id
-        }
-
-        val rootNode = Node.new {
-            this.bucket = bucket
-            this.name = "root"
-            this.type = "directory"
-        }
-
-        bucket.rootNode = rootNode
-
-        val path = Path("data", "buckets", bucket.id.value.toString(), "root")
+        val path = Path("data", "buckets", bucket.uuid, "root")
         try {
             Files.createDirectories(path)
         } catch (e: Exception) {
@@ -62,23 +34,10 @@ class BucketsServices {
         return@transaction bucket
     }
 
-    private suspend fun accessType(bucketUUID: UUID, userID: Int) = transaction {
-        val query = UserBuckets
-            .select {
-                UserBuckets.user eq userID and
-                        (UserBuckets.bucket eq bucketUUID)
-            }
-            .firstOrNull() ?: return@transaction null
-
-        return@transaction query.let {
-            it[UserBuckets.accessType]
-        }
-    }
-
-    suspend fun authorize(desiredAccessType: AccessType, bucketUUID: UUID, userID: Int): Boolean {
-        val accessType = accessType(bucketUUID, userID) ?: return false
+    suspend fun authorize(desiredAccessType: AccessType, bucketUUID: UUID, userID: Int) = transaction {
+        val accessType = usersBucketsDAO.get(bucketUUID, userID).accessType
         println("${accessType.ordinal} ${desiredAccessType.ordinal}")
-        return accessType >= desiredAccessType
+        return@transaction accessType >= desiredAccessType
     }
 }
 

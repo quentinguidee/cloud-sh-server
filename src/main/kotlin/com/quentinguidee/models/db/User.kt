@@ -1,12 +1,8 @@
 package com.quentinguidee.models.db
 
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
-import org.jetbrains.exposed.dao.IntEntity
-import org.jetbrains.exposed.dao.IntEntityClass
-import org.jetbrains.exposed.dao.id.EntityID
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.transactions.transaction
 
 object Users : IntIdTable() {
     val username = varchar("username", 127).uniqueIndex()
@@ -16,25 +12,13 @@ object Users : IntIdTable() {
     val role = varchar("role", 63).nullable()
 }
 
-class User(id: EntityID<Int>) : IntEntity(id) {
-    companion object : IntEntityClass<User>(Users)
-
-    var username by Users.username
-    var name by Users.name
-    var email by Users.email
-    var profilePicture by Users.profilePicture
-    var role by Users.role
-
-    var buckets by Bucket via UserBuckets
-
-    fun toJSON() = transaction {
-        return@transaction buildJsonObject {
-            put("id", this@User.id.value.toString())
-            put("username", username)
-            put("name", name)
-            put("email", email)
-            put("profile_picture", profilePicture)
-            put("role", role)
-        }
-    }
-}
+@Serializable
+data class User(
+    val id: Int,
+    val username: String,
+    val name: String,
+    val email: String,
+    @SerialName("profile_picture")
+    val profilePicture: String,
+    val role: String? = null,
+)

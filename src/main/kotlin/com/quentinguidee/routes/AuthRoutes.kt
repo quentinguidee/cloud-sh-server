@@ -12,7 +12,6 @@ import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import org.jetbrains.exposed.sql.transactions.transaction
 
 @Serializable
 data class CallbackParams(
@@ -66,13 +65,12 @@ fun Route.authRoutes() {
 
                 val session = try {
                     val githubUser = authServices.githubUser(githubUserBody.login)
-                    val user = transaction { githubUser.user }
-                    sessionsServices.createSession(user)
+                    sessionsServices.createSession(githubUser.userID)
                 } catch (e: NoSuchElementException) {
                     authServices.createAccount(githubUserBody)
                 }
 
-                call.respond(session.toJSON())
+                call.respond(session)
             }
         }
     }

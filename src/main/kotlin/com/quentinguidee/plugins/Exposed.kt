@@ -21,7 +21,7 @@ fun Application.configureDatabase() {
             Nodes,
             Sessions,
             Users,
-            UserBuckets,
+            UsersBuckets,
         )
     }
 }
