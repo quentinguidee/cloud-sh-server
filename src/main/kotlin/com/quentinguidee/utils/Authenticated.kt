@@ -1,5 +1,6 @@
 package com.quentinguidee.utils
 
+import com.quentinguidee.dao.usersDAO
 import com.quentinguidee.models.db.Session
 import com.quentinguidee.models.db.User
 import com.quentinguidee.services.sessionsServices
@@ -13,7 +14,6 @@ import org.jetbrains.exposed.sql.transactions.transaction
 
 private val sessionKey = io.ktor.util.AttributeKey<Session>("SESSION_KEY")
 private val userKey = io.ktor.util.AttributeKey<User>("USER_KEY")
-private val userIDKey = io.ktor.util.AttributeKey<Int>("USER_ID_KEY")
 
 fun Route.authenticated(build: Route.() -> Unit): Route {
     val pipelinePhase = PipelinePhase("Validate")
@@ -28,12 +28,10 @@ fun Route.authenticated(build: Route.() -> Unit): Route {
         )
 
         val session = sessionsServices.session(token)
+        val user = transaction { usersDAO.get(session.userID) }
 
         call.attributes.put(sessionKey, session)
-        transaction {
-            call.attributes.put(userKey, session.user)
-            call.attributes.put(userIDKey, session.user.id.value)
-        }
+        call.attributes.put(userKey, user)
     }
     route.build()
 
@@ -50,6 +48,3 @@ val ApplicationCall.session
 
 val ApplicationCall.user
     get() = attributes[userKey]
-
-val ApplicationCall.userID
-    get() = attributes[userIDKey]

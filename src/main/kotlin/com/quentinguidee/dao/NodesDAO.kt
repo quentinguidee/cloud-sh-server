@@ -3,6 +3,7 @@ package com.quentinguidee.dao
 import com.quentinguidee.models.db.Node
 import com.quentinguidee.models.db.Nodes
 import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import java.util.*
@@ -28,6 +29,14 @@ class NodesDAO {
             it[Nodes.name] = name
             it[Nodes.type] = type
         }.resultedValues!!.map(::toNode).first()
+
+    fun getRoot(bucketUUID: UUID) = Nodes
+        .select {
+            Nodes.parent eq null and
+                    (Nodes.bucket eq bucketUUID)
+        }
+        .map(::toNode)
+        .first()
 }
 
 val nodesDAO = NodesDAO()

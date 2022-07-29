@@ -10,7 +10,7 @@ import io.ktor.server.util.*
 fun Route.userRoutes() {
     route("/user") {
         get {
-            call.respond(call.user.toJSON())
+            call.respond(call.user)
         }
 
         get("/{username}") {
@@ -18,7 +18,7 @@ fun Route.userRoutes() {
 
             val user = usersServices.get(username)
 
-            call.respond(user.toJSON())
+            call.respond(user)
         }
     }
 }

@@ -2,9 +2,8 @@ package com.quentinguidee.routes
 
 import com.quentinguidee.services.authServices
 import com.quentinguidee.services.sessionsServices
-import com.quentinguidee.utils.OAuth
-import com.quentinguidee.utils.OAuthConfig
-import com.quentinguidee.utils.ok
+import com.quentinguidee.services.usersServices
+import com.quentinguidee.utils.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -70,7 +69,11 @@ fun Route.authRoutes() {
                     authServices.createAccount(githubUserBody)
                 }
 
-                call.respond(session)
+                val user = usersServices.get(session.userID)
+
+                call.respond(json(session) {
+                    putObject("user", user)
+                })
             }
         }
     }

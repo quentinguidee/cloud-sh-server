@@ -39,6 +39,10 @@ class BucketsServices {
         println("${accessType.ordinal} ${desiredAccessType.ordinal}")
         return@transaction accessType >= desiredAccessType
     }
+
+    suspend fun getRoot(bucketUUID: UUID) = transaction {
+        nodesDAO.getRoot(bucketUUID)
+    }
 }
 
 val bucketsServices = BucketsServices()
