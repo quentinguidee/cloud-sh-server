@@ -18,19 +18,15 @@ data class CallbackParams(
     val state: String,
 )
 
-@Serializable
-data class LogoutParams(
-    val token: String,
-)
-
 fun Route.authRoutes() {
     val environment = environment
 
     route("/auth") {
-        post("/logout") {
-            val params = call.receive<LogoutParams>()
-            sessionsServices.revokeSession(params.token)
-            call.ok()
+        authenticated {
+            post("/logout") {
+                sessionsServices.revokeSession(call.session.token)
+                call.ok()
+            }
         }
 
         route("/github") {
