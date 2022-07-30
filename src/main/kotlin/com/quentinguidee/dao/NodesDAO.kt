@@ -17,6 +17,9 @@ class NodesDAO {
         type = row[Nodes.type],
         mime = row[Nodes.mime],
         size = row[Nodes.size],
+        createdAt = row[Nodes.createdAt],
+        updatedAt = row[Nodes.updatedAt],
+        deletedAt = row[Nodes.deletedAt],
     )
 
     fun getChildren(parentUUID: UUID) = Nodes
