@@ -11,7 +11,7 @@ import java.util.*
 class NodesDAO {
     private fun toNode(row: ResultRow) = Node(
         uuid = row[Nodes.id].value.toString(),
-        parentUUID = row[Nodes.parent]?.value.toString(),
+        parentUUID = row[Nodes.parent]?.value?.toString(),
         bucketUUID = row[Nodes.bucket].value.toString(),
         name = row[Nodes.name],
         type = row[Nodes.type],
@@ -22,12 +22,18 @@ class NodesDAO {
         deletedAt = row[Nodes.deletedAt],
     )
 
+    fun get(uuid: UUID) = Nodes
+        .select { Nodes.id eq uuid }
+        .map(::toNode)
+        .first()
+
     fun getChildren(parentUUID: UUID) = Nodes
         .select { Nodes.parent eq parentUUID }
         .map(::toNode)
 
-    fun create(bucketUUID: UUID, name: String, type: String) = Nodes
+    fun create(bucketUUID: UUID, parentUUID: UUID? = null, name: String, type: String) = Nodes
         .insert {
+            it[Nodes.parent] = parentUUID
             it[Nodes.bucket] = bucketUUID
             it[Nodes.name] = name
             it[Nodes.type] = type

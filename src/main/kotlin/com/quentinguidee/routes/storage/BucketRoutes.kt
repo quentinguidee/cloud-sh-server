@@ -3,15 +3,20 @@ package com.quentinguidee.routes.storage
 import com.quentinguidee.models.AccessType
 import com.quentinguidee.services.storage.bucketsServices
 import com.quentinguidee.services.storage.nodesServices
-import com.quentinguidee.utils.UnauthorizedException
-import com.quentinguidee.utils.json
-import com.quentinguidee.utils.putObject
-import com.quentinguidee.utils.user
+import com.quentinguidee.utils.*
 import io.ktor.server.application.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.util.*
+import kotlinx.serialization.Serializable
 import java.util.*
+
+@Serializable
+data class CreateNodeParams(
+    val name: String,
+    val type: String,
+)
 
 fun Route.bucketRoutes() {
     route("/bucket") {
@@ -44,6 +49,26 @@ fun Route.bucketRoutes() {
             val nodes = nodesServices.getChildren(parentUUID)
 
             call.respond(nodes)
+        }
+
+        put {
+            val bucketUUID = call.parameters.getOrFail("bucket_uuid")
+            val parentUUID = call.parameters.getOrFail("parent_uuid")
+
+            val params = call.receive<CreateNodeParams>()
+
+            if (!bucketsServices.authorize(AccessType.WRITE, UUID.fromString(bucketUUID), call.user.id)) {
+                throw UnauthorizedException(call.user)
+            }
+
+            nodesServices.create(
+                UUID.fromString(bucketUUID),
+                UUID.fromString(parentUUID),
+                params.name,
+                params.type,
+            )
+
+            call.ok()
         }
     }
 }

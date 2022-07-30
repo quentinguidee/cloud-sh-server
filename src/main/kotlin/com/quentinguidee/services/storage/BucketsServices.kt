@@ -22,7 +22,7 @@ class BucketsServices {
         val bucket = bucketsDAO.create(name, type)
         val bucketUUID = UUID.fromString(bucket.uuid)
         usersBucketsDAO.create(bucketUUID, userID, AccessType.ADMIN)
-        nodesDAO.create(bucketUUID, "root", "directory")
+        nodesDAO.create(bucketUUID, name = "root", type = "directory")
 
         val path = Path("data", "buckets", bucket.uuid, "root")
         try {
