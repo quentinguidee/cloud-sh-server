@@ -11,6 +11,10 @@ import kotlin.io.path.createDirectory
 import kotlin.io.path.createFile
 
 class NodesServices {
+    fun getNode(uuid: UUID) = transaction {
+        nodesDAO.get(uuid)
+    }
+
     fun getChildren(parentUUID: String) =
         getChildren(UUID.fromString(parentUUID))
 
