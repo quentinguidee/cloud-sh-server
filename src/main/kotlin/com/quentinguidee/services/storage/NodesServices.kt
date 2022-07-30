@@ -56,14 +56,24 @@ class NodesServices {
         nodesDAO.softDelete(nodeUUID)
     }
 
-    suspend fun forceDelete(nodeUUID: UUID) {
+    suspend fun forceDeleteRecursively(nodeUUID: UUID) {
         val node = transaction {
             nodesDAO.get(nodeUUID)
+        }
+        forceDeleteRecursively(node)
+    }
+
+    suspend fun forceDeleteRecursively(node: Node) {
+        val nodes = transaction {
+            nodesDAO.getChildren(UUID.fromString(node.uuid))
+        }
+        for (n in nodes) {
+            forceDeleteRecursively(n)
         }
         forceDelete(node)
     }
 
-    suspend fun forceDelete(node: Node) = transaction {
+    private suspend fun forceDelete(node: Node) = transaction {
         val path = getNodePath(node)
         nodesDAO.delete(UUID.fromString(node.uuid))
         path.toFile().deleteRecursively()
@@ -74,7 +84,7 @@ class NodesServices {
             nodesDAO.getDeleted(bucketUUID)
         }
         for (node in nodes) {
-            forceDelete(node)
+            forceDeleteRecursively(node)
         }
     }
 }

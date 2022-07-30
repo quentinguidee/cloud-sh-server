@@ -81,7 +81,7 @@ fun Route.bucketRoutes() {
             }
 
             if (softDelete == "false") {
-                nodesServices.forceDelete(UUID.fromString(nodeUUID))
+                nodesServices.forceDeleteRecursively(UUID.fromString(nodeUUID))
             } else {
                 nodesServices.softDelete(UUID.fromString(nodeUUID))
             }
