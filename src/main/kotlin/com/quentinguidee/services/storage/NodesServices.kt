@@ -18,6 +18,10 @@ class NodesServices {
         nodesDAO.getChildren(parentUUID)
     }
 
+    suspend fun getBin(bucketUUID: UUID) = transaction {
+        nodesDAO.getDeleted(bucketUUID)
+    }
+
     private fun getNodePath(of: Node): Path {
         var node = of
         var path = Path(node.name)
@@ -52,11 +56,26 @@ class NodesServices {
         nodesDAO.softDelete(nodeUUID)
     }
 
-    suspend fun forceDelete(nodeUUID: UUID) = transaction {
-        val node = nodesDAO.get(nodeUUID)
+    suspend fun forceDelete(nodeUUID: UUID) {
+        val node = transaction {
+            nodesDAO.get(nodeUUID)
+        }
+        forceDelete(node)
+    }
+
+    suspend fun forceDelete(node: Node) = transaction {
         val path = getNodePath(node)
-        nodesDAO.delete(nodeUUID)
+        nodesDAO.delete(UUID.fromString(node.uuid))
         path.toFile().deleteRecursively()
+    }
+
+    suspend fun emptyBin(bucketUUID: UUID) {
+        val nodes = transaction {
+            nodesDAO.getDeleted(bucketUUID)
+        }
+        for (node in nodes) {
+            forceDelete(node)
+        }
     }
 }
 

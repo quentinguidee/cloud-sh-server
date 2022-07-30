@@ -37,7 +37,7 @@ fun Route.bucketRoutes() {
         }
     }
 
-    route("{bucket_uuid}") {
+    route("/{bucket_uuid}") {
         get {
             val bucketUUID = call.parameters.getOrFail("bucket_uuid")
             val parentUUID = call.parameters.getOrFail("parent_uuid")
@@ -74,7 +74,7 @@ fun Route.bucketRoutes() {
         delete {
             val bucketUUID = call.parameters.getOrFail("bucket_uuid")
             val nodeUUID = call.parameters.getOrFail("node_uuid")
-            val softDelete = call.parameters.getOrFail("soft_delete")
+            val softDelete = call.parameters.get("soft_delete")
 
             if (!bucketsServices.authorize(AccessType.WRITE, UUID.fromString(bucketUUID), call.user.id)) {
                 throw UnauthorizedException(call.user)
@@ -87,6 +87,32 @@ fun Route.bucketRoutes() {
             }
 
             call.ok()
+        }
+
+        route("/bin") {
+            get {
+                val bucketUUID = call.parameters.getOrFail("bucket_uuid")
+
+                if (!bucketsServices.authorize(AccessType.READ, UUID.fromString(bucketUUID), call.user.id)) {
+                    throw UnauthorizedException(call.user)
+                }
+
+                val nodes = nodesServices.getBin(UUID.fromString(bucketUUID))
+
+                call.respond(nodes)
+            }
+
+            delete {
+                val bucketUUID = call.parameters.getOrFail("bucket_uuid")
+
+                if (!bucketsServices.authorize(AccessType.WRITE, UUID.fromString(bucketUUID), call.user.id)) {
+                    throw UnauthorizedException(call.user)
+                }
+
+                nodesServices.emptyBin(UUID.fromString(bucketUUID))
+
+                call.ok()
+            }
         }
     }
 }

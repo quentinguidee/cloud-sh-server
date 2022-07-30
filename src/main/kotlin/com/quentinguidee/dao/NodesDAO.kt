@@ -37,6 +37,10 @@ class NodesDAO {
         .select { Nodes.parent eq parentUUID and (Nodes.deletedAt eq null) }
         .map(::toNode)
 
+    fun getDeleted(bucketUUID: UUID) = Nodes
+        .select { Nodes.bucket eq bucketUUID and (Nodes.deletedAt neq null) }
+        .map(::toNode)
+
     fun create(bucketUUID: UUID, parentUUID: UUID? = null, name: String, type: String) = Nodes
         .insert {
             it[Nodes.parent] = parentUUID
