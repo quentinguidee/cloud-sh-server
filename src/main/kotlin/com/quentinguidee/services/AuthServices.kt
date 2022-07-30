@@ -4,7 +4,7 @@ import com.quentinguidee.client
 import com.quentinguidee.dao.gitHubUsersDAO
 import com.quentinguidee.dao.sessionsDAO
 import com.quentinguidee.dao.usersDAO
-import com.quentinguidee.models.db.Session
+import com.quentinguidee.models.Session
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*

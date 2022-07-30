@@ -1,6 +1,6 @@
 package com.quentinguidee.dao
 
-import com.quentinguidee.models.db.*
+import com.quentinguidee.models.*
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert

@@ -1,8 +1,8 @@
 package com.quentinguidee.dao
 
-import com.quentinguidee.models.db.AccessType
-import com.quentinguidee.models.db.UserBucket
-import com.quentinguidee.models.db.UsersBuckets
+import com.quentinguidee.models.AccessType
+import com.quentinguidee.models.UserBucket
+import com.quentinguidee.models.UsersBuckets
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert

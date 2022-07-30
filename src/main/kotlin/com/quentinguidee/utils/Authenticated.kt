@@ -1,8 +1,8 @@
 package com.quentinguidee.utils
 
 import com.quentinguidee.dao.usersDAO
-import com.quentinguidee.models.db.Session
-import com.quentinguidee.models.db.User
+import com.quentinguidee.models.Session
+import com.quentinguidee.models.User
 import com.quentinguidee.services.sessionsServices
 import io.ktor.http.*
 import io.ktor.server.application.*

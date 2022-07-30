@@ -1,7 +1,7 @@
 package com.quentinguidee.dao
 
-import com.quentinguidee.models.db.GitHubUser
-import com.quentinguidee.models.db.GitHubUsers
+import com.quentinguidee.models.GitHubUser
+import com.quentinguidee.models.GitHubUsers
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select

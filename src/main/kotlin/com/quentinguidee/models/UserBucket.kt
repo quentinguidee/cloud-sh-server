@@ -1,4 +1,4 @@
-package com.quentinguidee.models.db
+package com.quentinguidee.models
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

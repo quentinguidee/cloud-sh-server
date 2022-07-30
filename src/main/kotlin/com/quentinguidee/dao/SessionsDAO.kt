@@ -1,7 +1,7 @@
 package com.quentinguidee.dao
 
-import com.quentinguidee.models.db.Session
-import com.quentinguidee.models.db.Sessions
+import com.quentinguidee.models.Session
+import com.quentinguidee.models.Sessions
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert

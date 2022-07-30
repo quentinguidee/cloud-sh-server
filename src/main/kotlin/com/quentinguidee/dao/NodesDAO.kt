@@ -1,7 +1,7 @@
 package com.quentinguidee.dao
 
-import com.quentinguidee.models.db.Node
-import com.quentinguidee.models.db.Nodes
+import com.quentinguidee.models.Node
+import com.quentinguidee.models.Nodes
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert

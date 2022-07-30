@@ -1,6 +1,6 @@
 package com.quentinguidee.routes.storage
 
-import com.quentinguidee.models.db.AccessType
+import com.quentinguidee.models.AccessType
 import com.quentinguidee.services.storage.bucketsServices
 import com.quentinguidee.services.storage.nodesServices
 import com.quentinguidee.utils.json

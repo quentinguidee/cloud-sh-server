@@ -3,8 +3,8 @@ package com.quentinguidee.services.storage
 import com.quentinguidee.dao.bucketsDAO
 import com.quentinguidee.dao.nodesDAO
 import com.quentinguidee.dao.usersBucketsDAO
-import com.quentinguidee.models.db.AccessType
-import com.quentinguidee.models.db.BucketType
+import com.quentinguidee.models.AccessType
+import com.quentinguidee.models.BucketType
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.nio.file.Files
 import java.util.*

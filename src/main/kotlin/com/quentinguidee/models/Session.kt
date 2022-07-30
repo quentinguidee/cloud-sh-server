@@ -1,17 +1,18 @@
-package com.quentinguidee.models.db
+package com.quentinguidee.models
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.dao.id.IntIdTable
 
-object GitHubUsers : IntIdTable("github_users") {
+object Sessions : IntIdTable() {
     val user = reference("user_id", Users)
-    val username = varchar("username", 255)
+    val token = varchar("token", 63)
 }
 
 @Serializable
-data class GitHubUser(
+class Session(
+    val id: Int?,
     @SerialName("user_id")
     val userID: Int,
-    val username: String,
+    val token: String,
 )
