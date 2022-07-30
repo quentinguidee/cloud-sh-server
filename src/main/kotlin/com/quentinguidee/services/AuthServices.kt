@@ -43,6 +43,7 @@ class AuthServices {
                 name = name,
                 email = email,
                 profilePicture = profilePicture,
+                role = "admin"
             )
 
             gitHubUsersDAO.create(user.id, username)
