@@ -71,6 +71,20 @@ fun Route.bucketRoutes() {
             call.ok()
         }
 
+        patch {
+            val bucketUUID = call.parameters.getOrFail("bucket_uuid")
+            val nodeUUID = call.parameters.getOrFail("node_uuid")
+            val name = call.parameters.getOrFail("new_name")
+
+            if (!bucketsServices.authorize(AccessType.WRITE, UUID.fromString(bucketUUID), call.user.id)) {
+                throw UnauthorizedException(call.user)
+            }
+
+            nodesServices.rename(UUID.fromString(nodeUUID), name)
+
+            call.ok()
+        }
+
         delete {
             val bucketUUID = call.parameters.getOrFail("bucket_uuid")
             val nodeUUID = call.parameters.getOrFail("node_uuid")

@@ -56,6 +56,11 @@ class NodesDAO {
         }
         .map(::toNode)
         .first()
+
+    fun rename(uuid: UUID, name: String) = Nodes
+        .update({ Nodes.id eq uuid }) {
+            it[Nodes.name] = name
+        }
 }
 
 val nodesDAO = NodesDAO()

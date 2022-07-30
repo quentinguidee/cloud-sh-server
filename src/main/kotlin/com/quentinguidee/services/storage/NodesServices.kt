@@ -52,6 +52,13 @@ class NodesServices {
         return@transaction node
     }
 
+    fun rename(nodeUUID: UUID, name: String) = transaction {
+        val path = getNodePath(nodesDAO.get(nodeUUID))
+        nodesDAO.rename(nodeUUID, name)
+        val file = path.toFile()
+        file.renameTo(path.parent.resolve(name).toFile())
+    }
+
     fun softDelete(nodeUUID: UUID) = transaction {
         nodesDAO.softDelete(nodeUUID)
     }
