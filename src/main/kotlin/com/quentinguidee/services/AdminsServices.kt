@@ -6,7 +6,7 @@ import java.io.File
 import kotlin.io.path.Path
 
 class AdminsServices {
-    suspend fun reset() {
+    fun reset() {
         resetDatabase()
         initDatabase()
 

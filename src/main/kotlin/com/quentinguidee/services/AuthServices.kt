@@ -22,7 +22,7 @@ data class GitHubUserBody(
 )
 
 class AuthServices {
-    suspend fun githubUser(username: String) = transaction {
+    fun githubUser(username: String) = transaction {
         gitHubUsersDAO.get(username)
     }
 
@@ -36,7 +36,7 @@ class AuthServices {
             .body()
     }
 
-    private suspend fun createAccount(username: String, name: String, email: String, profilePicture: String): Session =
+    private fun createAccount(username: String, name: String, email: String, profilePicture: String): Session =
         transaction {
             val user = usersDAO.create(
                 username = username,
@@ -51,14 +51,14 @@ class AuthServices {
             return@transaction sessionsDAO.create(user.id)
         }
 
-    suspend fun createAccount(gitHubUser: GitHubUserBody) = authServices.createAccount(
+    fun createAccount(gitHubUser: GitHubUserBody) = authServices.createAccount(
         username = gitHubUser.login,
         name = gitHubUser.name,
         email = gitHubUser.email,
         profilePicture = gitHubUser.avatarURL,
     )
 
-    suspend fun session(username: String) = transaction {
+    fun session(username: String) = transaction {
         val user = usersDAO.get(username)
         return@transaction sessionsDAO.get(user.id)
     }

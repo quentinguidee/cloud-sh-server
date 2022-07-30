@@ -11,14 +11,14 @@ import kotlin.io.path.createDirectory
 import kotlin.io.path.createFile
 
 class NodesServices {
-    suspend fun getChildren(parentUUID: String) =
+    fun getChildren(parentUUID: String) =
         getChildren(UUID.fromString(parentUUID))
 
-    private suspend fun getChildren(parentUUID: UUID) = transaction {
+    private fun getChildren(parentUUID: UUID) = transaction {
         nodesDAO.getChildren(parentUUID)
     }
 
-    suspend fun getBin(bucketUUID: UUID) = transaction {
+    fun getBin(bucketUUID: UUID) = transaction {
         nodesDAO.getDeleted(bucketUUID)
     }
 
@@ -41,7 +41,7 @@ class NodesServices {
         return Path("data", "buckets", node.bucketUUID, path.toString())
     }
 
-    suspend fun create(bucketUUID: UUID, parentUUID: UUID, name: String, type: String) = transaction {
+    fun create(bucketUUID: UUID, parentUUID: UUID, name: String, type: String) = transaction {
         val node = nodesDAO.create(bucketUUID, parentUUID, name, type)
         val path = getNodePath(node)
         if (type == "directory") {
@@ -52,18 +52,18 @@ class NodesServices {
         return@transaction node
     }
 
-    suspend fun softDelete(nodeUUID: UUID) = transaction {
+    fun softDelete(nodeUUID: UUID) = transaction {
         nodesDAO.softDelete(nodeUUID)
     }
 
-    suspend fun forceDeleteRecursively(nodeUUID: UUID) {
+    fun forceDeleteRecursively(nodeUUID: UUID) {
         val node = transaction {
             nodesDAO.get(nodeUUID)
         }
         forceDeleteRecursively(node)
     }
 
-    suspend fun forceDeleteRecursively(node: Node) {
+    fun forceDeleteRecursively(node: Node) {
         val nodes = transaction {
             nodesDAO.getChildren(UUID.fromString(node.uuid))
         }
@@ -73,13 +73,13 @@ class NodesServices {
         forceDelete(node)
     }
 
-    private suspend fun forceDelete(node: Node) = transaction {
+    private fun forceDelete(node: Node) = transaction {
         val path = getNodePath(node)
         nodesDAO.delete(UUID.fromString(node.uuid))
         path.toFile().deleteRecursively()
     }
 
-    suspend fun emptyBin(bucketUUID: UUID) {
+    fun emptyBin(bucketUUID: UUID) {
         val nodes = transaction {
             nodesDAO.getDeleted(bucketUUID)
         }

@@ -24,10 +24,7 @@ class BucketsDAO {
     fun getUserBucket(userID: Int) = Buckets
         .innerJoin(UsersBuckets)
         .innerJoin(Users)
-        .select {
-            Users.id eq userID and
-                    (Buckets.type eq BucketType.USER_BUCKET)
-        }
+        .select { Users.id eq userID and (Buckets.type eq BucketType.USER_BUCKET) }
         .map(::toBucket)
         .first()
 }

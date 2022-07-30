@@ -11,14 +11,14 @@ import java.util.*
 import kotlin.io.path.Path
 
 class BucketsServices {
-    suspend fun bucket(userID: Int) = transaction {
-        return@transaction bucketsDAO.getUserBucket(userID)
+    fun bucket(userID: Int) = transaction {
+        bucketsDAO.getUserBucket(userID)
     }
 
-    suspend fun createBucket(userID: Int) =
+    fun createBucket(userID: Int) =
         createBucket(userID, "User bucket", BucketType.USER_BUCKET)
 
-    private suspend fun createBucket(userID: Int, name: String, type: BucketType) = transaction {
+    private fun createBucket(userID: Int, name: String, type: BucketType) = transaction {
         val bucket = bucketsDAO.create(name, type)
         val bucketUUID = UUID.fromString(bucket.uuid)
         usersBucketsDAO.create(bucketUUID, userID, AccessType.ADMIN)
@@ -34,12 +34,12 @@ class BucketsServices {
         return@transaction bucket
     }
 
-    suspend fun authorize(desiredAccessType: AccessType, bucketUUID: UUID, userID: Int) = transaction {
+    fun authorize(desiredAccessType: AccessType, bucketUUID: UUID, userID: Int) = transaction {
         val accessType = usersBucketsDAO.get(bucketUUID, userID).accessType
         return@transaction accessType >= desiredAccessType
     }
 
-    suspend fun getRoot(bucketUUID: UUID) = transaction {
+    fun getRoot(bucketUUID: UUID) = transaction {
         nodesDAO.getRoot(bucketUUID)
     }
 }
