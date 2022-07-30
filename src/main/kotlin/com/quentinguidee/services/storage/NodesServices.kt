@@ -47,6 +47,17 @@ class NodesServices {
         }
         return@transaction node
     }
+
+    suspend fun softDelete(nodeUUID: UUID) = transaction {
+        nodesDAO.softDelete(nodeUUID)
+    }
+
+    suspend fun forceDelete(nodeUUID: UUID) = transaction {
+        val node = nodesDAO.get(nodeUUID)
+        val path = getNodePath(node)
+        nodesDAO.delete(nodeUUID)
+        path.toFile().deleteRecursively()
+    }
 }
 
 val nodesServices = NodesServices()

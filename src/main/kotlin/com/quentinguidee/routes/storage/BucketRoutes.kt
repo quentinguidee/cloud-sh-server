@@ -70,5 +70,23 @@ fun Route.bucketRoutes() {
 
             call.ok()
         }
+
+        delete {
+            val bucketUUID = call.parameters.getOrFail("bucket_uuid")
+            val nodeUUID = call.parameters.getOrFail("node_uuid")
+            val softDelete = call.parameters.getOrFail("soft_delete")
+
+            if (!bucketsServices.authorize(AccessType.WRITE, UUID.fromString(bucketUUID), call.user.id)) {
+                throw UnauthorizedException(call.user)
+            }
+
+            if (softDelete == "false") {
+                nodesServices.forceDelete(UUID.fromString(nodeUUID))
+            } else {
+                nodesServices.softDelete(UUID.fromString(nodeUUID))
+            }
+
+            call.ok()
+        }
     }
 }

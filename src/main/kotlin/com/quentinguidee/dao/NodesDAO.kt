@@ -2,10 +2,8 @@ package com.quentinguidee.dao
 
 import com.quentinguidee.models.Node
 import com.quentinguidee.models.Nodes
-import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.*
+import java.time.LocalDateTime
 import java.util.*
 
 class NodesDAO {
@@ -27,8 +25,16 @@ class NodesDAO {
         .map(::toNode)
         .first()
 
+    fun softDelete(uuid: UUID) = Nodes
+        .update({ Nodes.id eq uuid }) {
+            it[deletedAt] = LocalDateTime.now()
+        }
+
+    fun delete(uuid: UUID) = Nodes
+        .deleteWhere { Nodes.id eq uuid }
+
     fun getChildren(parentUUID: UUID) = Nodes
-        .select { Nodes.parent eq parentUUID }
+        .select { Nodes.parent eq parentUUID and (Nodes.deletedAt eq null) }
         .map(::toNode)
 
     fun create(bucketUUID: UUID, parentUUID: UUID? = null, name: String, type: String) = Nodes
