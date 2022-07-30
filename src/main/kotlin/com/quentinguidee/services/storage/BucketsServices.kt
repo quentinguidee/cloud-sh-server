@@ -36,7 +36,6 @@ class BucketsServices {
 
     suspend fun authorize(desiredAccessType: AccessType, bucketUUID: UUID, userID: Int) = transaction {
         val accessType = usersBucketsDAO.get(bucketUUID, userID).accessType
-        println("${accessType.ordinal} ${desiredAccessType.ordinal}")
         return@transaction accessType >= desiredAccessType
     }
 
