@@ -6,7 +6,10 @@ import com.quentinguidee.services.storage.nodesServices
 import com.quentinguidee.utils.UnauthorizedException
 import com.quentinguidee.utils.ok
 import com.quentinguidee.utils.user
+import io.ktor.http.content.*
 import io.ktor.server.application.*
+import io.ktor.server.plugins.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.util.*
@@ -70,6 +73,37 @@ fun Route.nodesRoutes() {
                 nodesServices.forceDeleteRecursively(UUID.fromString(nodeUUID))
             else
                 nodesServices.softDelete(UUID.fromString(nodeUUID))
+
+            call.ok()
+        }
+
+        post("/upload") {
+            val parentUUID = call.parameters.getOrFail("parent_uuid")
+            val parent = nodesServices.getNode(UUID.fromString(parentUUID))
+            val bucketUUID = parent.bucketUUID
+
+            if (!bucketsServices.authorize(AccessType.WRITE, UUID.fromString(bucketUUID), call.user.id))
+                throw UnauthorizedException(call.user)
+
+            var name = "unnamed"
+            var bytes: ByteArray? = null
+            call.receiveMultipart().forEachPart { part ->
+                if (part !is PartData.FileItem)
+                    throw BadRequestException("The upload is not a file")
+
+                name = part.originalFileName ?: "unnamed"
+                bytes = part.streamProvider().readBytes()
+                part.dispose()
+            }
+
+            nodesServices.create(
+                bucketUUID = UUID.fromString(bucketUUID),
+                parentUUID = UUID.fromString(parentUUID),
+                name = name,
+                type = "file",
+                size = bytes?.size ?: 0,
+                bytes = bytes,
+            )
 
             call.ok()
         }

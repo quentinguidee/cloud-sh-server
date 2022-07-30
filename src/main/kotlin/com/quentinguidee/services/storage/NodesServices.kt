@@ -9,6 +9,7 @@ import java.util.*
 import kotlin.io.path.Path
 import kotlin.io.path.createDirectory
 import kotlin.io.path.createFile
+import kotlin.io.path.writeBytes
 
 class NodesServices {
     fun getNode(uuid: UUID) = transaction {
@@ -45,10 +46,19 @@ class NodesServices {
         return Path("data", "buckets", node.bucketUUID, path.toString())
     }
 
-    fun create(bucketUUID: UUID, parentUUID: UUID, name: String, type: String) = transaction {
-        val node = nodesDAO.create(bucketUUID, parentUUID, name, type)
+    fun create(
+        bucketUUID: UUID,
+        parentUUID: UUID,
+        name: String,
+        type: String,
+        size: Int = 0,
+        bytes: ByteArray? = null
+    ) = transaction {
+        val node = nodesDAO.create(bucketUUID, parentUUID, name, type, size)
         val path = getNodePath(node)
-        if (type == "directory") {
+        if (bytes != null) {
+            path.writeBytes(bytes)
+        } else if (type == "directory") {
             path.createDirectory()
         } else {
             path.createFile()

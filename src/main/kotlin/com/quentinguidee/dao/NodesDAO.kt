@@ -41,12 +41,13 @@ class NodesDAO {
         .select { Nodes.bucket eq bucketUUID and (Nodes.deletedAt neq null) }
         .map(::toNode)
 
-    fun create(bucketUUID: UUID, parentUUID: UUID? = null, name: String, type: String) = Nodes
+    fun create(bucketUUID: UUID, parentUUID: UUID? = null, name: String, type: String, size: Int = 0) = Nodes
         .insert {
             it[Nodes.parent] = parentUUID
             it[Nodes.bucket] = bucketUUID
             it[Nodes.name] = name
             it[Nodes.type] = type
+            it[Nodes.size] = size
         }.resultedValues!!.map(::toNode).first()
 
     fun getRoot(bucketUUID: UUID) = Nodes
