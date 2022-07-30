@@ -1,5 +1,6 @@
 package com.quentinguidee.plugins
 
+import com.quentinguidee.utils.UnauthorizedException
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.*
@@ -14,6 +15,7 @@ fun Application.configureStatusPage() {
             val code = when (cause) {
                 is BadRequestException -> HttpStatusCode.BadRequest
                 is NoSuchElementException -> HttpStatusCode.NotFound
+                is UnauthorizedException -> HttpStatusCode.Unauthorized
                 else -> HttpStatusCode.InternalServerError
             }
 

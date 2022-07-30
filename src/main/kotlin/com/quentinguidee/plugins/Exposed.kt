@@ -25,3 +25,21 @@ fun Application.configureDatabase() {
         )
     }
 }
+
+val tables = arrayOf(
+    Buckets,
+    GitHubUsers,
+    Nodes,
+    Sessions,
+    Users,
+    UsersBuckets,
+)
+
+fun initDatabase() = transaction {
+    SchemaUtils.create(*tables)
+}
+
+fun resetDatabase() = transaction {
+    SchemaUtils.drop(*tables)
+}
+

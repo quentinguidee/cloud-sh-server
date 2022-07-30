@@ -1,5 +1,6 @@
 package com.quentinguidee.plugins
 
+import com.quentinguidee.routes.adminRoutes
 import com.quentinguidee.routes.authRoutes
 import com.quentinguidee.routes.storage.storageRoutes
 import com.quentinguidee.routes.userRoutes
@@ -14,6 +15,7 @@ fun Application.configureRouting() {
         authRoutes()
 
         authenticated {
+            adminRoutes()
             storageRoutes()
             userRoutes()
         }
