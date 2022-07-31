@@ -40,6 +40,9 @@ data class Node(
 )
 
 fun deduceNodeTypeByName(name: String) = when (Path(name).extension) {
+    "afdesign" -> "afdesign"
+    "afphoto" -> "afphoto"
+    "afpub" -> "afpub"
     "avi" -> "avi"
     "babelrc" -> "babel"
     "bmp" -> "bmp"
