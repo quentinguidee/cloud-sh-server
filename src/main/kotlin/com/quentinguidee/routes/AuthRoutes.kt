@@ -9,7 +9,9 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.put
 
 @Serializable
@@ -22,6 +24,14 @@ fun Route.authRoutes() {
     val environment = environment
 
     route("/auth") {
+        get {
+            val methods = authServices.methods()
+
+            call.respond(buildJsonObject {
+                put("methods", Json.encodeToJsonElement(methods))
+            })
+        }
+
         authenticated {
             post("/logout") {
                 sessionsServices.revokeSession(call.session.token)

@@ -2,6 +2,7 @@ package com.quentinguidee.services
 
 import com.quentinguidee.client
 import com.quentinguidee.dao.gitHubUsersDAO
+import com.quentinguidee.dao.oAuthMethodsDAO
 import com.quentinguidee.dao.sessionsDAO
 import com.quentinguidee.dao.usersDAO
 import com.quentinguidee.models.Session
@@ -61,6 +62,10 @@ class AuthServices {
     fun session(username: String) = transaction {
         val user = usersDAO.get(username)
         return@transaction sessionsDAO.get(user.id)
+    }
+
+    fun methods() = transaction {
+        oAuthMethodsDAO.getAll()
     }
 }
 

@@ -14,17 +14,7 @@ fun Application.configureDatabase() {
         password = "cloudsh"
     )
 
-    transaction {
-        SchemaUtils.create(
-            Buckets,
-            GitHubUsers,
-            Nodes,
-            Sessions,
-            Users,
-            UsersBuckets,
-            UsersNodes,
-        )
-    }
+    initDatabase()
 }
 
 val tables = arrayOf(
@@ -35,6 +25,7 @@ val tables = arrayOf(
     Users,
     UsersBuckets,
     UsersNodes,
+    OAuthMethods,
 )
 
 fun initDatabase() = transaction {
