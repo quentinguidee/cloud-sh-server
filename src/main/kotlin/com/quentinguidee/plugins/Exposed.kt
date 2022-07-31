@@ -34,6 +34,7 @@ val tables = arrayOf(
     Sessions,
     Users,
     UsersBuckets,
+    UsersNodes,
 )
 
 fun initDatabase() = transaction {
