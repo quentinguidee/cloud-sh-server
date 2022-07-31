@@ -22,6 +22,7 @@ fun Application.configureDatabase() {
             Sessions,
             Users,
             UsersBuckets,
+            UsersNodes,
         )
     }
 }

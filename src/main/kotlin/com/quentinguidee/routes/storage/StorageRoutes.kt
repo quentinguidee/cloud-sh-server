@@ -7,5 +7,6 @@ fun Route.storageRoutes() {
         binRoutes()
         bucketRoutes()
         nodesRoutes()
+        recentRoutes()
     }
 }

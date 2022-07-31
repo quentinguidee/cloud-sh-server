@@ -1,6 +1,7 @@
 package com.quentinguidee.services.storage
 
 import com.quentinguidee.dao.nodesDAO
+import com.quentinguidee.dao.usersNodesDAO
 import com.quentinguidee.models.Node
 import com.quentinguidee.models.deduceNodeTypeByName
 import com.quentinguidee.utils.MaxRecursionLevelException
@@ -28,8 +29,14 @@ class NodesServices {
         nodesDAO.getDeleted(bucketUUID)
     }
 
-    fun getFile(node: Node) = transaction {
-        getNodePath(node).toFile()
+    fun getRecent(bucketUUID: UUID, userID: Int) = transaction {
+        nodesDAO.getRecent(bucketUUID, userID)
+    }
+
+    fun getFile(node: Node, userID: Int) = transaction {
+        val file = getNodePath(node).toFile()
+        usersNodesDAO.updateSeenAt(UUID.fromString(node.uuid), userID)
+        return@transaction file
     }
 
     private fun getNodePath(of: Node): Path {
@@ -52,6 +59,7 @@ class NodesServices {
     }
 
     fun create(
+        userID: Int,
         bucketUUID: UUID,
         parentUUID: UUID,
         name: String,
@@ -64,6 +72,8 @@ class NodesServices {
             deducedType = deduceNodeTypeByName(name)
 
         val node = nodesDAO.create(bucketUUID, parentUUID, name, deducedType, size)
+        usersNodesDAO.create(UUID.fromString(node.uuid), userID)
+
         val path = getNodePath(node)
         if (bytes != null) {
             path.writeBytes(bytes)
@@ -110,6 +120,7 @@ class NodesServices {
 
     private fun forceDelete(node: Node) = transaction {
         val path = getNodePath(node)
+        usersNodesDAO.delete(UUID.fromString(node.uuid))
         nodesDAO.delete(UUID.fromString(node.uuid))
         path.toFile().deleteRecursively()
     }

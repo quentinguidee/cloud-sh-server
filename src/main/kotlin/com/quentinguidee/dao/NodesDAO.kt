@@ -2,6 +2,7 @@ package com.quentinguidee.dao
 
 import com.quentinguidee.models.Node
 import com.quentinguidee.models.Nodes
+import com.quentinguidee.models.UsersNodes
 import org.jetbrains.exposed.sql.*
 import java.time.LocalDateTime
 import java.util.*
@@ -39,6 +40,17 @@ class NodesDAO {
 
     fun getDeleted(bucketUUID: UUID) = Nodes
         .select { Nodes.bucket eq bucketUUID and (Nodes.deletedAt neq null) }
+        .map(::toNode)
+
+    fun getRecent(bucketUUID: UUID, userID: Int) = Nodes
+        .innerJoin(UsersNodes)
+        .select {
+            UsersNodes.user eq userID and
+                    (UsersNodes.seenAt neq null) and
+                    (Nodes.deletedAt eq null) and
+                    (Nodes.bucket eq bucketUUID)
+        }
+        .orderBy(UsersNodes.seenAt, SortOrder.DESC)
         .map(::toNode)
 
     fun create(bucketUUID: UUID, parentUUID: UUID? = null, name: String, type: String, size: Int = 0) = Nodes

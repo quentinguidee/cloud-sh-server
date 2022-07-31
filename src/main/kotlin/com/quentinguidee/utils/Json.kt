@@ -1,9 +1,15 @@
 package com.quentinguidee.utils
 
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
+import java.time.LocalDateTime
 
 inline fun <reified T> json(
     base: T,
@@ -21,4 +27,10 @@ inline fun <reified T> MutableMap<String, JsonElement>.putObject(key: String, va
         this.remove("${key}_uuid")
     }
     return put(key, Json.encodeToJsonElement(value))
+}
+
+object DateSerializer : KSerializer<LocalDateTime> {
+    override val descriptor = PrimitiveSerialDescriptor("LocalDateTime", PrimitiveKind.LONG)
+    override fun serialize(encoder: Encoder, value: LocalDateTime) = encoder.encodeString(value.toString())
+    override fun deserialize(decoder: Decoder): LocalDateTime = LocalDateTime.parse(decoder.decodeString())
 }

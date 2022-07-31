@@ -1,12 +1,8 @@
 package com.quentinguidee.models
 
-import kotlinx.serialization.KSerializer
+import com.quentinguidee.utils.DateSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.javatime.datetime
 import java.time.LocalDateTime
@@ -83,10 +79,4 @@ fun deduceNodeTypeByName(name: String) = when (Path(name).extension) {
     "wav" -> "wav"
     "lock" -> "yarn"
     else -> "file"
-}
-
-object DateSerializer : KSerializer<LocalDateTime> {
-    override val descriptor = PrimitiveSerialDescriptor("LocalDateTime", PrimitiveKind.LONG)
-    override fun serialize(encoder: Encoder, value: LocalDateTime) = encoder.encodeString(value.toString())
-    override fun deserialize(decoder: Decoder): LocalDateTime = LocalDateTime.parse(decoder.decodeString())
 }

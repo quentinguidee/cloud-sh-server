@@ -39,10 +39,11 @@ fun Route.nodesRoutes() {
                 throw UnauthorizedException(call.user)
 
             nodesServices.create(
-                UUID.fromString(bucketUUID),
-                UUID.fromString(parentUUID),
-                name,
-                type,
+                userID = call.user.id,
+                bucketUUID = UUID.fromString(bucketUUID),
+                parentUUID = UUID.fromString(parentUUID),
+                name = name,
+                type = type,
             )
 
             call.ok()
@@ -85,7 +86,7 @@ fun Route.nodesRoutes() {
             if (!bucketsServices.authorize(AccessType.READ, UUID.fromString(bucketUUID), call.user.id))
                 throw UnauthorizedException(call.user)
 
-            call.respondFile(nodesServices.getFile(node))
+            call.respondFile(nodesServices.getFile(node, call.user.id))
         }
 
         post("/upload") {
@@ -108,6 +109,7 @@ fun Route.nodesRoutes() {
             }
 
             nodesServices.create(
+                userID = call.user.id,
                 bucketUUID = UUID.fromString(bucketUUID),
                 parentUUID = UUID.fromString(parentUUID),
                 name = name,
