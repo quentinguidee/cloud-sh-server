@@ -97,29 +97,25 @@ fun Route.nodesRoutes() {
             if (!bucketsServices.authorize(AccessType.WRITE, UUID.fromString(bucketUUID), call.user.id))
                 throw UnauthorizedException(call.user)
 
-            var name = "unnamed"
-            var mime: String? = null
-            var bytes: ByteArray? = null
             call.receiveMultipart().forEachPart { part ->
                 if (part !is PartData.FileItem)
                     throw BadRequestException("The upload is not a file")
 
-                name = part.originalFileName ?: "unnamed"
-                mime = part.contentType?.toString()
-                bytes = part.streamProvider().readBytes()
+                val bytes = part.streamProvider().readBytes()
+
+                nodesServices.create(
+                    userID = call.user.id,
+                    bucketUUID = UUID.fromString(bucketUUID),
+                    parentUUID = UUID.fromString(parentUUID),
+                    name = part.originalFileName ?: "unnamed",
+                    type = "file",
+                    mime = part.contentType?.toString(),
+                    size = bytes?.size ?: 0,
+                    bytes = bytes,
+                )
+
                 part.dispose()
             }
-
-            nodesServices.create(
-                userID = call.user.id,
-                bucketUUID = UUID.fromString(bucketUUID),
-                parentUUID = UUID.fromString(parentUUID),
-                name = name,
-                type = "file",
-                mime = mime,
-                size = bytes?.size ?: 0,
-                bytes = bytes,
-            )
 
             call.ok()
         }
