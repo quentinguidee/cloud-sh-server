@@ -1,5 +1,6 @@
 package com.quentinguidee.services.storage
 
+import com.quentinguidee.dao.bucketsDAO
 import com.quentinguidee.dao.nodesDAO
 import com.quentinguidee.dao.usersNodesDAO
 import com.quentinguidee.models.Node
@@ -74,6 +75,7 @@ class NodesServices {
 
         val node = nodesDAO.create(bucketUUID, parentUUID, name, deducedType, mime, size)
         usersNodesDAO.create(UUID.fromString(node.uuid), userID)
+        bucketsDAO.increaseSize(bucketUUID, size)
 
         val path = getNodePath(node)
         if (bytes != null) {
@@ -102,10 +104,9 @@ class NodesServices {
         nodesDAO.softDelete(nodeUUID)
     }
 
-    fun forceDeleteRecursively(nodeUUID: UUID) {
-        val node = transaction {
-            nodesDAO.get(nodeUUID)
-        }
+    fun forceDeleteRecursively(nodeUUID: UUID) = transaction {
+        val node = nodesDAO.get(nodeUUID)
+        bucketsDAO.decreaseSize(UUID.fromString(node.bucketUUID), node.size)
         forceDeleteRecursively(node)
     }
 

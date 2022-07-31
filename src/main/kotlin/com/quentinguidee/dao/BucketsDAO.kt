@@ -1,10 +1,8 @@
 package com.quentinguidee.dao
 
 import com.quentinguidee.models.*
-import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.*
+import java.util.*
 
 class BucketsDAO {
     private fun toBucket(row: ResultRow) = Bucket(
@@ -27,6 +25,18 @@ class BucketsDAO {
         .select { Users.id eq userID and (Buckets.type eq BucketType.USER_BUCKET) }
         .map(::toBucket)
         .first()
+
+    fun increaseSize(bucketUUID: UUID, size: Int? = null) {
+        if (size == null || size == 0) return
+        Buckets.update({ Buckets.id eq bucketUUID }) {
+            with(SqlExpressionBuilder) {
+                it.update(Buckets.size, Buckets.size + size)
+            }
+        }
+    }
+
+    fun decreaseSize(bucketUUID: UUID, size: Int? = null) =
+        increaseSize(bucketUUID, size?.let { -it })
 }
 
 val bucketsDAO = BucketsDAO()
