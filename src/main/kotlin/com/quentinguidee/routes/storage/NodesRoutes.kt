@@ -98,12 +98,14 @@ fun Route.nodesRoutes() {
                 throw UnauthorizedException(call.user)
 
             var name = "unnamed"
+            var mime: String? = null
             var bytes: ByteArray? = null
             call.receiveMultipart().forEachPart { part ->
                 if (part !is PartData.FileItem)
                     throw BadRequestException("The upload is not a file")
 
                 name = part.originalFileName ?: "unnamed"
+                mime = part.contentType?.toString()
                 bytes = part.streamProvider().readBytes()
                 part.dispose()
             }
@@ -114,6 +116,7 @@ fun Route.nodesRoutes() {
                 parentUUID = UUID.fromString(parentUUID),
                 name = name,
                 type = "file",
+                mime = mime,
                 size = bytes?.size ?: 0,
                 bytes = bytes,
             )

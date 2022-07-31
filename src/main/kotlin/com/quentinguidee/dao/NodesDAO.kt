@@ -53,12 +53,20 @@ class NodesDAO {
         .orderBy(UsersNodes.seenAt, SortOrder.DESC)
         .map(::toNode)
 
-    fun create(bucketUUID: UUID, parentUUID: UUID? = null, name: String, type: String, size: Int = 0) = Nodes
+    fun create(
+        bucketUUID: UUID,
+        parentUUID: UUID? = null,
+        name: String,
+        type: String,
+        mime: String? = null,
+        size: Int = 0
+    ) = Nodes
         .insert {
             it[Nodes.parent] = parentUUID
             it[Nodes.bucket] = bucketUUID
             it[Nodes.name] = name
             it[Nodes.type] = type
+            it[Nodes.mime] = mime
             it[Nodes.size] = size
         }.resultedValues!!.map(::toNode).first()
 

@@ -64,6 +64,7 @@ class NodesServices {
         parentUUID: UUID,
         name: String,
         type: String,
+        mime: String? = null,
         size: Int = 0,
         bytes: ByteArray? = null
     ) = transaction {
@@ -71,7 +72,7 @@ class NodesServices {
         if (deducedType == "file")
             deducedType = deduceNodeTypeByName(name)
 
-        val node = nodesDAO.create(bucketUUID, parentUUID, name, deducedType, size)
+        val node = nodesDAO.create(bucketUUID, parentUUID, name, deducedType, mime, size)
         usersNodesDAO.create(UUID.fromString(node.uuid), userID)
 
         val path = getNodePath(node)
