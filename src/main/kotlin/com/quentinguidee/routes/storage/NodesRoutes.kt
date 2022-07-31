@@ -77,6 +77,17 @@ fun Route.nodesRoutes() {
             call.ok()
         }
 
+        get("/download") {
+            val nodeUUID = call.parameters.getOrFail("node_uuid")
+            val node = nodesServices.getNode(UUID.fromString(nodeUUID))
+            val bucketUUID = node.bucketUUID
+
+            if (!bucketsServices.authorize(AccessType.READ, UUID.fromString(bucketUUID), call.user.id))
+                throw UnauthorizedException(call.user)
+
+            call.respondFile(nodesServices.getFile(node))
+        }
+
         post("/upload") {
             val parentUUID = call.parameters.getOrFail("parent_uuid")
             val parent = nodesServices.getNode(UUID.fromString(parentUUID))

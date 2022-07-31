@@ -28,6 +28,10 @@ class NodesServices {
         nodesDAO.getDeleted(bucketUUID)
     }
 
+    fun getFile(node: Node) = transaction {
+        getNodePath(node).toFile()
+    }
+
     private fun getNodePath(of: Node): Path {
         var node = of
         var path = Path(node.name)
