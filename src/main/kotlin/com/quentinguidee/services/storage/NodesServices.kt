@@ -2,6 +2,7 @@ package com.quentinguidee.services.storage
 
 import com.quentinguidee.dao.nodesDAO
 import com.quentinguidee.models.Node
+import com.quentinguidee.models.deduceNodeTypeByName
 import com.quentinguidee.utils.MaxRecursionLevelException
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.nio.file.Path
@@ -54,7 +55,11 @@ class NodesServices {
         size: Int = 0,
         bytes: ByteArray? = null
     ) = transaction {
-        val node = nodesDAO.create(bucketUUID, parentUUID, name, type, size)
+        var deducedType: String = type
+        if (deducedType == "file")
+            deducedType = deduceNodeTypeByName(name)
+
+        val node = nodesDAO.create(bucketUUID, parentUUID, name, deducedType, size)
         val path = getNodePath(node)
         if (bytes != null) {
             path.writeBytes(bytes)
@@ -68,7 +73,12 @@ class NodesServices {
 
     fun rename(nodeUUID: UUID, name: String) = transaction {
         val path = getNodePath(nodesDAO.get(nodeUUID))
-        nodesDAO.rename(nodeUUID, name)
+        val node = nodesDAO.get(nodeUUID)
+        var type = node.type
+        if (type != "directory")
+            type = deduceNodeTypeByName(name)
+
+        nodesDAO.rename(nodeUUID, name, type)
         val file = path.toFile()
         file.renameTo(path.parent.resolve(name).toFile())
     }

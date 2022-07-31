@@ -10,6 +10,8 @@ import kotlinx.serialization.encoding.Encoder
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.javatime.datetime
 import java.time.LocalDateTime
+import kotlin.io.path.Path
+import kotlin.io.path.extension
 
 object Nodes : UUIDTable() {
     val parent = reference("parent_uuid", Nodes).nullable()
@@ -40,6 +42,48 @@ data class Node(
     @Serializable(DateSerializer::class) val updatedAt: LocalDateTime? = null,
     @Serializable(DateSerializer::class) val deletedAt: LocalDateTime? = null,
 )
+
+fun deduceNodeTypeByName(name: String) = when (Path(name).extension) {
+    "avi" -> "avi"
+    "babelrc" -> "babel"
+    "bmp" -> "bmp"
+    "c" -> "c"
+    "cpp", "cxx" -> "cpp"
+    "css" -> "css"
+    "word", "odt", "doc", "docx" -> "document"
+    "flac" -> "flac"
+    "gitignore", "gitkeep" -> "git"
+    "go" -> "go"
+    "html", "htm" -> "html"
+    "js" -> "javascript"
+    "jpeg" -> "jpeg"
+    "jpg" -> "jpg"
+    "json" -> "json"
+    "kt" -> "kotlin"
+    "md" -> "markdown"
+    "mkv" -> "mkv"
+    "mov" -> "mov"
+    "mp3" -> "mp3"
+    "mp4" -> "mp4"
+    "ml", "mli" -> "ocaml"
+    "ogg" -> "ogg"
+    "pdf" -> "pdf"
+    "php" -> "php"
+    "png" -> "png"
+    "ppt", "pptx", "odp" -> "presentation"
+    "py" -> "python"
+    "raw" -> "raw"
+    "tsx" -> "react"
+    "rb" -> "ruby"
+    "sass", "scss" -> "sass"
+    "sc" -> "scala"
+    "sh" -> "shell"
+    "xls", "xlsx", "ods" -> "spreadsheet"
+    "ts" -> "typescript"
+    "wav" -> "wav"
+    "lock" -> "yarn"
+    else -> "file"
+}
 
 object DateSerializer : KSerializer<LocalDateTime> {
     override val descriptor = PrimitiveSerialDescriptor("LocalDateTime", PrimitiveKind.LONG)
