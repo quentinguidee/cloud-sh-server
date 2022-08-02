@@ -9,6 +9,7 @@ import org.jetbrains.exposed.sql.selectAll
 class OAuthMethodsDAO {
     private fun toOAuthMethodPrivate(row: ResultRow) = OAuthMethodPrivate(
         name = row[OAuthMethods.name],
+        displayName = row[OAuthMethods.displayName],
         color = row[OAuthMethods.color],
         clientID = row[OAuthMethods.clientID],
         clientSecret = row[OAuthMethods.clientSecret],
@@ -16,13 +17,18 @@ class OAuthMethodsDAO {
 
     private fun toOAuthMethod(row: ResultRow) = OAuthMethod(
         name = row[OAuthMethods.name],
+        displayName = row[OAuthMethods.displayName],
         color = row[OAuthMethods.color],
     )
 
     fun getAll() = OAuthMethods
-        .slice(OAuthMethods.name, OAuthMethods.color)
+        .slice(OAuthMethods.name, OAuthMethods.displayName, OAuthMethods.color)
         .selectAll()
         .map(::toOAuthMethod)
+
+    fun getAllPrivate() = OAuthMethods
+        .selectAll()
+        .map(::toOAuthMethodPrivate)
 }
 
 val oAuthMethodsDAO = OAuthMethodsDAO()
