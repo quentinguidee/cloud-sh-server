@@ -5,6 +5,7 @@ import com.quentinguidee.dao.gitHubUsersDAO
 import com.quentinguidee.dao.oAuthMethodsDAO
 import com.quentinguidee.dao.sessionsDAO
 import com.quentinguidee.dao.usersDAO
+import com.quentinguidee.models.OAuthMethodPrivate
 import com.quentinguidee.models.Session
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -78,6 +79,10 @@ class AuthServices {
 
     fun methodPrivate(name: String) = transaction {
         oAuthMethodsDAO.getPrivate(name)
+    }
+
+    fun createMethod(oAuthMethod: OAuthMethodPrivate) = transaction {
+        oAuthMethodsDAO.create(oAuthMethod)
     }
 }
 
