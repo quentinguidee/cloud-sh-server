@@ -1,5 +1,6 @@
 package com.quentinguidee.plugins
 
+import com.quentinguidee.dao.oAuthMethodsDAO
 import com.quentinguidee.models.*
 import io.ktor.server.application.*
 import org.jetbrains.exposed.sql.Database
@@ -33,6 +34,10 @@ fun initDatabase() = transaction {
 }
 
 fun resetDatabase() = transaction {
-    SchemaUtils.drop(*tables)
-}
+    val oAuthMethods = oAuthMethodsDAO.getAllPrivate()
 
+    SchemaUtils.drop(*tables)
+    initDatabase()
+
+    oAuthMethods.forEach { oAuthMethodsDAO.create(it) }
+}
