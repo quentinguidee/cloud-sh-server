@@ -1,5 +1,6 @@
 package com.quentinguidee.routes
 
+import com.quentinguidee.plugins.getDatabaseConfig
 import com.quentinguidee.services.adminsServices
 import com.quentinguidee.services.authServices
 import com.quentinguidee.utils.UnauthorizedException
@@ -14,6 +15,12 @@ import kotlinx.serialization.json.encodeToJsonElement
 
 fun Route.adminRoutes() {
     route("/admin") {
+        get("/database") {
+            val config = getDatabaseConfig()
+            config.password = "***"
+            call.respond(config)
+        }
+
         get("/auth") {
             val methods = authServices.methodsPrivate()
 

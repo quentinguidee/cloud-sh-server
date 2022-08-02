@@ -1,5 +1,7 @@
 package com.quentinguidee.plugins
 
+import com.quentinguidee.utils.DatabaseConnectionFailedException
+import com.quentinguidee.utils.ServerAlreadyConfiguredException
 import com.quentinguidee.utils.UnauthorizedException
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -14,12 +16,15 @@ fun Application.configureStatusPage() {
         exception<Throwable> { call, cause ->
             val code = when (cause) {
                 is BadRequestException -> HttpStatusCode.BadRequest
+                is DatabaseConnectionFailedException -> HttpStatusCode.NotFound
                 is NoSuchElementException -> HttpStatusCode.NotFound
+                is ServerAlreadyConfiguredException -> HttpStatusCode.Unauthorized
                 is UnauthorizedException -> HttpStatusCode.Unauthorized
                 else -> HttpStatusCode.InternalServerError
             }
 
             val message = buildJsonObject {
+                put("type", cause.javaClass.simpleName)
                 put("message", cause.message.toString())
             }
 
