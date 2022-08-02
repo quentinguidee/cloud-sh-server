@@ -71,6 +71,14 @@ class AuthServices {
     fun methodsPrivate() = transaction {
         oAuthMethodsDAO.getAllPrivate()
     }
+
+    fun method(name: String) = transaction {
+        oAuthMethodsDAO.get(name)
+    }
+
+    fun methodPrivate(name: String) = transaction {
+        oAuthMethodsDAO.getPrivate(name)
+    }
 }
 
 val authServices = AuthServices()

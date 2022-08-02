@@ -8,6 +8,7 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.util.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
@@ -21,8 +22,6 @@ data class CallbackParams(
 )
 
 fun Route.authRoutes() {
-    val environment = environment
-
     route("/auth") {
         get {
             val methods = authServices.methods()
@@ -39,24 +38,20 @@ fun Route.authRoutes() {
             }
         }
 
-        route("/github") {
-            val oAuthConfig = OAuthConfig(
-                clientID = environment!!.config.property("auth.github.client_id").getString(),
-                clientSecret = environment.config.property("auth.github.client_secret").getString(),
-                authorizeURL = "https://github.com/login/oauth/authorize",
-                accessTokenURL = "https://github.com/login/oauth/access_token",
-                redirectURL = "http://localhost:3000/login",
-            )
-
-            val oAuth = OAuth(oAuthConfig)
-
+        route("/{oauth_method_name}") {
             get("/login") {
+                val oAuthMethodName = call.parameters.getOrFail("oauth_method_name")
+                val method = authServices.method(oAuthMethodName)
+
                 call.respond(buildJsonObject {
-                    put("url", oAuth.getLoginURL())
+                    put("url", method.getLoginURL())
                 })
             }
 
             post("/callback") {
+                val oAuthMethodName = call.parameters.getOrFail("oauth_method_name")
+                val method = authServices.methodPrivate(oAuthMethodName)
+
                 val params = call.receive<CallbackParams>()
 
                 val code = params.code
@@ -65,7 +60,7 @@ fun Route.authRoutes() {
                 // val state = params.state
 
                 // TODO: Handle exchange fail
-                val token = oAuth.exchange(oAuthConfig, code).accessToken
+                val token = method.exchange(code).accessToken
                 val githubUserBody = authServices.fetchGitHubUser(token)
 
                 val session = try {
