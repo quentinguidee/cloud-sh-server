@@ -17,7 +17,9 @@ fun Route.adminRoutes() {
     route("/admin") {
         get("/database") {
             val config = getDatabaseConfig()
-            config.password = "***"
+            if (config.password != null) {
+                config.password = "***"
+            }
             call.respond(config)
         }
 
