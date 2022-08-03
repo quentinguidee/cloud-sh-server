@@ -9,6 +9,7 @@ import com.quentinguidee.services.authServices
 import com.quentinguidee.utils.ServerAlreadyConfiguredException
 import com.quentinguidee.utils.ok
 import io.ktor.server.application.*
+import io.ktor.server.plugins.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.util.*
@@ -28,12 +29,19 @@ fun Route.serverConfigRoute() {
                 if (DB_CONFIG_PATH.toFile().exists())
                     throw ServerAlreadyConfiguredException()
 
-                val config = DatabaseConfig(
-                    host = call.parameters.getOrFail("host"),
-                    name = call.parameters.getOrFail("name"),
-                    user = call.parameters.getOrFail("user"),
-                    password = call.parameters.getOrFail("password"),
-                )
+                val dbms = call.parameters.getOrFail("dbms")
+                val config = when (dbms) {
+                    "sqlite" -> DatabaseConfig(dbms)
+                    "postgresql" -> DatabaseConfig(
+                        dbms = dbms,
+                        host = call.parameters.getOrFail("host"),
+                        name = call.parameters.getOrFail("name"),
+                        user = call.parameters.getOrFail("user"),
+                        password = call.parameters.getOrFail("password"),
+                    )
+
+                    else -> throw BadRequestException("The DBMS $dbms is not supported.")
+                }
 
                 connectDatabase(config)
 

@@ -18,7 +18,6 @@ fun configureDatabase() {
     if (!DB_CONFIG_PATH.toFile().exists()) return
 
     connectDatabase()
-    initDatabase()
 }
 
 val tables = arrayOf(
@@ -34,10 +33,11 @@ val tables = arrayOf(
 
 @Serializable
 data class DatabaseConfig(
-    val host: String,
-    val name: String,
-    val user: String,
-    var password: String,
+    val dbms: String,
+    val host: String? = null,
+    val name: String? = null,
+    val user: String? = null,
+    var password: String? = null,
 )
 
 @OptIn(ExperimentalSerializationApi::class)
@@ -46,18 +46,29 @@ fun getDatabaseConfig() = Json.decodeFromStream<DatabaseConfig>(
 )
 
 fun connectDatabase(config: DatabaseConfig = getDatabaseConfig()) {
-    val database = Database.connect(
-        "jdbc:postgresql://${config.host}/${config.name}",
-        driver = "org.postgresql.Driver",
-        user = config.user,
-        password = config.password,
-    )
+    val database = when (config.dbms) {
+        "sqlite" -> Database.connect(
+            "jdbc:${config.dbms}:data/database.db",
+            driver = "org.sqlite.JDBC",
+        )
+
+        "postgresql" -> Database.connect(
+            "jdbc:${config.dbms}://${config.host}/${config.name}",
+            driver = "org.postgresql.Driver",
+            user = config.user!!,
+            password = config.password!!
+        )
+
+        else -> throw DatabaseConnectionFailedException()
+    }
 
     try {
         transaction(database) { connection.isClosed }
     } catch (e: Exception) {
         throw DatabaseConnectionFailedException()
     }
+
+    initDatabase()
 }
 
 fun initDatabase() = transaction {
