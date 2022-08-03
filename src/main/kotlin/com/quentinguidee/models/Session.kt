@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.dao.id.IntIdTable
 
-object Sessions : IntIdTable() {
+object Sessions : IntIdTable("sessions") {
     val user = reference("user_id", Users)
     val token = varchar("token", 63)
 }

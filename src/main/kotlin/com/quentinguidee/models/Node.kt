@@ -9,7 +9,7 @@ import java.time.LocalDateTime
 import kotlin.io.path.Path
 import kotlin.io.path.extension
 
-object Nodes : UUIDTable() {
+object Nodes : UUIDTable("nodes") {
     val parent = reference("parent_uuid", Nodes).nullable()
     val bucket = reference("bucket_uuid", Buckets)
     val name = varchar("name", 255)

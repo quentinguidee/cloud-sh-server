@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.dao.id.IntIdTable
 
-object Users : IntIdTable() {
+object Users : IntIdTable("users") {
     val username = varchar("username", 127).uniqueIndex()
     val name = varchar("name", 127)
     val email = varchar("email", 255)

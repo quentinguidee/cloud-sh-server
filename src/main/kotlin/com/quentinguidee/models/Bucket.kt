@@ -8,7 +8,7 @@ enum class BucketType {
     USER_BUCKET
 }
 
-object Buckets : UUIDTable() {
+object Buckets : UUIDTable("buckets") {
     val name = varchar("name", 255)
     val type = enumerationByName("type", 63, BucketType::class)
     val size = integer("size").default(0)
