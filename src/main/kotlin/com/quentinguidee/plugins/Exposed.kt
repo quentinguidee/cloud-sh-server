@@ -3,7 +3,6 @@ package com.quentinguidee.plugins
 import com.quentinguidee.dao.oAuthMethodsDAO
 import com.quentinguidee.models.*
 import com.quentinguidee.utils.DatabaseConnectionFailedException
-import io.ktor.server.application.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -15,7 +14,7 @@ import kotlin.io.path.Path
 
 val DB_CONFIG_PATH = Path("data", "database.json")
 
-fun Application.configureDatabase() {
+fun configureDatabase() {
     if (!DB_CONFIG_PATH.toFile().exists()) return
 
     connectDatabase()

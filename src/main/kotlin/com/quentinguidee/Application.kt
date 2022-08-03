@@ -20,7 +20,9 @@ val client = HttpClient(CIO) {
 fun main() {
     embeddedServer(Netty, environment = applicationEngineEnvironment {
         module {
+            configureDataDirectory()
             configureDatabase()
+
             configureHTTP()
             configureSerialization()
             configureStatusPage()
