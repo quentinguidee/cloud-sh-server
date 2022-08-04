@@ -13,6 +13,7 @@ val client = HttpClient(CIO) {
     install(ContentNegotiation) {
         json(Json {
             ignoreUnknownKeys = true
+            coerceInputValues = true
         })
     }
 }
