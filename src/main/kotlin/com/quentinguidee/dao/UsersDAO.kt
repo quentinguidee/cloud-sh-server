@@ -26,7 +26,13 @@ class UsersDAO {
         .map(::toUser)
         .first()
 
-    fun create(username: String, name: String, email: String, profilePicture: String, role: String? = null) =
+    fun create(
+        username: String,
+        name: String? = null,
+        email: String? = null,
+        profilePicture: String? = null,
+        role: String? = null
+    ) =
         Users.insert {
             it[Users.username] = username
             it[Users.name] = name

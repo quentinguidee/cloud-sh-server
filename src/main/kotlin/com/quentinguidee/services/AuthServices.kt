@@ -16,11 +16,11 @@ import org.jetbrains.exposed.sql.transactions.transaction
 
 @Serializable
 data class GitHubUserBody(
-    val email: String,
-    var name: String,
-    @SerialName("avatar_url")
-    val avatarURL: String,
     val login: String,
+    val email: String?,
+    var name: String?,
+    @SerialName("avatar_url")
+    val avatarURL: String?,
 )
 
 class AuthServices {
@@ -37,18 +37,15 @@ class AuthServices {
             }
             .body()
 
-        if (githubUser.name.isBlank())
-            githubUser.name = githubUser.login
-
         return githubUser
     }
 
     private fun createAccount(
         method: OAuthMethodPrivate,
         username: String,
-        name: String,
-        email: String,
-        profilePicture: String
+        name: String? = null,
+        email: String? = null,
+        profilePicture: String? = null
     ): Session =
         transaction {
             val user = usersDAO.create(
