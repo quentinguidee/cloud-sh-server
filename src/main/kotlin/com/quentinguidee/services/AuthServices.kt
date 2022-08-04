@@ -17,7 +17,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 @Serializable
 data class GitHubUserBody(
     val email: String,
-    val name: String,
+    var name: String,
     @SerialName("avatar_url")
     val avatarURL: String,
     val login: String,
@@ -29,13 +29,18 @@ class AuthServices {
     }
 
     suspend fun fetchGitHubUser(token: String): GitHubUserBody {
-        return client
+        val githubUser: GitHubUserBody = client
             .request("https://api.github.com/user") {
                 headers {
                     append(HttpHeaders.Authorization, "token $token")
                 }
             }
             .body()
+
+        if (githubUser.name.isBlank())
+            githubUser.name = githubUser.login
+
+        return githubUser
     }
 
     private fun createAccount(username: String, name: String, email: String, profilePicture: String): Session =
