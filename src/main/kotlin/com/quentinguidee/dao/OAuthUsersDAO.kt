@@ -4,6 +4,7 @@ import com.quentinguidee.models.OAuthMethodPrivate
 import com.quentinguidee.models.OAuthUser
 import com.quentinguidee.models.OAuthUsers
 import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 
@@ -14,8 +15,8 @@ class OAuthUsersDAO {
         oAuthMethodID = row[OAuthUsers.oAuthMethod].value
     )
 
-    fun get(username: String) = OAuthUsers
-        .select { OAuthUsers.username eq username }
+    fun get(username: String, method: OAuthMethodPrivate) = OAuthUsers
+        .select { OAuthUsers.username eq username and (OAuthUsers.oAuthMethod eq method.id) }
         .map(::toOAuthUser)
         .first()
 

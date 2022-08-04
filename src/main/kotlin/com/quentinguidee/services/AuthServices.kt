@@ -24,8 +24,8 @@ data class GitHubUserBody(
 )
 
 class AuthServices {
-    fun oAuthUser(username: String) = transaction {
-        oAuthUsersDAO.get(username)
+    fun oAuthUser(username: String, method: OAuthMethodPrivate) = transaction {
+        oAuthUsersDAO.get(username, method)
     }
 
     suspend fun fetchGitHubUser(token: String): GitHubUserBody {
