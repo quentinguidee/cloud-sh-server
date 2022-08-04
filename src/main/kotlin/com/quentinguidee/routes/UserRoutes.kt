@@ -13,6 +13,17 @@ fun Route.userRoutes() {
             call.respond(call.user)
         }
 
+        patch {
+            val user = usersServices.updateInfo(
+                userID = call.user.id,
+                name = call.parameters["name"],
+                email = call.parameters["email"],
+                profilePicture = call.parameters["profile_picture"],
+            )
+
+            call.respond(user)
+        }
+
         get("/{username}") {
             val username = call.parameters.getOrFail("username")
 

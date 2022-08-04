@@ -5,6 +5,7 @@ import com.quentinguidee.models.Users
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.update
 
 class UsersDAO {
     private fun toUser(row: ResultRow) = User(
@@ -40,6 +41,13 @@ class UsersDAO {
             it[Users.profilePicture] = profilePicture
             it[Users.role] = role
         }.resultedValues?.map(::toUser)!!.first()
+
+    fun update(userID: Int, name: String?, email: String?, profilePicture: String?) =
+        Users.update({ Users.id eq userID }) {
+            it[Users.name] = name
+            it[Users.email] = email
+            it[Users.profilePicture] = profilePicture
+        }
 }
 
 val usersDAO = UsersDAO()
