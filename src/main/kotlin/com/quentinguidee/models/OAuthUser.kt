@@ -4,14 +4,17 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.dao.id.IntIdTable
 
-object GitHubUsers : IntIdTable("github_users") {
+object OAuthUsers : IntIdTable("oauth_users") {
     val user = reference("user_id", Users)
     val username = varchar("username", 255)
+    val oAuthMethod = reference("oauth_method_id", OAuthMethods)
 }
 
 @Serializable
-data class GitHubUser(
+data class OAuthUser(
     @SerialName("user_id")
     val userID: Int,
     val username: String,
+    @SerialName("oauth_method_id")
+    val oAuthMethodID: Int,
 )

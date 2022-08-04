@@ -22,6 +22,7 @@ object OAuthMethods : IntIdTable("oauth_methods") {
 
 @Serializable
 data class OAuthMethod(
+    val id: Int,
     val name: String,
     @SerialName("display_name")
     val displayName: String,
@@ -46,6 +47,7 @@ data class OAuthMethod(
 
 @Serializable
 data class OAuthMethodPrivate(
+    val id: Int,
     val name: String,
     @SerialName("display_name")
     val displayName: String,

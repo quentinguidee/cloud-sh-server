@@ -1,6 +1,5 @@
 package com.quentinguidee.routes
 
-import com.quentinguidee.models.OAuthMethodPrivate
 import com.quentinguidee.plugins.DB_CONFIG_PATH
 import com.quentinguidee.plugins.DatabaseConfig
 import com.quentinguidee.plugins.connectDatabase
@@ -62,7 +61,7 @@ fun Route.serverConfigRoute() {
                 if (authServices.methods().isNotEmpty())
                     throw ServerAlreadyConfiguredException()
 
-                val config = OAuthMethodPrivate(
+                authServices.createMethod(
                     name = call.parameters.getOrFail("name").lowercase(),
                     displayName = call.parameters.getOrFail("name"),
                     color = call.parameters.getOrFail("color"),
@@ -72,8 +71,6 @@ fun Route.serverConfigRoute() {
                     accessTokenURL = call.parameters.getOrFail("access_token_url"),
                     redirectURL = call.parameters.getOrFail("redirect_url"),
                 )
-
-                authServices.createMethod(config)
 
                 call.ok()
             }

@@ -22,7 +22,7 @@ fun configureDatabase() {
 
 val tables = arrayOf(
     Buckets,
-    GitHubUsers,
+    OAuthUsers,
     Nodes,
     Sessions,
     Users,

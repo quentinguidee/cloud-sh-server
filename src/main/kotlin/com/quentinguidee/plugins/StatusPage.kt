@@ -1,6 +1,7 @@
 package com.quentinguidee.plugins
 
 import com.quentinguidee.utils.DatabaseConnectionFailedException
+import com.quentinguidee.utils.NotAuthenticatedException
 import com.quentinguidee.utils.ServerAlreadyConfiguredException
 import com.quentinguidee.utils.UnauthorizedException
 import io.ktor.http.*
@@ -20,6 +21,7 @@ fun Application.configureStatusPage() {
                 is NoSuchElementException -> HttpStatusCode.NotFound
                 is ServerAlreadyConfiguredException -> HttpStatusCode.Unauthorized
                 is UnauthorizedException -> HttpStatusCode.Unauthorized
+                is NotAuthenticatedException -> HttpStatusCode.Unauthorized
                 else -> HttpStatusCode.InternalServerError
             }
 

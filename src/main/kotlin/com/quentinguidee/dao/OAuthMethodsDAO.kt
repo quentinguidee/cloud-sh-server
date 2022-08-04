@@ -10,6 +10,7 @@ import org.jetbrains.exposed.sql.selectAll
 
 class OAuthMethodsDAO {
     private fun toOAuthMethod(row: ResultRow) = OAuthMethod(
+        id = row[OAuthMethods.id].value,
         name = row[OAuthMethods.name],
         displayName = row[OAuthMethods.displayName],
         color = row[OAuthMethods.color],
@@ -20,6 +21,7 @@ class OAuthMethodsDAO {
     )
 
     private fun toOAuthMethodPrivate(row: ResultRow) = OAuthMethodPrivate(
+        id = row[OAuthMethods.id].value,
         name = row[OAuthMethods.name],
         displayName = row[OAuthMethods.displayName],
         color = row[OAuthMethods.color],
@@ -30,15 +32,37 @@ class OAuthMethodsDAO {
         redirectURL = row[OAuthMethods.redirectURL],
     )
 
-    fun create(oAuthMethod: OAuthMethodPrivate) = OAuthMethods.insert {
-        it[name] = oAuthMethod.name
-        it[displayName] = oAuthMethod.displayName
-        it[color] = oAuthMethod.color
-        it[clientID] = oAuthMethod.clientID
-        it[clientSecret] = oAuthMethod.clientSecret
-        it[authorizeURL] = oAuthMethod.authorizeURL
-        it[accessTokenURL] = oAuthMethod.accessTokenURL
-        it[redirectURL] = oAuthMethod.redirectURL
+    fun create(method: OAuthMethodPrivate) =
+        create(
+            method.name,
+            method.displayName,
+            method.color,
+            method.clientID,
+            method.clientSecret,
+            method.authorizeURL,
+            method.accessTokenURL,
+            method.redirectURL,
+        )
+
+
+    fun create(
+        name: String,
+        displayName: String,
+        color: String,
+        clientID: String,
+        clientSecret: String,
+        authorizeURL: String,
+        accessTokenURL: String,
+        redirectURL: String,
+    ) = OAuthMethods.insert {
+        it[OAuthMethods.name] = name
+        it[OAuthMethods.displayName] = displayName
+        it[OAuthMethods.color] = color
+        it[OAuthMethods.clientID] = clientID
+        it[OAuthMethods.clientSecret] = clientSecret
+        it[OAuthMethods.authorizeURL] = authorizeURL
+        it[OAuthMethods.accessTokenURL] = accessTokenURL
+        it[OAuthMethods.redirectURL] = redirectURL
     }
 
     fun getAll() = OAuthMethods

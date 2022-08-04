@@ -1,8 +1,8 @@
 package com.quentinguidee.services
 
 import com.quentinguidee.client
-import com.quentinguidee.dao.gitHubUsersDAO
 import com.quentinguidee.dao.oAuthMethodsDAO
+import com.quentinguidee.dao.oAuthUsersDAO
 import com.quentinguidee.dao.sessionsDAO
 import com.quentinguidee.dao.usersDAO
 import com.quentinguidee.models.OAuthMethodPrivate
@@ -24,8 +24,8 @@ data class GitHubUserBody(
 )
 
 class AuthServices {
-    fun githubUser(username: String) = transaction {
-        gitHubUsersDAO.get(username)
+    fun oAuthUser(username: String) = transaction {
+        oAuthUsersDAO.get(username)
     }
 
     suspend fun fetchGitHubUser(token: String): GitHubUserBody {
@@ -43,7 +43,13 @@ class AuthServices {
         return githubUser
     }
 
-    private fun createAccount(username: String, name: String, email: String, profilePicture: String): Session =
+    private fun createAccount(
+        method: OAuthMethodPrivate,
+        username: String,
+        name: String,
+        email: String,
+        profilePicture: String
+    ): Session =
         transaction {
             val user = usersDAO.create(
                 username = username,
@@ -53,12 +59,13 @@ class AuthServices {
                 role = "admin"
             )
 
-            gitHubUsersDAO.create(user.id, username)
+            oAuthUsersDAO.create(user.id, username, method)
 
             return@transaction sessionsDAO.create(user.id)
         }
 
-    fun createAccount(gitHubUser: GitHubUserBody) = authServices.createAccount(
+    fun createAccount(gitHubUser: GitHubUserBody, method: OAuthMethodPrivate) = authServices.createAccount(
+        method = method,
         username = gitHubUser.login,
         name = gitHubUser.name,
         email = gitHubUser.email,
@@ -86,8 +93,26 @@ class AuthServices {
         oAuthMethodsDAO.getPrivate(name)
     }
 
-    fun createMethod(oAuthMethod: OAuthMethodPrivate) = transaction {
-        oAuthMethodsDAO.create(oAuthMethod)
+    fun createMethod(
+        name: String,
+        displayName: String,
+        color: String,
+        clientID: String,
+        clientSecret: String,
+        authorizeURL: String,
+        accessTokenURL: String,
+        redirectURL: String,
+    ) = transaction {
+        oAuthMethodsDAO.create(
+            name,
+            displayName,
+            color,
+            clientID,
+            clientSecret,
+            authorizeURL,
+            accessTokenURL,
+            redirectURL,
+        )
     }
 }
 

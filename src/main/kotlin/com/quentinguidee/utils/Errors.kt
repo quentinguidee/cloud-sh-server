@@ -8,6 +8,9 @@ class DatabaseConnectionFailedException() :
 class ServerAlreadyConfiguredException() :
     Exception("The server is already configured. Use the admin routes to edit them, or delete your data/database.json config file.")
 
+class NotAuthenticatedException :
+    Exception("You're not logged in.")
+
 class UnauthorizedException(user: User) :
     Exception("${user.username} is not authorized to access this")
 

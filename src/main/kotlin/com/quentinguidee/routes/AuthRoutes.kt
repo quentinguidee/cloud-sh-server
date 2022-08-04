@@ -64,10 +64,10 @@ fun Route.authRoutes() {
                 val githubUserBody = authServices.fetchGitHubUser(token)
 
                 val session = try {
-                    val githubUser = authServices.githubUser(githubUserBody.login)
-                    sessionsServices.createSession(githubUser.userID)
+                    val oAuthUser = authServices.oAuthUser(githubUserBody.login)
+                    sessionsServices.createSession(oAuthUser.userID)
                 } catch (e: NoSuchElementException) {
-                    authServices.createAccount(githubUserBody)
+                    authServices.createAccount(githubUserBody, method)
                 }
 
                 val user = usersServices.get(session.userID)
