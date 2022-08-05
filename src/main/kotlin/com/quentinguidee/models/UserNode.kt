@@ -23,6 +23,6 @@ data class UserNode(
     @SerialName("user_id")
     val userID: Int,
 
-    @Serializable(DateSerializer::class) val seenAt: LocalDateTime?,
-    @Serializable(DateSerializer::class) val editedAt: LocalDateTime?,
+    @Serializable(DateSerializer::class) @SerialName("seen_at") val seenAt: LocalDateTime?,
+    @Serializable(DateSerializer::class) @SerialName("edited_at") val editedAt: LocalDateTime?,
 )

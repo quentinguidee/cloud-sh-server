@@ -34,9 +34,9 @@ data class Node(
     val mime: String?,
     val size: Int,
 
-    @Serializable(DateSerializer::class) val createdAt: LocalDateTime,
-    @Serializable(DateSerializer::class) val updatedAt: LocalDateTime? = null,
-    @Serializable(DateSerializer::class) val deletedAt: LocalDateTime? = null,
+    @Serializable(DateSerializer::class) @SerialName("created_at") val createdAt: LocalDateTime,
+    @Serializable(DateSerializer::class) @SerialName("updated_at") val updatedAt: LocalDateTime? = null,
+    @Serializable(DateSerializer::class) @SerialName("deleted_at") val deletedAt: LocalDateTime? = null,
 )
 
 fun deduceNodeTypeByName(name: String) = when (Path(name).extension) {
