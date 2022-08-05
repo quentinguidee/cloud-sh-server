@@ -16,6 +16,7 @@ object Nodes : UUIDTable("nodes") {
     val type = varchar("type", 255)
     val mime = varchar("mime", 255).nullable()
     val size = integer("size").default(0)
+    val description = text("description").nullable()
 
     val createdAt = datetime("created_at").default(LocalDateTime.now())
     val updatedAt = datetime("updated_at").nullable()
@@ -33,6 +34,7 @@ data class Node(
     val type: String,
     val mime: String?,
     val size: Int,
+    val description: String?,
 
     @Serializable(DateSerializer::class) @SerialName("created_at") val createdAt: LocalDateTime,
     @Serializable(DateSerializer::class) @SerialName("updated_at") val updatedAt: LocalDateTime? = null,

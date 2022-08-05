@@ -88,14 +88,14 @@ class NodesServices {
         return@transaction node
     }
 
-    fun rename(nodeUUID: UUID, name: String) = transaction {
+    fun update(nodeUUID: UUID, name: String, description: String?) = transaction {
         val path = getNodePath(nodesDAO.get(nodeUUID))
         val node = nodesDAO.get(nodeUUID)
         var type = node.type
         if (type != "directory")
             type = deduceNodeTypeByName(name)
 
-        nodesDAO.rename(nodeUUID, name, type)
+        nodesDAO.update(nodeUUID, name, description, type)
         val file = path.toFile()
         file.renameTo(path.parent.resolve(name).toFile())
     }

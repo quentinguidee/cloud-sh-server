@@ -16,6 +16,7 @@ class NodesDAO {
         type = row[Nodes.type],
         mime = row[Nodes.mime],
         size = row[Nodes.size],
+        description = row[Nodes.description],
         createdAt = row[Nodes.createdAt],
         updatedAt = row[Nodes.updatedAt],
         deletedAt = row[Nodes.deletedAt],
@@ -62,8 +63,8 @@ class NodesDAO {
         size: Int = 0
     ) = Nodes
         .insert {
-            it[Nodes.parent] = parentUUID
-            it[Nodes.bucket] = bucketUUID
+            it[parent] = parentUUID
+            it[bucket] = bucketUUID
             it[Nodes.name] = name
             it[Nodes.type] = type
             it[Nodes.mime] = mime
@@ -78,9 +79,10 @@ class NodesDAO {
         .map(::toNode)
         .first()
 
-    fun rename(uuid: UUID, name: String, type: String) = Nodes
+    fun update(uuid: UUID, name: String, description: String?, type: String) = Nodes
         .update({ Nodes.id eq uuid }) {
             it[Nodes.name] = name
+            it[Nodes.description] = description
             it[Nodes.type] = type
         }
 }
