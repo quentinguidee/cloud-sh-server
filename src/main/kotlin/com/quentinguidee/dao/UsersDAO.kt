@@ -6,6 +6,7 @@ import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.update
+import java.time.LocalDateTime
 
 class UsersDAO {
     private fun toUser(row: ResultRow) = User(
@@ -15,6 +16,8 @@ class UsersDAO {
         email = row[Users.email],
         profilePicture = row[Users.profilePicture],
         role = row[Users.role],
+        createdAt = row[Users.createdAt],
+        updatedAt = row[Users.updatedAt],
     )
 
     fun get(userID: Int) = Users
@@ -47,6 +50,7 @@ class UsersDAO {
             it[Users.name] = name
             it[Users.email] = email
             it[Users.profilePicture] = profilePicture
+            it[updatedAt] = LocalDateTime.now()
         }
 }
 
