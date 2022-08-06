@@ -1,6 +1,5 @@
 package com.quentinguidee.models
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.Table
 
@@ -22,10 +21,7 @@ object UsersBuckets : Table("user_buckets") {
 
 @Serializable
 data class UserBucket(
-    @SerialName("bucket_id")
     val bucketUUID: String,
-    @SerialName("user_id")
     val userID: Int,
-    @SerialName("access_type")
     val accessType: AccessType,
 )

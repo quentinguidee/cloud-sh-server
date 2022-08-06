@@ -20,7 +20,7 @@ fun Route.serverConfigRoute() {
         route("/database") {
             get {
                 call.respond(buildJsonObject {
-                    put("already_done", DB_CONFIG_PATH.toFile().exists())
+                    put("alreadyDone", DB_CONFIG_PATH.toFile().exists())
                 })
             }
 
@@ -53,7 +53,7 @@ fun Route.serverConfigRoute() {
         route("/oauth") {
             get {
                 call.respond(buildJsonObject {
-                    put("already_done", authServices.methods().isNotEmpty())
+                    put("alreadyDone", authServices.methods().isNotEmpty())
                 })
             }
 

@@ -1,6 +1,5 @@
 package com.quentinguidee.models
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.dao.id.UUIDTable
 
@@ -21,6 +20,5 @@ data class Bucket(
     val name: String,
     val type: BucketType,
     val size: Int,
-    @SerialName("max_size")
     val maxSize: Int?,
 )

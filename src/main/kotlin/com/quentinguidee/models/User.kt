@@ -1,6 +1,5 @@
 package com.quentinguidee.models
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.dao.id.IntIdTable
 
@@ -18,7 +17,6 @@ data class User(
     val username: String,
     val name: String? = null,
     val email: String? = null,
-    @SerialName("profile_picture")
     val profilePicture: String? = null,
     val role: String? = null,
 )

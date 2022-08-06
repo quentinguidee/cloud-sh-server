@@ -21,10 +21,10 @@ inline fun <reified T> json(
 }
 
 inline fun <reified T> MutableMap<String, JsonElement>.putObject(key: String, value: T): JsonElement? {
-    if (this.containsKey("${key}_id")) {
-        this.remove("${key}_id")
-    } else if (this.containsKey("${key}_uuid")) {
-        this.remove("${key}_uuid")
+    if (this.containsKey("${key}ID")) {
+        this.remove("${key}ID")
+    } else if (this.containsKey("${key}UUID")) {
+        this.remove("${key}UUID")
     }
     return put(key, Json.encodeToJsonElement(value))
 }

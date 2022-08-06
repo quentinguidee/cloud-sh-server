@@ -24,16 +24,11 @@ object OAuthMethods : IntIdTable("oauth_methods") {
 data class OAuthMethod(
     val id: Int,
     val name: String,
-    @SerialName("display_name")
     val displayName: String,
     val color: String,
-    @SerialName("client_id")
     val clientID: String,
-    @SerialName("authorize_url")
     val authorizeURL: String,
-    @SerialName("access_token_url")
     val accessTokenURL: String,
-    @SerialName("redirect_url")
     val redirectURL: String,
 ) {
     fun getLoginURL(): String {
@@ -49,18 +44,12 @@ data class OAuthMethod(
 data class OAuthMethodPrivate(
     val id: Int,
     val name: String,
-    @SerialName("display_name")
     val displayName: String,
     val color: String,
-    @SerialName("client_id")
     val clientID: String,
-    @SerialName("client_secret")
     var clientSecret: String,
-    @SerialName("authorize_url")
     val authorizeURL: String,
-    @SerialName("access_token_url")
     val accessTokenURL: String,
-    @SerialName("redirect_url")
     val redirectURL: String,
 ) {
     suspend fun exchange(code: String): OAuthExchangeResponse = client

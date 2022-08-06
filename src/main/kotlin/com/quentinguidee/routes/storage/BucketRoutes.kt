@@ -23,7 +23,7 @@ fun Route.bucketRoutes() {
             val rootNode = bucketsServices.getRoot(UUID.fromString(bucket.uuid))
 
             call.respond(json(bucket) {
-                putObject("root_node", rootNode)
+                putObject("rootNode", rootNode)
             })
         }
     }

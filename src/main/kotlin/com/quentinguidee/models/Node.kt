@@ -1,7 +1,6 @@
 package com.quentinguidee.models
 
 import com.quentinguidee.utils.DateSerializer
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.javatime.datetime
@@ -26,9 +25,7 @@ object Nodes : UUIDTable("nodes") {
 @Serializable
 data class Node(
     val uuid: String,
-    @SerialName("parent_uuid")
     val parentUUID: String?,
-    @SerialName("bucket_uuid")
     val bucketUUID: String,
     val name: String,
     val type: String,
@@ -36,9 +33,9 @@ data class Node(
     val size: Int,
     val description: String?,
 
-    @Serializable(DateSerializer::class) @SerialName("created_at") val createdAt: LocalDateTime,
-    @Serializable(DateSerializer::class) @SerialName("updated_at") val updatedAt: LocalDateTime? = null,
-    @Serializable(DateSerializer::class) @SerialName("deleted_at") val deletedAt: LocalDateTime? = null,
+    @Serializable(DateSerializer::class) val createdAt: LocalDateTime,
+    @Serializable(DateSerializer::class) val updatedAt: LocalDateTime? = null,
+    @Serializable(DateSerializer::class) val deletedAt: LocalDateTime? = null,
 )
 
 fun deduceNodeTypeByName(name: String) = when (Path(name).extension) {

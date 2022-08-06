@@ -1,7 +1,6 @@
 package com.quentinguidee.models
 
 import com.quentinguidee.utils.DateSerializer
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.datetime
@@ -18,11 +17,9 @@ object UsersNodes : Table("users_nodes") {
 
 @Serializable
 data class UserNode(
-    @SerialName("node_uuid")
     val nodeUUID: String,
-    @SerialName("user_id")
     val userID: Int,
 
-    @Serializable(DateSerializer::class) @SerialName("seen_at") val seenAt: LocalDateTime?,
-    @Serializable(DateSerializer::class) @SerialName("edited_at") val editedAt: LocalDateTime?,
+    @Serializable(DateSerializer::class) val seenAt: LocalDateTime?,
+    @Serializable(DateSerializer::class) val editedAt: LocalDateTime?,
 )
