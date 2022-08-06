@@ -73,6 +73,7 @@ fun connectDatabase(config: DatabaseConfig = getDatabaseConfig()) {
 
 fun initDatabase() = transaction {
     SchemaUtils.create(*tables)
+    SchemaUtils.createMissingTablesAndColumns(*tables)
 }
 
 fun resetDatabase() = transaction {
